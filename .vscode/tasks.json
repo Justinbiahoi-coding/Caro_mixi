@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Game Caro",
+            "type": "shell",
+            "command": "clang++",
+            "args": [
+                "-std=c++17",
+                "${fileDirname}/*.cpp", 
+                "-o", "${fileDirname}/caro_game",
+                "-L/opt/homebrew/lib",
+                "-I/opt/homebrew/include",
+                "-lraylib",
+                "-framework", "CoreVideo",
+                "-framework", "IOKit",
+                "-framework", "Cocoa",
+                "-framework", "OpenGL"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
