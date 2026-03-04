@@ -4,8 +4,8 @@
 #include "GraphicView.h"
 
 int main() {
-    const int screenWidth = 800;
-    const int screenHeight = 600;
+    const int screenWidth = 1920;
+    const int screenHeight = 1080;
 
     InitWindow(screenWidth, screenHeight, "Do An Caro - KHTN");
     SetTargetFPS(60);
@@ -17,10 +17,78 @@ int main() {
     // 0: Menu, 1: Game, 2: Settings
     int currentScreen = 0; 
 
+    // import
+    Texture2D bgMenu      = LoadTexture("assets/background-new.png");
+    Texture2D btnNewGame  = LoadTexture("assets/menu/NewGame.png");
+    Texture2D btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
+    Texture2D btnSettings = LoadTexture("assets/menu/Settings.png");
+    Texture2D btnHelp     = LoadTexture("assets/menu/Help.png");
+    Texture2D btnCredits  = LoadTexture("assets/menu/Credits.png");
+    Texture2D btnExit     = LoadTexture("assets/menu/Exit.png");
+
     while (!WindowShouldClose()) {
         
         // --- PHẦN 1: CẬP NHẬT LOGIC (Update) ---
         if (currentScreen == 0) {
+            // Vẽ background
+            DrawTexturePro(
+                bgMenu,
+                { 0, 0, (float)bgMenu.width, (float)bgMenu.height },
+                { 0, 0, (float)screenWidth, (float)screenHeight },
+                { 0, 0 }, 0.0f, WHITE
+            );
+
+            Vector2 mouse = GetMousePosition();
+
+            // --- Định nghĩa vị trí và kích thước các nút ---
+            float centerX = 1496.2;
+            float startY = 420;
+            float gap = btnNewGame.height + 42;
+
+            Rectangle rectNewGame  = { centerX - btnNewGame.width  / 2.0f, startY,        (float)btnNewGame.width,  (float)btnNewGame.height };
+            Rectangle rectLoadGame = { centerX - btnLoadGame.width / 2.0f, startY + gap,   (float)btnLoadGame.width, (float)btnLoadGame.height };
+            Rectangle rectSettings = { centerX - btnSettings.width/ 2.0f, startY + gap*2, (float)btnSettings.width, (float)btnSettings.height };
+            Rectangle rectHelp     = { centerX - btnHelp.width    / 2.0f, startY + gap*3, (float)btnHelp.width,     (float)btnHelp.height };
+            Rectangle rectCredits  = { centerX - btnCredits.width / 2.0f, startY + gap*4, (float)btnCredits.width,  (float)btnCredits.height };
+            Rectangle rectExit     = { centerX - btnExit.width    / 2.0f, startY + gap*5, (float)btnExit.width,     (float)btnExit.height };
+
+            // --- Hàm vẽ nút với hover effect (làm sáng khi hover) ---
+            auto DrawMenuBtn = [&](Texture2D& tex, Rectangle rect) {
+                Color tint = CheckCollisionPointRec(mouse, rect) ? YELLOW : WHITE;
+                DrawTexture(tex, (int)rect.x, (int)rect.y, tint);
+            };
+
+            DrawMenuBtn(btnNewGame,  rectNewGame);
+            DrawMenuBtn(btnLoadGame, rectLoadGame);
+            DrawMenuBtn(btnSettings, rectSettings);
+            DrawMenuBtn(btnHelp,     rectHelp);
+            DrawMenuBtn(btnCredits,  rectCredits);
+            DrawMenuBtn(btnExit,     rectExit);
+
+            // Click chuột vào nút
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                if (CheckCollisionPointRec(mouse, rectNewGame)) {
+                    int savedInput = game.inputType;
+                    InitGame(game, 0);
+                    game.inputType = savedInput;
+                    currentScreen = 1;
+                }
+                else if (CheckCollisionPointRec(mouse, rectSettings)) {
+                    currentScreen = 2;
+                }
+                else if (CheckCollisionPointRec(mouse, rectLoadGame)) {
+                    if (LoadGame(game, "caro_save.bin")) {
+                        currentScreen = 1;
+                    }
+                }
+                else if (CheckCollisionPointRec(mouse, rectCredits)) {
+                    currentScreen = 3;
+                }
+                else if (CheckCollisionPointRec(mouse, rectExit)) {
+                    break; // Thoát vòng lặp
+                }
+            }
+
             // Đang ở Menu: Lắng nghe phím
             if (IsKeyPressed(KEY_ENTER)) {
                 // Lưu lại tùy chọn điều khiển trước khi reset ván mới
@@ -39,7 +107,11 @@ int main() {
                     currentScreen = 1; // Load thành công thì nhảy thẳng vào game
                 }
             }
-        } 
+            // credit
+            if(IsKeyPressed(KEY_I)){
+                currentScreen = 3;
+            }
+        }
         else if (currentScreen == 1) {
             // Đang chơi game
             HandleInput(game);
@@ -62,6 +134,13 @@ int main() {
                 currentScreen = 0;
             }
         }
+        else if (currentScreen == 3) {
+
+            // Nhấn ESC để quay về Menu chính
+            if (IsKeyPressed(KEY_M)) {
+                currentScreen = 0;
+            }
+        }
 
         // --- PHẦN 2: VẼ GIAO DIỆN (Draw) ---
         BeginDrawing();
@@ -69,10 +148,16 @@ int main() {
 
             if (currentScreen == 0) {
                 // --- Vẽ giao diện Menu ---
-                DrawText("GAME CO CARO", 200, 150, 50, DARKBLUE);
-                DrawText("Nhan [ENTER] de Choi Moi", 250, 250, 20, DARKGRAY);
-                DrawText("Nhan [S] de vao Cai Dat (Settings)", 250, 300, 20, DARKGRAY);
-                DrawText("Nhan [T] de Tai Game ", 250, 350, 20, LIGHTGRAY);
+
+                float btnW = 300, btnH = 70;
+                float btnX = (screenWidth - btnW) / 2.0f;
+                Rectangle btnPlay     = { btnX, 300, btnW, btnH };
+                Rectangle btnLoad     = { btnX, 390, btnW, btnH };
+                Rectangle btnSettings = { btnX, 480, btnW, btnH };
+                Rectangle btnInfo     = { btnX, 570, btnW, btnH };
+                Rectangle btnCredits  = { btnX, 660, btnW, btnH };
+                Rectangle btnExit     = { btnX, 750, btnW, btnH };
+
             } 
             else if (currentScreen == 1) {
                 // --- Vẽ giao diện Bàn cờ ---
@@ -113,10 +198,23 @@ int main() {
                 DrawText("Nhan phim [1] hoac [2] de thay doi.", 250, 400, 20, GRAY);
                 DrawText("Nhan [M] de luu va quay lai Menu", 250, 450, 20, GRAY);
             }
+            else if (currentScreen == 3) {
+                // --- Vẽ giao diện Settings ---
+                DrawText("Credit hihi", 100, 200, 40, DARKBLUE);
+
+                DrawText("Nhan [M] de  quay lai Menu", 250, 250, 20, GRAY);
+            }
 
         EndDrawing();
     }
 
+    UnloadTexture(bgMenu);
+    UnloadTexture(btnNewGame);
+    UnloadTexture(btnLoadGame);
+    UnloadTexture(btnSettings);
+    UnloadTexture(btnHelp);
+    UnloadTexture(btnCredits);
+    UnloadTexture(btnExit);
     CloseWindow();
     return 0;
 }
