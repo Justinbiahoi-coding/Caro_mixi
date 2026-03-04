@@ -26,6 +26,11 @@ void InitGame(GameState& game, int mode) {
     game.player2.hp = 3;
     game.player2.scansLeft = 2;
     game.player2.stepCount = 0;
+
+    // keyboard
+    game.cursorRow = BOARD_SIZE / 2; 
+    game.cursorCol = BOARD_SIZE / 2;
+    game.inputType = 1;
 }
 
 bool MakeMove(GameState& game, int row, int col) {
@@ -42,8 +47,8 @@ bool MakeMove(GameState& game, int row, int col) {
             if (game.isPlayer1Turn) game.player1.stepCount++;
             else game.player2.stepCount++;
             
-            // goi hahm ktra
-            // game.matchStatus = CheckWin(game, row, col);
+            // check
+            game.matchStatus = CheckWin(game, row, col);
             
             // Switch turns if the game is still ongoing
             if (game.matchStatus == 0) {
@@ -57,6 +62,78 @@ bool MakeMove(GameState& game, int row, int col) {
 }
 
 int CheckWin(GameState& game, int lastRow, int lastCol) {
-    // Tạm thời trả về 0 để game tiếp tục chạy
+    int player = game.board[lastRow][lastCol].c; 
+    if (player == 0) return 0; 
+    // Horizontal (0, 1), Vertical (1, 0), main diagonal (1, 1), secondary diagonal (1, -1)
+    int directions[4][2] = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
+
+    for (int d = 0; d < 4; d++) {
+        int dx = directions[d][0];
+        int dy = directions[d][1];
+        
+        int count = 1;     // Count the number of consecutive troops
+        int blocks = 0;    // Count the number of blocked entries
+
+        //(+dx, +dy)
+        int r = lastRow + dx;
+        int c = lastCol + dy;
+        while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player) {
+            count++;
+            r += dx;
+            c += dy;
+        }
+        // Check if blocked (touching the boundary or hitting the opponent's flag).
+        if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) {
+            blocks++;
+        }
+
+        //(-dx, -dy)
+        r = lastRow - dx;
+        c = lastCol - dy;
+        while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player) {
+            count++;
+            r -= dx;
+            c -= dy;
+        }
+        //Check if blocked
+        if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) {
+            blocks++;
+        }
+
+        //Win if you have 5 pieces and are not blocked at both ends
+        if (count >= 5 && blocks < 2) {
+            return player; 
+        }
+    }
+
+    // Check for a Tie (if all 225 squares have been played and no one has won).
+    if (game.moveCount == BOARD_SIZE * BOARD_SIZE) {
+        return 3;
+    }
     return 0;
+}
+// Thêm 2 hàm này vào cuối file LogicControl.cpp
+
+bool SaveGame(const GameState& game, const char* filename) {
+    // Mở file để ghi dưới dạng nhị phân (wb)
+    FILE* file = fopen(filename, "wb");
+    if (file == NULL) return false; // Không tạo được file
+    
+    // Ghi toàn bộ khối bộ nhớ của biến game xuống file
+    fwrite(&game, sizeof(GameState), 1, file);
+    
+    fclose(file);
+    return true;
+}
+
+bool LoadGame(GameState& game, const char* filename) {
+    // Mở file để đọc dưới dạng nhị phân (rb)
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) return false; // File không tồn tại
+    
+    // Đọc khối dữ liệu từ file đè thẳng vào biến game
+    fread(&game, sizeof(GameState), 1, file);
+    
+    fclose(file);
+    return true;
 }

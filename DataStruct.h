@@ -36,6 +36,9 @@ struct GameState {
     int moveCount;      // Total number of moves made on the chessboard
     int gameMode;       // 0: Normal Caro, 1: Booming Caro
     int matchStatus;    // 0: In progress, 1: P1 wins, 2: P2 wins, 3: Draw
+    int cursorRow;  // Y coordinate of the keyboard cursor
+    int cursorCol;  // X coordinate of the keyboard cursor
+    int inputType;  //0: Play with Mouse, 1: Play with Keyboard
 };
 
 #endif // DATA_STRUCT_H

@@ -2,7 +2,7 @@
 #define LOGIC_CONTROL_H
 
 #include "DataStruct.h"
-
+#include <stdio.h>
 //Create the defaul data
 void InitGame(GameState& game, int mode);
 
@@ -13,4 +13,7 @@ bool MakeMove(GameState& game, int row, int col);
 // Returns: 0 (No winner yet), 1 (P1 wins), 2 (P2 wins), 3 (Draw)
 int CheckWin(GameState& game, int lastRow, int lastCol);
 
+bool SaveGame(const GameState& game, const char* filename);
+
+bool LoadGame(GameState& game, const char* filename);
 #endif // LOGIC_CONTROL_H
