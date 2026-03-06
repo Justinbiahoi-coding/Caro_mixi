@@ -39,6 +39,9 @@ struct GameState {
     int cursorRow;  // Y coordinate of the keyboard cursor
     int cursorCol;  // X coordinate of the keyboard cursor
     int inputType;  //0: Play with Mouse, 1: Play with Keyboard
+
+    char saveName[30];
+    char saveTime[30];
 };
 
 #endif // DATA_STRUCT_H

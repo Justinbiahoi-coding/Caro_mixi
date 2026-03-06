@@ -1,5 +1,7 @@
 #include "LogicControl.h"
-
+#include "LogicControl.h"
+#include <string.h> 
+#include <time.h>   
 void InitGame(GameState& game, int mode) {
     // Reset the chessboard matrix to 0 (no one has played yet)
     for (int i = 0; i < BOARD_SIZE; i++) {
@@ -112,28 +114,50 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
     }
     return 0;
 }
-// Thêm 2 hàm này vào cuối file LogicControl.cpp
+// slot save 
 
-bool SaveGame(const GameState& game, const char* filename) {
-    // Mở file để ghi dưới dạng nhị phân (wb)
+bool SaveGameSlot(GameState& game, int slot, const char* customName) {
+    char filename[30];
+    sprintf(filename, "save_%d.bin", slot);
+    strncpy(game.saveName, customName, 29);
+    game.saveName[29] = '\0';
+
+    // get time
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    strftime(game.saveTime, 30, "%H:%M %d/%m/%Y", tm_info); 
     FILE* file = fopen(filename, "wb");
-    if (file == NULL) return false; // Không tạo được file
-    
-    // Ghi toàn bộ khối bộ nhớ của biến game xuống file
+    if (file == NULL) return false;
     fwrite(&game, sizeof(GameState), 1, file);
+    fclose(file);
     
+    return true;
+}
+
+bool LoadGameSlot(GameState& game, int slot) {
+    char filename[30];
+    sprintf(filename, "save_%d.bin", slot);
+    
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) return false;
+    fread(&game, sizeof(GameState), 1, file);
     fclose(file);
     return true;
 }
 
-bool LoadGame(GameState& game, const char* filename) {
-    // Mở file để đọc dưới dạng nhị phân (rb)
+bool DeleteGameSlot(int slot) {
+    char filename[30];
+    sprintf(filename, "save_%d.bin", slot);
+    return remove(filename) == 0;
+}
+
+bool PeekGameSlot(int slot, GameState& tempGame) {
+    char filename[30];
+    sprintf(filename, "save_%d.bin", slot);
+    
     FILE* file = fopen(filename, "rb");
-    if (file == NULL) return false; // File không tồn tại
-    
-    // Đọc khối dữ liệu từ file đè thẳng vào biến game
-    fread(&game, sizeof(GameState), 1, file);
-    
+    if (file == NULL) return false; 
+    fread(&tempGame, sizeof(GameState), 1, file);
     fclose(file);
     return true;
 }
