@@ -1,6 +1,7 @@
 #ifndef DATA_STRUCT_H
 #define DATA_STRUCT_H
 
+#include "raylib.h"
 //define the constant
 #define BOARD_SIZE 15 // The chessboard size is 15x15
 #define WIN_CONDITION 5
@@ -39,6 +40,21 @@ struct GameState {
     int cursorRow;  // Y coordinate of the keyboard cursor
     int cursorCol;  // X coordinate of the keyboard cursor
     int inputType;  //0: Play with Mouse, 1: Play with Keyboard
+};
+// Struct chứa hình ảnh
+struct GameAssets {
+    Texture2D boardFrame;
+    Texture2D cell;
+    Texture2D pieceX;
+    Texture2D pieceO;
+};
+
+// Struct MỚI: Quản lý toàn bộ thông số vị trí, kích thước
+struct BoardLayout {
+    Rectangle frame;      // Khung cờ: x, y (vị trí), width, height (kích thước)
+    float cellStartX;     // Tọa độ X bắt đầu vẽ ô cờ góc trên cùng bên trái
+    float cellStartY;     // Tọa độ Y bắt đầu vẽ ô cờ góc trên cùng bên trái
+    float cellSize;       // Kích thước 1 ô cờ (Ví dụ: 30x30 thì lưu 30)
 };
 
 #endif // DATA_STRUCT_H

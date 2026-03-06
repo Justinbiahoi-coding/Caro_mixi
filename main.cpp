@@ -17,6 +17,19 @@ int main() {
     // 0: Menu, 1: Game, 2: Settings
     int currentScreen = 0; 
 
+    BoardLayout layout;
+    
+    // 1. Cấu hình Ô cờ trước
+    layout.cellSize = 50.0f;
+    layout.cellStartX = 125.0f; 
+    layout.cellStartY = 150.0f;
+
+    // float padding = 30.0f;
+    // layout.frame.x = layout.cellStartX - padding;
+    // layout.frame.y = layout.cellStartY - padding;
+    layout.frame.width = (BOARD_SIZE * layout.cellSize*1.3);
+    layout.frame.height = (BOARD_SIZE * layout.cellSize*1.3);
+
     // import
     Texture2D bgMenu      = LoadTexture("assets/background-new.png");
     Texture2D btnNewGame  = LoadTexture("assets/menu/NewGame.png");
@@ -25,6 +38,11 @@ int main() {
     Texture2D btnHelp     = LoadTexture("assets/menu/Help.png");
     Texture2D btnCredits  = LoadTexture("assets/menu/Credits.png");
     Texture2D btnExit     = LoadTexture("assets/menu/Exit.png");
+    GameAssets assets;
+    assets.boardFrame = LoadTexture("assets/board/board_frame.png"); // Ảnh khung gỗ/kim loại bọc ngoài
+    assets.cell       = LoadTexture("assets/board/cell_custom.png");
+    assets.pieceX     = LoadTexture("assets/board/piece_x.png");
+    assets.pieceO     = LoadTexture("assets/board/piece_o.png");
 
     while (!WindowShouldClose()) {
         
@@ -114,7 +132,7 @@ int main() {
         }
         else if (currentScreen == 1) {
             // Đang chơi game
-            HandleInput(game);
+            HandleInput(game, layout);
 
             if (IsKeyPressed(KEY_M)) {
                 currentScreen = 0; // Về Menu
@@ -161,9 +179,9 @@ int main() {
             } 
             else if (currentScreen == 1) {
                 // --- Vẽ giao diện Bàn cờ ---
-                DrawBoard(game);
+                DrawBoard(game, assets, layout);
 
-                int infoX = 550; 
+                int infoX = 1500; 
                 DrawText("THONG TIN VAN DAU", infoX, 50, 20, BLACK);
                 
                 if (game.isPlayer1Turn) DrawText("Luot cua: X (P1)", infoX, 100, 20, RED);
@@ -215,6 +233,10 @@ int main() {
     UnloadTexture(btnHelp);
     UnloadTexture(btnCredits);
     UnloadTexture(btnExit);
+    UnloadTexture(assets.boardFrame);
+    UnloadTexture(assets.cell);
+    UnloadTexture(assets.pieceX);
+    UnloadTexture(assets.pieceO);
     CloseWindow();
     return 0;
 }
