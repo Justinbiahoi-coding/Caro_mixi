@@ -15,6 +15,11 @@ struct UIState {
     int letterCount;
     bool shouldExit;
 
+    char p1NameInput[16]; 
+    char p2NameInput[16];
+    int p1LetterCount;
+    int p2LetterCount;
+    int activeInputField; // 0: P1 is entering , 1 P2 is entering 
     //Textures
     Texture2D bgMenu;
     Texture2D btnNewGame;

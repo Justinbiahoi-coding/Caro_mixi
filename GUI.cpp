@@ -1,8 +1,9 @@
 #include "GUI.h"
 #include "LogicControl.h"
-const int CELL_SIZE = 30;
-const int OFFSET_X = 50; 
-const int OFFSET_Y = 50; 
+
+const int CELL_SIZE = 45; 
+const int OFFSET_X = (1920 - 15 * CELL_SIZE) / 2; 
+const int OFFSET_Y = (1080 - 15 * CELL_SIZE) / 2; 
 const int TOTAL_MENU_ITEMS = 6;
 const int TOTAL_SETTING_ITEMS = 3;
 
@@ -15,8 +16,13 @@ void InitGUI(UIState& ui) {
     ui.nameInput[0] = '\0';
     ui.letterCount = 0;
     ui.shouldExit = false;
+    
+    ui.p1NameInput[0] = '\0';
+    ui.p2NameInput[0] = '\0';
+    ui.p1LetterCount = 0;
+    ui.p2LetterCount = 0;
+    ui.activeInputField = 0;
 
-    // Load assets
     ui.bgMenu      = LoadTexture("assets/background-new.png");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
@@ -72,11 +78,11 @@ void UpdateGUI(GameState& game, UIState& ui) {
 
         if (confirmSelection) {
             switch (ui.menuSelection) {
-                case 0: {
-                    int savedInput = game.inputType;
-                    InitGame(game, 0);
-                    game.inputType = savedInput;
-                    ui.currentScreen = 1;
+                case 0: { // New Game
+                    ui.currentScreen = 7; 
+                    ui.activeInputField = 0;
+                    ui.p1NameInput[0] = '\0'; ui.p1LetterCount = 0;
+                    ui.p2NameInput[0] = '\0'; ui.p2LetterCount = 0;
                 } break;
                 case 1: ui.currentScreen = 5; ui.loadSelection = 0; break;
                 case 2: ui.currentScreen = 2; ui.settingSelection = game.inputType; break;
@@ -87,7 +93,6 @@ void UpdateGUI(GameState& game, UIState& ui) {
         }
     }
     else if (ui.currentScreen == 1) {
-        // --- LOGIC ĐÁNH CỜ TẠI ĐÂY ---
         if (game.inputType == 0) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 if (mouse.x >= OFFSET_X && mouse.x < OFFSET_X + BOARD_SIZE * CELL_SIZE &&
@@ -192,6 +197,56 @@ void UpdateGUI(GameState& game, UIState& ui) {
         }
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 1; 
     }
+    else if (ui.currentScreen == 7) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if ((key >= 32) && (key <= 125)) {
+                if (ui.activeInputField == 0 && ui.p1LetterCount < 15) {
+                    ui.p1NameInput[ui.p1LetterCount] = (char)key;
+                    ui.p1NameInput[ui.p1LetterCount+1] = '\0';
+                    ui.p1LetterCount++;
+                } else if (ui.activeInputField == 1 && ui.p2LetterCount < 15) {
+                    ui.p2NameInput[ui.p2LetterCount] = (char)key;
+                    ui.p2NameInput[ui.p2LetterCount+1] = '\0';
+                    ui.p2LetterCount++;
+                }
+            }
+            key = GetCharPressed(); 
+        }
+
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            if (ui.activeInputField == 0 && ui.p1LetterCount > 0) {
+                ui.p1LetterCount--;
+                ui.p1NameInput[ui.p1LetterCount] = '\0';
+            } else if (ui.activeInputField == 1 && ui.p2LetterCount > 0) {
+                ui.p2LetterCount--;
+                ui.p2NameInput[ui.p2LetterCount] = '\0';
+            }
+        }
+
+        if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_TAB)) {
+            ui.activeInputField = 1 - ui.activeInputField; 
+        }
+
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (ui.activeInputField == 0) {
+                ui.activeInputField = 1;
+            } else {
+                int savedInput = game.inputType;
+                InitGame(game, 0); 
+                game.inputType = savedInput;
+                
+                if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
+                else strcpy(game.player1.name, "Player 1");
+                
+                if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
+                else strcpy(game.player2.name, "Player 2");
+
+                ui.currentScreen = 1; 
+            }
+        }
+        if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
+    }
 }
 
 void DrawGUI(const GameState& game, const UIState& ui) {
@@ -217,46 +272,66 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         }
     } 
     else if (ui.currentScreen == 1) {
-        //Draw board
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 int x = OFFSET_X + j * CELL_SIZE;
                 int y = OFFSET_Y + i * CELL_SIZE;
                 DrawRectangleLines(x, y, CELL_SIZE, CELL_SIZE, LIGHTGRAY);
+                
                 if (game.board[i][j].c == 1) {
-                    DrawLine(x + 5, y + 5, x + CELL_SIZE - 5, y + CELL_SIZE - 5, RED);
-                    DrawLine(x + CELL_SIZE - 5, y + 5, x + 5, y + CELL_SIZE - 5, RED);
+                    DrawLineEx({(float)x + 10, (float)y + 10}, {(float)x + CELL_SIZE - 10, (float)y + CELL_SIZE - 10}, 4.0f, RED);
+                    DrawLineEx({(float)x + CELL_SIZE - 10, (float)y + 10}, {(float)x + 10, (float)y + CELL_SIZE - 10}, 4.0f, RED);
                 } else if (game.board[i][j].c == 2) {
-                    DrawCircleLines(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE / 2 - 4, BLUE);
+                    DrawCircleLines(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE / 2 - 8, BLUE);
                 }
             }
         }
-
+        
         if (game.inputType == 1) {
             int cx = OFFSET_X + game.cursorCol * CELL_SIZE;
             int cy = OFFSET_Y + game.cursorRow * CELL_SIZE;
-            DrawRectangleLines(cx, cy, CELL_SIZE, CELL_SIZE, DARKGREEN);
-            DrawRectangle(cx + 1, cy + 1, CELL_SIZE - 2, CELL_SIZE - 2, Fade(GREEN, 0.3f));
+            DrawRectangleLinesEx({(float)cx, (float)cy, (float)CELL_SIZE, (float)CELL_SIZE}, 3.0f, DARKGREEN);
+            DrawRectangle(cx + 2, cy + 2, CELL_SIZE - 4, CELL_SIZE - 4, Fade(GREEN, 0.4f));
         }
 
-        //board infor
-        int infoX = 1400; 
-        DrawText("THONG TIN VAN DAU", infoX, 50, 20, BLACK);
-        if (game.isPlayer1Turn) DrawText("Luot cua: X (P1)", infoX, 100, 20, RED);
-        else DrawText("Luot cua: O (P2)", infoX, 100, 20, BLUE);
-
-        DrawText(TextFormat("So buoc P1: %d", game.player1.stepCount), infoX, 150, 20, DARKGRAY);
-        DrawText(TextFormat("So buoc P2: %d", game.player2.stepCount), infoX, 180, 20, DARKGRAY);
+        DrawText("THONG TIN VAN DAU", 820, 50, 30, BLACK);
         
-        if (game.inputType == 0) DrawText("Dieu khien: Chuot", infoX, 230, 20, GRAY);
-        else DrawText("Dieu khien: WASD + Enter", infoX, 230, 20, GRAY);
-        
-        DrawText("Bam [L] de luu game", infoX, 250, 20, DARKGRAY);
-        DrawText("Nhan [M] de ve Menu", infoX, 550, 20, GRAY);
+        if (game.matchStatus == 0) {
+            if (game.isPlayer1Turn) DrawText(TextFormat(">> LUOT CUA: %s (X) <<", game.player1.name), 790, 100, 30, RED);
+            else DrawText(TextFormat(">> LUOT CUA: %s (O) <<", game.player2.name), 790, 100, 30, BLUE);
+        }
 
-        if (game.matchStatus == 1) DrawText("P1 (X) THANG!", infoX, 300, 30, RED);
-        if (game.matchStatus == 2) DrawText("P2 (O) THANG!", infoX, 300, 30, BLUE);
-        if (game.matchStatus == 3) DrawText("HOA NHAU!", infoX, 300, 30, GRAY);
+        if (game.inputType == 0) DrawText("Dieu khien: Chuot", 880, 140, 20, GRAY);
+        else DrawText("Dieu khien: WASD + Enter", 850, 140, 20, GRAY);
+        
+        DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 950, 25, DARKGRAY);
+
+        int p1X = 200; 
+        int p1Y = 350;
+        DrawText(game.player1.name, p1X, p1Y, 50, RED);
+        DrawText("Phe: X", p1X, p1Y + 70, 30, DARKGRAY);
+        DrawText(TextFormat("So buoc: %d", game.player1.stepCount), p1X, p1Y + 120, 30, BLACK);
+        if (game.gameMode == 1) {
+            DrawText(TextFormat("HP: %d / 3", game.player1.hp), p1X, p1Y + 170, 30, MAROON);
+            DrawText(TextFormat("Scan: %d", game.player1.scansLeft), p1X, p1Y + 220, 30, ORANGE);
+        }
+
+        int p2X = 1500; 
+        int p2Y = 350;
+        DrawText(game.player2.name, p2X, p2Y, 50, BLUE);
+        DrawText("Phe: O", p2X, p2Y + 70, 30, DARKGRAY);
+        DrawText(TextFormat("So buoc: %d", game.player2.stepCount), p2X, p2Y + 120, 30, BLACK);
+        if (game.gameMode == 1) {
+            DrawText(TextFormat("HP: %d / 3", game.player2.hp), p2X, p2Y + 170, 30, MAROON);
+            DrawText(TextFormat("Scan: %d", game.player2.scansLeft), p2X, p2Y + 220, 30, ORANGE);
+        }
+
+        if (game.matchStatus != 0) {
+            DrawRectangle(OFFSET_X, OFFSET_Y, BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, Fade(WHITE, 0.7f));
+            if (game.matchStatus == 1) DrawText(TextFormat("%s (X) THANG!", game.player1.name), 800, 500, 50, RED);
+            if (game.matchStatus == 2) DrawText(TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
+            if (game.matchStatus == 3) DrawText("HOA NHAU!", 850, 500, 50, GRAY);
+        }
     }
     else if (ui.currentScreen == 2) {
         DrawText("CAI DAT DIEU KHIEN", 200, 150, 40, DARKBLUE);
@@ -358,5 +433,34 @@ void DrawGUI(const GameState& game, const UIState& ui) {
             else DrawText(TextFormat("%s Slot %d: -- TRONG --", cursor, i+1), 800, yPos, 25, textColor);
         }
         DrawText("Nhan [ENTER] de luu. Nhan [ESC] de quay lai game.", 800, 800, 20, GRAY);
+    }
+    else if (ui.currentScreen == 7) {
+        DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.85f)); 
+
+        DrawText("THONG TIN NGUOI CHOI", 750, 300, 40, WHITE);
+        
+        //Player 1
+        DrawText("Ten Player 1 (X) - Toi da 15 ky tu:", 750, 400, 25, LIGHTGRAY);
+        Color p1BoxColor = (ui.activeInputField == 0) ? RAYWHITE : DARKGRAY;
+        DrawRectangle(750, 440, 400, 50, p1BoxColor);
+        DrawText(ui.p1NameInput, 760, 455, 25, BLACK);
+        if (ui.activeInputField == 0 && ((int)(GetTime() * 2) % 2) == 0) {
+            DrawText("_", 760 + MeasureText(ui.p1NameInput, 25), 455, 25, BLACK);
+        }
+
+        //Player 2
+        DrawText("Ten Player 2 (O) - Toi da 15 ky tu:", 750, 530, 25, LIGHTGRAY);
+        Color p2BoxColor = (ui.activeInputField == 1) ? RAYWHITE : DARKGRAY;
+        DrawRectangle(750, 570, 400, 50, p2BoxColor);
+        DrawText(ui.p2NameInput, 760, 585, 25, BLACK);
+        if (ui.activeInputField == 1 && ((int)(GetTime() * 2) % 2) == 0) {
+            DrawText("_", 760 + MeasureText(ui.p2NameInput, 25), 585, 25, BLACK);
+        }
+
+
+        DrawText("Dung phim [Len]/[Xuong] hoac [Tab] de chuyen o nhap.", 650, 700, 25, GRAY);
+        DrawText("Nhan [ENTER] de bat dau tran chien!", 750, 750, 25, YELLOW);
+        DrawText("Nhan [ESC] de quay lai Menu.", 850, 800, 20, DARKGRAY);
     }
 }
