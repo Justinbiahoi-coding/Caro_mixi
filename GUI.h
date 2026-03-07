@@ -20,6 +20,18 @@ struct UIState {
     int p1LetterCount;
     int p2LetterCount;
     int activeInputField; // 0: P1 is entering , 1 P2 is entering 
+    //board
+    Texture2D boardFrame;
+    Texture2D cell;
+    Texture2D pieceX;
+    Texture2D pieceO;
+
+    //layout
+    float cellSize;       
+    float cellStartX;     
+    float cellStartY;     
+    Rectangle boardFrameRec;
+
     //Textures
     Texture2D bgMenu;
     Texture2D btnNewGame;

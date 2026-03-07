@@ -1,9 +1,9 @@
 #include "GUI.h"
 #include "LogicControl.h"
 
-const int CELL_SIZE = 45; 
-const int OFFSET_X = (1920 - 15 * CELL_SIZE) / 2; 
-const int OFFSET_Y = (1080 - 15 * CELL_SIZE) / 2; 
+// const int CELL_SIZE = 45; 
+// const int OFFSET_X = (1920 - 15 * CELL_SIZE) / 2; 
+// const int OFFSET_Y = (1080 - 15 * CELL_SIZE) / 2; 
 const int TOTAL_MENU_ITEMS = 6;
 const int TOTAL_SETTING_ITEMS = 3;
 
@@ -22,7 +22,7 @@ void InitGUI(UIState& ui) {
     ui.p1LetterCount = 0;
     ui.p2LetterCount = 0;
     ui.activeInputField = 0;
-
+    // Load asset for menu
     ui.bgMenu      = LoadTexture("assets/background-new.png");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
@@ -30,9 +30,40 @@ void InitGUI(UIState& ui) {
     ui.btnHelp     = LoadTexture("assets/menu/Help.png");
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
+    //Load asset for board 
+    ui.boardFrame = LoadTexture("assets/board/board_frame.png");
+    ui.cell       = LoadTexture("assets/board/cell_custom.png");
+    ui.pieceX     = LoadTexture("assets/board/piece_x.png");
+    ui.pieceO     = LoadTexture("assets/board/piece_o.png");
+
+    ui.cellSize = 50.0f; 
+    ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
+    ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
+
+   //Layout
+    ui.cellSize = 44.0f; // size of cell
+    float gridWidth = BOARD_SIZE *1.0275*ui.cellSize;  // board'width
+    float gridHeight = BOARD_SIZE *1.0275*ui.cellSize; // board'height
+
+    
+    float margin_Left   = 0.073f;  
+    float margin_Right  = 0.07f;  
+    float margin_Top    = 0.13f;  
+    float margin_Bottom = 0.050f; 
+
+    ui.boardFrameRec.width = gridWidth / (1.0f - margin_Left - margin_Right);
+    ui.boardFrameRec.height = gridHeight / (1.0f - margin_Top - margin_Bottom);
+
+    ui.boardFrameRec.x = (1920.0f - ui.boardFrameRec.width) / 2.0f;
+    ui.boardFrameRec.y = (1080.0f - ui.boardFrameRec.height) / 2.0f + 30.0f; 
+
+    ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
+    ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
+
 }
 
 void UnloadGUI(UIState& ui) {
+    //unload menu
     UnloadTexture(ui.bgMenu);
     UnloadTexture(ui.btnNewGame);
     UnloadTexture(ui.btnLoadGame);
@@ -40,6 +71,11 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.btnHelp);
     UnloadTexture(ui.btnCredits);
     UnloadTexture(ui.btnExit);
+    //unload board
+    UnloadTexture(ui.boardFrame);
+    UnloadTexture(ui.cell);
+    UnloadTexture(ui.pieceX);
+    UnloadTexture(ui.pieceO);
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
@@ -92,13 +128,18 @@ void UpdateGUI(GameState& game, UIState& ui) {
             }
         }
     }
-    else if (ui.currentScreen == 1) {
+  else if (ui.currentScreen == 1) {
         if (game.inputType == 0) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                if (mouse.x >= OFFSET_X && mouse.x < OFFSET_X + BOARD_SIZE * CELL_SIZE &&
-                    mouse.y >= OFFSET_Y && mouse.y < OFFSET_Y + BOARD_SIZE * CELL_SIZE) {
-                    int col = ((int)mouse.x - OFFSET_X) / CELL_SIZE;
-                    int row = ((int)mouse.y - OFFSET_Y) / CELL_SIZE;
+                // Sửa lại logic bắt tọa độ dùng UI Layoutf
+                float gridWidth = BOARD_SIZE * ui.cellSize;
+                float gridHeight = BOARD_SIZE * ui.cellSize;
+
+                if (mouse.x >= ui.cellStartX && mouse.x < ui.cellStartX + gridWidth &&
+                    mouse.y >= ui.cellStartY && mouse.y < ui.cellStartY + gridHeight) {
+                    
+                    int col = (mouse.x - ui.cellStartX) / ui.cellSize;
+                    int row = (mouse.y - ui.cellStartY) / ui.cellSize;
                     MakeMove(game, row, col);
                 }
             }
@@ -272,28 +313,48 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         }
     } 
     else if (ui.currentScreen == 1) {
+        Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
+        DrawTexturePro(ui.boardFrame, frameSrc, ui.boardFrameRec, {0, 0}, 0.0f, WHITE);
+
+        // draw board and X,O
+        Vector2 mousePos = GetMousePosition();
+        
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
-                int x = OFFSET_X + j * CELL_SIZE;
-                int y = OFFSET_Y + i * CELL_SIZE;
-                DrawRectangleLines(x, y, CELL_SIZE, CELL_SIZE, LIGHTGRAY);
-                
+                float x = ui.cellStartX + j * ui.cellSize;
+                float y = ui.cellStartY + i * ui.cellSize;
+                Rectangle cellRect = { x, y, ui.cellSize, ui.cellSize };
+                Color cellTint = WHITE; 
+
+                // effect lighter
+                if (game.inputType == 0 && CheckCollisionPointRec(mousePos, cellRect) && game.board[i][j].c == 0) {
+                    cellTint = LIGHTGRAY; 
+                } else if (game.inputType == 1 && i == game.cursorRow && j == game.cursorCol) {
+                    cellTint = LIGHTGRAY; 
+                }
+
+                // background for board
+                Rectangle sourceCell = { 0, 0, (float)ui.cell.width, (float)ui.cell.height };
+                DrawTexturePro(ui.cell, sourceCell, cellRect, {0, 0}, 0.0f, cellTint);
+
+                // draw x and O
                 if (game.board[i][j].c == 1) {
-                    DrawLineEx({(float)x + 10, (float)y + 10}, {(float)x + CELL_SIZE - 10, (float)y + CELL_SIZE - 10}, 4.0f, RED);
-                    DrawLineEx({(float)x + CELL_SIZE - 10, (float)y + 10}, {(float)x + 10, (float)y + CELL_SIZE - 10}, 4.0f, RED);
-                } else if (game.board[i][j].c == 2) {
-                    DrawCircleLines(x + CELL_SIZE / 2, y + CELL_SIZE / 2, CELL_SIZE / 2 - 8, BLUE);
+                    Rectangle sourceX = { 0, 0, (float)ui.pieceX.width, (float)ui.pieceX.height };
+                    DrawTexturePro(ui.pieceX, sourceX, cellRect, {0, 0}, 0.0f, WHITE);
+                } 
+                else if (game.board[i][j].c == 2) {
+                    Rectangle sourceO = { 0, 0, (float)ui.pieceO.width, (float)ui.pieceO.height };
+                    DrawTexturePro(ui.pieceO, sourceO, cellRect, {0, 0}, 0.0f, WHITE);
                 }
             }
         }
         
+        // grid 
         if (game.inputType == 1) {
-            int cx = OFFSET_X + game.cursorCol * CELL_SIZE;
-            int cy = OFFSET_Y + game.cursorRow * CELL_SIZE;
-            DrawRectangleLinesEx({(float)cx, (float)cy, (float)CELL_SIZE, (float)CELL_SIZE}, 3.0f, DARKGREEN);
-            DrawRectangle(cx + 2, cy + 2, CELL_SIZE - 4, CELL_SIZE - 4, Fade(GREEN, 0.4f));
+            float cx = ui.cellStartX + game.cursorCol * ui.cellSize;
+            float cy = ui.cellStartY + game.cursorRow * ui.cellSize;
+            DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
         }
-
         DrawText("THONG TIN VAN DAU", 820, 50, 30, BLACK);
         
         if (game.matchStatus == 0) {
@@ -304,7 +365,7 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         if (game.inputType == 0) DrawText("Dieu khien: Chuot", 880, 140, 20, GRAY);
         else DrawText("Dieu khien: WASD + Enter", 850, 140, 20, GRAY);
         
-        DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 950, 25, DARKGRAY);
+        DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 980, 25, DARKGRAY);
 
         int p1X = 200; 
         int p1Y = 350;
@@ -326,8 +387,10 @@ void DrawGUI(const GameState& game, const UIState& ui) {
             DrawText(TextFormat("Scan: %d", game.player2.scansLeft), p2X, p2Y + 220, 30, ORANGE);
         }
 
-        if (game.matchStatus != 0) {
-            DrawRectangle(OFFSET_X, OFFSET_Y, BOARD_SIZE * CELL_SIZE, BOARD_SIZE * CELL_SIZE, Fade(WHITE, 0.7f));
+       if (game.matchStatus != 0) {
+            // draw wwin / lose
+            DrawRectangle(ui.cellStartX, ui.cellStartY, BOARD_SIZE * ui.cellSize, BOARD_SIZE * ui.cellSize, Fade(WHITE, 0.7f));
+            
             if (game.matchStatus == 1) DrawText(TextFormat("%s (X) THANG!", game.player1.name), 800, 500, 50, RED);
             if (game.matchStatus == 2) DrawText(TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
             if (game.matchStatus == 3) DrawText("HOA NHAU!", 850, 500, 50, GRAY);
