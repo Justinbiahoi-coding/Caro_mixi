@@ -1,13 +1,7 @@
 #include "GUI.h"
 #include "LogicControl.h"
 
-<<<<<<< HEAD
-// const int CELL_SIZE = 45; 
-// const int OFFSET_X = (1920 - 15 * CELL_SIZE) / 2; 
-// const int OFFSET_Y = (1080 - 15 * CELL_SIZE) / 2; 
-const int TOTAL_MENU_ITEMS = 6;
-const int TOTAL_SETTING_ITEMS = 3;
-=======
+
 // ============================================================
 //  Hằng số nội bộ
 // ============================================================
@@ -148,7 +142,6 @@ static void HandleGameInput(GameState& game, const BoardLayout& layout) {
 // ============================================================
 //  VÒNG ĐỜI
 // ============================================================
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
 
 void InitGUI(UIState& ui) {
     // --- Trạng thái điều hướng ---
@@ -166,12 +159,9 @@ void InitGUI(UIState& ui) {
     ui.p1LetterCount  = 0;
     ui.p2LetterCount  = 0;
     ui.activeInputField = 0;
-<<<<<<< HEAD
-    // Load asset for menu
-=======
 
     // --- Texture menu ---
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
     ui.bgMenu      = LoadTexture("assets/background-new.png");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
@@ -179,47 +169,16 @@ void InitGUI(UIState& ui) {
     ui.btnHelp     = LoadTexture("assets/menu/Help.png");
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
-<<<<<<< HEAD
-    //Load asset for board 
-=======
 
     // --- Texture bàn cờ ---
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");
     ui.pieceO     = LoadTexture("assets/board/piece_o.png");
 
-<<<<<<< HEAD
-    ui.cellSize = 50.0f; 
-    ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
-    ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
-
-   //Layout
-    ui.cellSize = 44.0f; // size of cell
-    float gridWidth = BOARD_SIZE *1.0275*ui.cellSize;  // board'width
-    float gridHeight = BOARD_SIZE *1.0275*ui.cellSize; // board'height
-
-    
-    float margin_Left   = 0.073f;  
-    float margin_Right  = 0.07f;  
-    float margin_Top    = 0.13f;  
-    float margin_Bottom = 0.050f; 
-
-    ui.boardFrameRec.width = gridWidth / (1.0f - margin_Left - margin_Right);
-    ui.boardFrameRec.height = gridHeight / (1.0f - margin_Top - margin_Bottom);
-
-    ui.boardFrameRec.x = (1920.0f - ui.boardFrameRec.width) / 2.0f;
-    ui.boardFrameRec.y = (1080.0f - ui.boardFrameRec.height) / 2.0f + 30.0f; 
-
-    ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
-    ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
-
-}
-
-void UnloadGUI(UIState& ui) {
-    //unload menu
-=======
+    // --- Texture Settings
+    ui.bgSettings = LoadTexture("assets/menu/bgSettings.png");
     // --- Layout bàn cờ ---
     // Chỉ cần chỉnh 4 dòng này để thay đổi toàn bộ layout.
     // gridWidth / gridHeight / frameRect sẽ tự tính.
@@ -232,7 +191,7 @@ void UnloadGUI(UIState& ui) {
 
 void UnloadGUI(UIState& ui) {
     // Menu
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
     UnloadTexture(ui.bgMenu);
     UnloadTexture(ui.btnNewGame);
     UnloadTexture(ui.btnLoadGame);
@@ -240,12 +199,7 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.btnHelp);
     UnloadTexture(ui.btnCredits);
     UnloadTexture(ui.btnExit);
-<<<<<<< HEAD
-    //unload board
-=======
 
-    // Bàn cờ
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
     UnloadTexture(ui.boardFrame);
     UnloadTexture(ui.cell);
     UnloadTexture(ui.pieceX);
@@ -257,7 +211,10 @@ void UnloadGUI(UIState& ui) {
 // ============================================================
 
 void UpdateGUI(GameState& game, UIState& ui) {
+
     const Vector2 mouse = GetMousePosition();
+
+   
 
     // ----------------------------------------------------------
     // Màn hình 0: Menu chính
@@ -312,30 +269,7 @@ void UpdateGUI(GameState& game, UIState& ui) {
             }
         }
     }
-<<<<<<< HEAD
-  else if (ui.currentScreen == 1) {
-        if (game.inputType == 0) {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                // Sửa lại logic bắt tọa độ dùng UI Layoutf
-                float gridWidth = BOARD_SIZE * ui.cellSize;
-                float gridHeight = BOARD_SIZE * ui.cellSize;
 
-                if (mouse.x >= ui.cellStartX && mouse.x < ui.cellStartX + gridWidth &&
-                    mouse.y >= ui.cellStartY && mouse.y < ui.cellStartY + gridHeight) {
-                    
-                    int col = (mouse.x - ui.cellStartX) / ui.cellSize;
-                    int row = (mouse.y - ui.cellStartY) / ui.cellSize;
-                    MakeMove(game, row, col);
-                }
-            }
-        } else if (game.inputType == 1) {
-            if (IsKeyPressed(KEY_W) && game.cursorRow > 0) game.cursorRow--;
-            if (IsKeyPressed(KEY_S) && game.cursorRow < BOARD_SIZE - 1) game.cursorRow++;
-            if (IsKeyPressed(KEY_A) && game.cursorCol > 0) game.cursorCol--;
-            if (IsKeyPressed(KEY_D) && game.cursorCol < BOARD_SIZE - 1) game.cursorCol++;
-            if (IsKeyPressed(KEY_ENTER)) MakeMove(game, game.cursorRow, game.cursorCol);
-        }
-=======
     // ----------------------------------------------------------
     // Màn hình 1: Game
     // ----------------------------------------------------------
@@ -343,7 +277,6 @@ void UpdateGUI(GameState& game, UIState& ui) {
         HandleGameInput(game, ui.boardLayout);
 
         if (IsKeyPressed(KEY_M)) ui.currentScreen = 0;
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
 
         if (IsKeyPressed(KEY_L)) {
             ui.currentScreen = 6;
@@ -356,6 +289,36 @@ void UpdateGUI(GameState& game, UIState& ui) {
     // Màn hình 2: Settings
     // ----------------------------------------------------------
     else if (ui.currentScreen == 2) {
+        // Lam moi phan settings
+        Rectangle mouseBtn = { 850, 450, 200, 50 };
+        Rectangle keyboardBtn = { 850, 520, 200, 50 };
+        Rectangle backBtn = { 850, 590, 200, 50 };
+
+        if (CheckCollisionPointRec(mouse, mouseBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            game.inputType = 0;
+        }
+
+        if (CheckCollisionPointRec(mouse, keyboardBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            game.inputType = 1;
+        }
+
+        if (CheckCollisionPointRec(mouse, backBtn) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            ui.currentScreen = 0;
+        }
+
+        if (CheckCollisionPointRec(mouse, mouseBtn))
+            ui.settingSelection = 0;
+
+        if (CheckCollisionPointRec(mouse, keyboardBtn))
+            ui.settingSelection = 1;
+
+        if (CheckCollisionPointRec(mouse, backBtn))
+            ui.settingSelection = 2;
+
+
         if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
             ui.settingSelection = (ui.settingSelection - 1 + TOTAL_SETTING_ITEMS) % TOTAL_SETTING_ITEMS;
         }
@@ -530,55 +493,10 @@ void DrawGUI(const GameState& game, const UIState& ui) {
     // Màn hình 1: Game
     // ----------------------------------------------------------
     else if (ui.currentScreen == 1) {
-<<<<<<< HEAD
-        Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
-        DrawTexturePro(ui.boardFrame, frameSrc, ui.boardFrameRec, {0, 0}, 0.0f, WHITE);
-
-        // draw board and X,O
-        Vector2 mousePos = GetMousePosition();
-        
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                float x = ui.cellStartX + j * ui.cellSize;
-                float y = ui.cellStartY + i * ui.cellSize;
-                Rectangle cellRect = { x, y, ui.cellSize, ui.cellSize };
-                Color cellTint = WHITE; 
-
-                // effect lighter
-                if (game.inputType == 0 && CheckCollisionPointRec(mousePos, cellRect) && game.board[i][j].c == 0) {
-                    cellTint = LIGHTGRAY; 
-                } else if (game.inputType == 1 && i == game.cursorRow && j == game.cursorCol) {
-                    cellTint = LIGHTGRAY; 
-                }
-
-                // background for board
-                Rectangle sourceCell = { 0, 0, (float)ui.cell.width, (float)ui.cell.height };
-                DrawTexturePro(ui.cell, sourceCell, cellRect, {0, 0}, 0.0f, cellTint);
-
-                // draw x and O
-                if (game.board[i][j].c == 1) {
-                    Rectangle sourceX = { 0, 0, (float)ui.pieceX.width, (float)ui.pieceX.height };
-                    DrawTexturePro(ui.pieceX, sourceX, cellRect, {0, 0}, 0.0f, WHITE);
-                } 
-                else if (game.board[i][j].c == 2) {
-                    Rectangle sourceO = { 0, 0, (float)ui.pieceO.width, (float)ui.pieceO.height };
-                    DrawTexturePro(ui.pieceO, sourceO, cellRect, {0, 0}, 0.0f, WHITE);
-                }
-            }
-        }
-        
-        // grid 
-        if (game.inputType == 1) {
-            float cx = ui.cellStartX + game.cursorCol * ui.cellSize;
-            float cy = ui.cellStartY + game.cursorRow * ui.cellSize;
-            DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
-        }
-=======
         // Bàn cờ (khung + ô + quân + cursor)
         DrawBoard(game, ui);
 
         // --- Panel thông tin trên (căn giữa phía trên bàn cờ) ---
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
         DrawText("THONG TIN VAN DAU", 820, 50, 30, BLACK);
 
         if (game.matchStatus == 0) {
@@ -588,17 +506,11 @@ void DrawGUI(const GameState& game, const UIState& ui) {
                 DrawText(TextFormat(">> LUOT CUA: %s (O) <<", game.player2.name), 790, 100, 30, BLUE);
         }
 
-<<<<<<< HEAD
-        if (game.inputType == 0) DrawText("Dieu khien: Chuot", 880, 140, 20, GRAY);
-        else DrawText("Dieu khien: WASD + Enter", 850, 140, 20, GRAY);
-        
-        DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 980, 25, DARKGRAY);
-=======
         if (game.inputType == 0) DrawText("Dieu khien: Chuot",           880, 140, 20, GRAY);
         else                     DrawText("Dieu khien: WASD + Enter",    850, 140, 20, GRAY);
 
         DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 950, 25, DARKGRAY);
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
 
         // --- Panel bên trái: Player 1 ---
         const int p1X = 200, p1Y = 350;
@@ -620,15 +532,7 @@ void DrawGUI(const GameState& game, const UIState& ui) {
             DrawText(TextFormat("Scan: %d",      game.player2.scansLeft), p2X, p2Y + 220, 30, ORANGE);
         }
 
-<<<<<<< HEAD
-       if (game.matchStatus != 0) {
-            // draw wwin / lose
-            DrawRectangle(ui.cellStartX, ui.cellStartY, BOARD_SIZE * ui.cellSize, BOARD_SIZE * ui.cellSize, Fade(WHITE, 0.7f));
-            
-            if (game.matchStatus == 1) DrawText(TextFormat("%s (X) THANG!", game.player1.name), 800, 500, 50, RED);
-            if (game.matchStatus == 2) DrawText(TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
-            if (game.matchStatus == 3) DrawText("HOA NHAU!", 850, 500, 50, GRAY);
-=======
+
         // --- Overlay kết quả (đè lên bàn cờ khi ván kết thúc) ---
         if (game.matchStatus != 0) {
             const BoardLayout& L = ui.boardLayout;
@@ -643,32 +547,58 @@ void DrawGUI(const GameState& game, const UIState& ui) {
                 DrawText(TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
             else if (game.matchStatus == 3)
                 DrawText("HOA NHAU!", 850, 500, 50, GRAY);
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
         }
     }
     // ----------------------------------------------------------
     // Màn hình 2: Settings
     // ----------------------------------------------------------
     else if (ui.currentScreen == 2) {
-        DrawText("CAI DAT DIEU KHIEN", 200, 150, 40, DARKBLUE);
 
-        const char* options[TOTAL_SETTING_ITEMS] = {
-            "Dung Chuot (Khuyen Nghi)",
-            "Dung Ban Phim (WASD + Enter)",
-            "Quay lai Menu"
+        // Background
+       static float cloudOffset = 0;
+
+        cloudOffset += 20 * GetFrameTime();
+
+        DrawTexture(ui.bgSettings, -cloudOffset, 0, WHITE);
+        DrawTexture(ui.bgSettings, ui.bgSettings.width - cloudOffset, 0, WHITE);
+
+        if (cloudOffset > ui.bgSettings.width)
+            cloudOffset = 0;
+
+      
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.7f));
+
+        DrawText("SETTINGS", 820, 150, 50, WHITE);
+
+        const char* options[3] = {
+            "    Dieu khien bang Chuot",
+            "  Dieu khien bang Ban Phim",
+            "         Quay lai Menu"
         };
 
-        for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            int yPos = 250 + i * 60;
+        Color mouseColor = (game.inputType == 0) ? SKYBLUE : GRAY;
+        Color keyboardColor = (game.inputType == 1) ? SKYBLUE : GRAY;
 
-            // Checkbox: chỉ áp dụng cho 2 tuỳ chọn đầu
-            const char* checkbox = "   ";
-            if      (i == 0) checkbox = (game.inputType == 0) ? "[X]" : "[ ]";
-            else if (i == 1) checkbox = (game.inputType == 1) ? "[X]" : "[ ]";
+        for (int i = 0; i < 3; i++)
+        {
+            int y = 350 + i * 100;
 
-            Color      textColor = (i == ui.settingSelection) ? RED : DARKGRAY;
-            const char* pointer  = (i == ui.settingSelection) ? "->" : "  ";
-            DrawText(TextFormat("%s %s %s", pointer, checkbox, options[i]), 210, yPos, 30, textColor);
+            Color boxColor = DARKGRAY;
+
+            if (i == game.inputType)
+                boxColor = GREEN;
+
+            DrawRectangle(700, y, 500, 60, Fade(boxColor, 0.6f));
+
+            // viền nút
+            DrawRectangleLines(700, y, 500, 60, WHITE);
+
+            // nếu đang hover --> viền sáng
+            if (i == ui.settingSelection)
+                DrawRectangleLinesEx({ 700, (float)y, 500, 60 }, 3, YELLOW);
+
+            DrawText(options[i], 760, y + 18, 28, WHITE);
         }
     }
     // ----------------------------------------------------------

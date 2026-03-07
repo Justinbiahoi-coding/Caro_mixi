@@ -27,30 +27,12 @@ struct UIState {
     // --- Input tên người chơi (màn hình 7) ---
     char p1NameInput[16];
     char p2NameInput[16];
-<<<<<<< HEAD
-    int p1LetterCount;
-    int p2LetterCount;
-    int activeInputField; // 0: P1 is entering , 1 P2 is entering 
-    //board
-    Texture2D boardFrame;
-    Texture2D cell;
-    Texture2D pieceX;
-    Texture2D pieceO;
-
-    //layout
-    float cellSize;       
-    float cellStartX;     
-    float cellStartY;     
-    Rectangle boardFrameRec;
-
-    //Textures
-=======
     int  p1LetterCount;
     int  p2LetterCount;
     int  activeInputField;  // 0: đang nhập P1 | 1: đang nhập P2
 
     // --- Texture menu ---
->>>>>>> 671801499e9c4640b2a77385b90e5bdb1fadfe19
+
     Texture2D bgMenu;
     Texture2D btnNewGame;
     Texture2D btnLoadGame;
@@ -65,6 +47,8 @@ struct UIState {
     Texture2D pieceX;       // Quân X
     Texture2D pieceO;       // Quân O
 
+    // --- Texture Settings ---
+    Texture2D bgSettings;
     // --- Layout bàn cờ ---
     // Config (set 1 lần trong InitGUI, không đổi khi chạy):
     //   cellSize, gridX, gridY, framePadding
