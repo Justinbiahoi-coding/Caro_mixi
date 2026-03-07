@@ -7,7 +7,7 @@
 void InitGame(GameState& game, int mode);
 bool MakeMove(GameState& game, int row, int col);
 int CheckWin(GameState& game, int lastRow, int lastCol);
-
+void ResetRound(GameState& game);
 //save game
 bool SaveGameSlot(GameState& game, int slot, const char* customName);
 
