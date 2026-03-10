@@ -25,8 +25,6 @@ void InitGame(GameState& game, int mode) {
     game.player1.scansLeft = 2;
     game.player1.stepCount = 0;
     game.player1.winCount = 0; game.player1.loseCount = 0;
-    game.winStartRow = -1; game.winStartCol = -1; 
-    game.winEndRow = -1; game.winEndCol = -1;
     
     game.player2.hp = 3;
     game.player2.scansLeft = 2;
@@ -43,11 +41,8 @@ void ResetRound(GameState& game) {
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             game.board[i][j].c = 0;
-            game.winStartRow = -1; game.winStartCol = -1; 
-            game.winEndRow = -1; game.winEndCol = -1;
             game.board[i][j].isMine = false;
             game.board[i][j].isScanned = false;
-            
         }
     }
     
@@ -108,7 +103,7 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
     for (int d = 0; d < 4; d++) {
         int dx = directions[d][0];
         int dy = directions[d][1];
-        int r1, c1, r2, c2;
+        
         int count = 1;     // Count the number of consecutive troops
         int blocks = 0;    // Count the number of blocked entries
 
@@ -120,8 +115,6 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
             r += dx;
             c += dy;
         }
-        r1 = r; 
-        c1 = c;
         // Check if blocked (touching the boundary or hitting the opponent's flag).
         if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) {
             blocks++;
@@ -135,8 +128,6 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
             r -= dx;
             c -= dy;
         }
-        r2 = r; 
-        c2 = c;
         //Check if blocked
         if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) {
             blocks++;
@@ -144,11 +135,6 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
 
         //Win if you have 5 pieces and are not blocked at both ends
         if (count >= 5 && blocks < 2) {
-            game.winStartRow = r1 - dx;
-            game.winStartCol = c1 - dy;
-            game.winEndRow = r2 + dx;
-            game.winEndCol = c2 + dy;
-            
             return player; 
         }
     }
