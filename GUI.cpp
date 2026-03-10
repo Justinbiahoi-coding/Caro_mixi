@@ -24,13 +24,16 @@ void InitGUI(UIState& ui) {
     ui.p2LetterCount = 0;
     ui.activeInputField = 0;
     // Load asset for menu
-    ui.bgMenu      = LoadTexture("assets/background-new.png");
+    ui.bgMenu      = LoadTexture("assets/background-new.jpg");
+  
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
     ui.btnSettings = LoadTexture("assets/menu/Settings.png");
     ui.btnHelp     = LoadTexture("assets/menu/Help.png");
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
+    //load asset in game
+    ui.bgGame      = LoadTexture("assets/bgboard/bg_game.png"); 
     //Load asset for board 
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
@@ -77,6 +80,8 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.cell);
     UnloadTexture(ui.pieceX);
     UnloadTexture(ui.pieceO);
+    //ul bg game
+    UnloadTexture(ui.bgGame);
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
@@ -92,7 +97,7 @@ void UpdateGUI(GameState& game, UIState& ui) {
             if (ui.menuSelection >= TOTAL_MENU_ITEMS) ui.menuSelection = 0;
         }
 
-        float centerX = 1496.2f;
+        float centerX = 400.0f; 
         float startY = 420.0f;
         float gap = ui.btnNewGame.height + 42.0f;
 
@@ -330,7 +335,7 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
         Texture2D* textures[TOTAL_MENU_ITEMS] = { (Texture2D*)&ui.btnNewGame, (Texture2D*)&ui.btnLoadGame, (Texture2D*)&ui.btnSettings, (Texture2D*)&ui.btnHelp, (Texture2D*)&ui.btnCredits, (Texture2D*)&ui.btnExit };
-        float centerX = 1496.2f;
+        float centerX = 400.0f;
         float startY = 420.0f;
         float gap = ui.btnNewGame.height + 42.0f;
         Rectangle rectsToDraw[TOTAL_MENU_ITEMS] = {
@@ -348,6 +353,7 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         }
     } 
     else if (ui.currentScreen == 1) {
+        DrawTexturePro(ui.bgGame, { 0, 0, (float)ui.bgGame.width, (float)ui.bgGame.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
         Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
         DrawTexturePro(ui.boardFrame, frameSrc, ui.boardFrameRec, {0, 0}, 0.0f, WHITE);
 

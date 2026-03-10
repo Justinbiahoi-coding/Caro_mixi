@@ -38,6 +38,7 @@ struct UIState {
     Texture2D bgMenu;
     Texture2D btnNewGame;
     Texture2D btnLoadGame;
+    Texture2D bgGame;
     Texture2D btnSettings;
     Texture2D btnHelp;
     Texture2D btnCredits;
