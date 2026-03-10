@@ -32,6 +32,7 @@ void InitGUI(UIState& ui) {
     ui.btnHelp     = LoadTexture("assets/menu/Help.png");
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
+    ui.bgSettings = LoadTexture("assets/menu/bgSettings.png");
     //load asset in game
     ui.bgGame      = LoadTexture("assets/bgboard/bg_game.png"); 
     //Load asset for board 
@@ -199,35 +200,63 @@ void UpdateGUI(GameState& game, UIState& ui) {
             ui.saveSelection = 0;
         }
     }
-    else if (ui.currentScreen == 2) {
-        if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
-            ui.settingSelection--;
-            if (ui.settingSelection < 0) ui.settingSelection = TOTAL_SETTING_ITEMS - 1;
-        }
-        if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
-            ui.settingSelection++;
-            if (ui.settingSelection >= TOTAL_SETTING_ITEMS) ui.settingSelection = 0;
-        }
+  else if (ui.currentScreen == 2) {
 
-        Rectangle setRects[TOTAL_SETTING_ITEMS] = {
-            { 250, 250, 600, 40 }, { 250, 310, 600, 40 }, { 250, 370, 600, 40 }  
-        };
+      if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
+          ui.settingSelection--;
+          if (ui.settingSelection < 0) ui.settingSelection = TOTAL_SETTING_ITEMS - 1;
+      }
 
-        for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            if (CheckCollisionPointRec(mouse, setRects[i])) ui.settingSelection = i;
-        }
+      if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
+          ui.settingSelection++;
+          if (ui.settingSelection >= TOTAL_SETTING_ITEMS) ui.settingSelection = 0;
+      }
 
-        bool confirmSet = false;
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection])) confirmSet = true;
-        if (IsKeyPressed(KEY_ENTER)) confirmSet = true;
+      const char* setOptions[TOTAL_SETTING_ITEMS] = {
+          "Dung Chuot (Khuyen Nghi)",
+          "Dung Ban Phim (WASD + Enter)",
+          "Quay lai Menu"
+      };
 
-        if (confirmSet) {
-            if (ui.settingSelection == 0) game.inputType = 0; 
-            else if (ui.settingSelection == 1) game.inputType = 1; 
-            else if (ui.settingSelection == 2) ui.currentScreen = 0; 
-        }
-        if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
-    }
+      Rectangle setRects[TOTAL_SETTING_ITEMS];
+
+      for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
+
+          int yPos = 300 + i * 70;
+
+          int textWidth = MeasureText(setOptions[i], 30);
+          int xPos = (1920 - textWidth) / 2;
+
+          setRects[i] = { (float)xPos, (float)yPos, (float)textWidth, 40 };
+
+          if (CheckCollisionPointRec(mouse, setRects[i]))
+              ui.settingSelection = i;
+      }
+
+      bool confirmSet = false;
+
+      if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) &&
+          CheckCollisionPointRec(mouse, setRects[ui.settingSelection]))
+          confirmSet = true;
+
+      if (IsKeyPressed(KEY_ENTER))
+          confirmSet = true;
+
+      if (confirmSet) {
+
+          if (ui.settingSelection == 0)
+              game.inputType = 0;
+
+          else if (ui.settingSelection == 1)
+              game.inputType = 1;
+
+          else if (ui.settingSelection == 2)
+              ui.currentScreen = 0;
+      }
+
+      if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE))
+          ui.currentScreen = 0;
+          }
     else if (ui.currentScreen == 3) {
         if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
     }
@@ -460,19 +489,60 @@ void DrawGUI(const GameState& game, const UIState& ui) {
         }
     }
     else if (ui.currentScreen == 2) {
-        DrawText("CAI DAT DIEU KHIEN", 200, 150, 40, DARKBLUE);
-        const char* setOptions[TOTAL_SETTING_ITEMS] = { "Dung Chuot (Khuyen Nghi)", "Dung Ban Phim (WASD + Enter)", "Quay lai Menu" };
-        for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            int yPos = 250 + i * 60; 
-            const char* prefix = "   ";
-            if (i == 0 && game.inputType == 0) prefix = "[X]";
-            else if (i == 0) prefix = "[ ]";
-            if (i == 1 && game.inputType == 1) prefix = "[X]";
-            else if (i == 1) prefix = "[ ]";
 
-            Color textColor = (i == ui.settingSelection) ? RED : DARKGRAY;
-            const char* pointer = (i == ui.settingSelection) ? "->" : "  ";
-            DrawText(TextFormat("%s %s %s", pointer, prefix, setOptions[i]), 210, yPos, 30, textColor);
+        static float cloudOffset = 0;
+        static int direction = 1;
+
+        cloudOffset += direction * 60 * GetFrameTime();
+
+        DrawTexture(ui.bgSettings, -cloudOffset, 0, WHITE);
+        DrawTexture(ui.bgSettings, ui.bgSettings.width - cloudOffset, 0, WHITE);
+
+        if (cloudOffset >= ui.bgSettings.width) direction = -1;
+        if (cloudOffset <= 0) direction = 1;
+
+        int panelW = 600;
+        int panelH = 350;
+        int panelX = (1920 - panelW) / 2;
+        int panelY = 250;
+
+        DrawRectangle(panelX, panelY, panelW, panelH, Fade(BLACK, 0.6f));
+        DrawRectangleLines(panelX, panelY, panelW, panelH, WHITE);
+        const char* title = "CAI DAT DIEU KHIEN";
+        int titleX = (1920 - MeasureText(title, 40)) / 2;
+        DrawText(title, titleX, panelY - 80, 40, WHITE);
+
+        const char* setOptions[TOTAL_SETTING_ITEMS] = {
+            "Dung Chuot (Khuyen Nghi)",
+            "Dung Ban Phim (WASD + Enter)",
+            "Quay lai Menu"
+        };
+
+        Vector2 mouse = GetMousePosition();
+
+        for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
+
+            int yPos = 300 + i * 70;
+
+            int textWidth = MeasureText(setOptions[i], 30);
+            int xPos = (1920 - textWidth) / 2;
+
+            Rectangle btn = { (float)xPos - 20, (float)yPos - 10, (float)textWidth + 40, 50 };
+
+            bool hover = CheckCollisionPointRec(mouse, btn);
+
+            Color color = WHITE;
+
+            if (i == 0 && game.inputType == 0) color = GREEN;
+            if (i == 1 && game.inputType == 1) color = GREEN;
+
+            if (hover || i == ui.settingSelection)
+                color = SKYBLUE;
+
+            if (hover || i == ui.settingSelection)
+                DrawRectangle(xPos - 25, yPos - 10, textWidth + 50, 45, Fade(SKYBLUE, 0.12f));
+
+            DrawText(setOptions[i], xPos, yPos, 30, color);
         }
     }
     else if (ui.currentScreen == 3) {

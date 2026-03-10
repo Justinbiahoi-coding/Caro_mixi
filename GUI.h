@@ -1,6 +1,6 @@
 #ifndef GUI_H
 #define GUI_H
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "Library.h"
 
 // struct for image 
@@ -43,6 +43,7 @@ struct UIState {
     Texture2D btnHelp;
     Texture2D btnCredits;
     Texture2D btnExit;
+    Texture2D bgSettings;
 };
 
 // loadpic
