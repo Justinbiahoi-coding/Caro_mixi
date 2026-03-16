@@ -149,7 +149,7 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
 
 bool SaveGameSlot(GameState& game, int slot, const char* customName) {
     char filename[30];
-    sprintf(filename, "save_%d.bin", slot);
+    snprintf(filename, sizeof(filename), "save_%d.bin", slot);
     strncpy(game.saveName, customName, 29);
     game.saveName[29] = '\0';
 
@@ -167,7 +167,7 @@ bool SaveGameSlot(GameState& game, int slot, const char* customName) {
 
 bool LoadGameSlot(GameState& game, int slot) {
     char filename[30];
-    sprintf(filename, "save_%d.bin", slot);
+    snprintf(filename, sizeof(filename), "save_%d.bin", slot);
     
     FILE* file = fopen(filename, "rb");
     if (file == NULL) return false;
@@ -178,13 +178,13 @@ bool LoadGameSlot(GameState& game, int slot) {
 
 bool DeleteGameSlot(int slot) {
     char filename[30];
-    sprintf(filename, "save_%d.bin", slot);
+    snprintf(filename, sizeof(filename), "save_%d.bin", slot);
     return remove(filename) == 0;
 }
 
 bool PeekGameSlot(int slot, GameState& tempGame) {
     char filename[30];
-    sprintf(filename, "save_%d.bin", slot);
+    snprintf(filename, sizeof(filename), "save_%d.bin", slot);
     
     FILE* file = fopen(filename, "rb");
     if (file == NULL) return false; 
