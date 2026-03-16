@@ -18,8 +18,6 @@ int main() {
     while (!ui.shouldExit && !WindowShouldClose()) {
 
         UpdateGUI(game, ui);
-
-        UpdateMusicStream(ui.bgMusic);
         
         BeginDrawing();
             ClearBackground(RAYWHITE);

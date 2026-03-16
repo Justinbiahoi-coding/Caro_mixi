@@ -1,4 +1,6 @@
 #include "GUI.h"
+#include "GUI_Menu.h"
+#include "GUI_Game.h"
 #include "LogicControl.h"
 
 // const int CELL_SIZE = 45; 
@@ -23,19 +25,18 @@ void InitGUI(UIState& ui) {
     ui.p1LetterCount = 0;
     ui.p2LetterCount = 0;
     ui.activeInputField = 0;
-    // Load asset for menu
-    ui.bgMenu      = LoadTexture("assets/background-new.jpg");
-  
+    
+    ui.bgMenu      = LoadTexture("assets/menu/background.jpg");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
     ui.btnSettings = LoadTexture("assets/menu/Settings.png");
     ui.btnHelp     = LoadTexture("assets/menu/Help.png");
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
-    ui.bgSettings = LoadTexture("assets/menu/bgSettings.png");
-    //load asset in game
-    ui.bgGame      = LoadTexture("assets/bgboard/bg_game.png"); 
-    //Load asset for board 
+    ui.bgSettings  = LoadTexture("assets/menu/bgSettings.png");
+    
+    ui.bgGame      = LoadTexture("assets/board/bg_game.png"); 
+    
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");
@@ -45,11 +46,9 @@ void InitGUI(UIState& ui) {
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
 
-   //Layout
-    ui.cellSize = 44.0f; // size of cell
-    float gridWidth = BOARD_SIZE *1.0275*ui.cellSize;  // board'width
-    float gridHeight = BOARD_SIZE *1.0275*ui.cellSize; // board'height
-
+    ui.cellSize = 44.0f; 
+    float gridWidth = BOARD_SIZE * 1.0275 * ui.cellSize;  
+    float gridHeight = BOARD_SIZE * 1.0275 * ui.cellSize; 
     
     float margin_Left   = 0.073f;  
     float margin_Right  = 0.07f;  
@@ -64,11 +63,9 @@ void InitGUI(UIState& ui) {
 
     ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
     ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
-
 }
 
 void UnloadGUI(UIState& ui) {
-    //unload menu
     UnloadTexture(ui.bgMenu);
     UnloadTexture(ui.btnNewGame);
     UnloadTexture(ui.btnLoadGame);
@@ -76,16 +73,11 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.btnHelp);
     UnloadTexture(ui.btnCredits);
     UnloadTexture(ui.btnExit);
-    //unload board
     UnloadTexture(ui.boardFrame);
     UnloadTexture(ui.cell);
     UnloadTexture(ui.pieceX);
     UnloadTexture(ui.pieceO);
-    //ul bg game
     UnloadTexture(ui.bgGame);
-    //uunload bg music
-    UnloadMusicStream(ui.bgMusic);
-    CloseAudioDevice();
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
