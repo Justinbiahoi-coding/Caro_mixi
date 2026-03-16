@@ -83,6 +83,9 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.pieceO);
     //ul bg game
     UnloadTexture(ui.bgGame);
+    //uunload bg music
+    UnloadMusicStream(ui.bgMusic);
+    CloseAudioDevice();
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {

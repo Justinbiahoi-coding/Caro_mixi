@@ -44,6 +44,11 @@ struct UIState {
     Texture2D btnCredits;
     Texture2D btnExit;
     Texture2D bgSettings;
+
+    //Music
+    Music bgMusic;
+    float musicVolume;
+    bool musicEnabled;
 };
 
 // loadpic
