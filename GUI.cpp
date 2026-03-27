@@ -35,8 +35,14 @@ void InitGUI(UIState& ui) {
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");
     ui.pieceO     = LoadTexture("assets/board/piece_o.png");
+    ui.playerBadge = LoadTexture("assets/board/playername_badge.png");
+    ui.roundBadge = LoadTexture("assets/board/round_badge.png");
+    ui.titleBadge = LoadTexture("assets/board/title_badge.png");
 
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
+
+    ui.charP1 = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.12f);
+    ui.charP2 = LoadCharAnim("assets/Character/fire_knight/idle.png", 4, 0.12f);
 
     ui.cellSize = 50.0f; 
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
@@ -54,8 +60,8 @@ void InitGUI(UIState& ui) {
     ui.boardFrameRec.width = gridWidth / (1.0f - margin_Left - margin_Right);
     ui.boardFrameRec.height = gridHeight / (1.0f - margin_Top - margin_Bottom);
 
-    ui.boardFrameRec.x = (1920.0f - ui.boardFrameRec.width) / 2.0f;
-    ui.boardFrameRec.y = (1080.0f - ui.boardFrameRec.height) / 2.0f + 30.0f; 
+    ui.boardFrameRec.x = 570.7f;
+    ui.boardFrameRec.y = 180.9f;    
 
     ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
     ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
@@ -73,8 +79,13 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.cell);
     UnloadTexture(ui.pieceX);
     UnloadTexture(ui.pieceO);
+    UnloadTexture(ui.playerBadge);
+    UnloadTexture(ui.roundBadge);
+    UnloadTexture(ui.titleBadge);
     UnloadTexture(ui.bgGame);
     UnloadFont(ui.mainFont);
+    UnloadCharAnim(ui.charP1);
+    UnloadCharAnim(ui.charP2);
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
