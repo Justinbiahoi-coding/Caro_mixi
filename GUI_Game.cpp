@@ -2,6 +2,7 @@
 #include "LogicControl.h"
 
 void UpdateGUIGame(GameState& game, UIState& ui) {
+
     Vector2 mouse = GetMousePosition();
 
     if (game.matchStatus == 0) { 

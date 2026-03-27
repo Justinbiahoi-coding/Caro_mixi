@@ -41,6 +41,11 @@ struct UIState {
     Texture2D btnCredits;
     Texture2D btnExit;
     Texture2D bgSettings;
+
+    Music bgMusic;
+    float musicVolume = 0.8f;
+    bool musicEnabled;
+    bool draggingVolume = false;
 };
 
 void InitGUI(UIState& ui);
