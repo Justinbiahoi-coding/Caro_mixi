@@ -41,11 +41,23 @@ struct UIState {
     Texture2D btnCredits;
     Texture2D btnExit;
     Texture2D bgSettings;
+
+    Font mainFont;
 };
 
 void InitGUI(UIState& ui);
 void UnloadGUI(UIState& ui);
 void UpdateGUI(GameState& game, UIState& ui);
 void DrawGUI(const GameState& game, const UIState& ui);
+
+// helper
+inline void DrawTextCustom(Font font, const char *text, int posX, int posY, int fontSize, Color color) {
+    // Spacing (khoảng cách chữ) để mặc định là 1.0f
+    DrawTextEx(font, text, {(float)posX, (float)posY}, (float)fontSize, 1.0f, color);
+}
+
+inline int MeasureTextCustom(Font font, const char *text, int fontSize) {
+    return (int)MeasureTextEx(font, text, (float)fontSize, 1.0f).x;
+}
 
 #endif // GUI_H

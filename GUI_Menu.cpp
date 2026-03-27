@@ -75,7 +75,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
-            int textWidth = MeasureText(setOptions[i], 30);
+            int textWidth = MeasureTextCustom(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
             setRects[i] = { (float)xPos, (float)yPos, (float)textWidth, 40 };
 
@@ -241,8 +241,8 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawRectangle(panelX, panelY, panelW, panelH, Fade(BLACK, 0.6f));
         DrawRectangleLines(panelX, panelY, panelW, panelH, WHITE);
         const char* title = "CAI DAT DIEU KHIEN";
-        int titleX = (1920 - MeasureText(title, 40)) / 2;
-        DrawText(title, titleX, panelY - 80, 40, WHITE);
+        int titleX = (1920 - MeasureTextCustom(ui.mainFont, title, 40)) / 2;
+        DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 40, WHITE);
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
             "Dung Chuot (Khuyen Nghi)",
@@ -254,7 +254,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
-            int textWidth = MeasureText(setOptions[i], 30);
+            int textWidth = MeasureTextCustom(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
             Rectangle btn = { (float)xPos - 20, (float)yPos - 10, (float)textWidth + 40, 50 };
             bool hover = CheckCollisionPointRec(mouse, btn);
@@ -266,16 +266,16 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             if (hover || i == ui.settingSelection)
                 DrawRectangle(xPos - 25, yPos - 10, textWidth + 50, 45, Fade(SKYBLUE, 0.12f));
 
-            DrawText(setOptions[i], xPos, yPos, 30, color);
+            DrawTextCustom(ui.mainFont, setOptions[i], xPos, yPos, 30, color);
         }
     }
     else if (ui.currentScreen == 3) {
-        DrawText("Credits: Thien", 100, 200, 40, DARKBLUE);
-        DrawText("Nhan [M] de quay lai Menu", 250, 250, 20, GRAY);
+        DrawTextCustom(ui.mainFont, "Credits: Thien, @b1nhan", 100, 200, 40, DARKBLUE);
+        DrawTextCustom(ui.mainFont, "Nhan [M] de quay lai Menu", 250, 250, 20, GRAY);
     }
     else if (ui.currentScreen == 5) {
-        DrawText("CHON FILE DE TAI", 800, 100, 50, DARKBLUE);
-        DrawText("Dung [A]/[D] hoac [Trai]/[Phai] de chon. [ENTER] de Tai. [DEL] de Xoa. [M] ve Menu.", 450, 180, 25, DARKGRAY);
+        DrawTextCustom(ui.mainFont, "CHON FILE DE TAI", 800, 100, 50, DARKBLUE);
+        DrawTextCustom(ui.mainFont, "Dung [A]/[D] hoac [Trai]/[Phai] de chon. [ENTER] de Tai. [DEL] de Xoa. [M] ve Menu.", 450, 180, 25, DARKGRAY);
 
         int cardWidth = 360, cardHeight = 480, gap = 60;
         int startX = (1920 - (4 * cardWidth + 3 * gap)) / 2; 
@@ -319,29 +319,30 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
                 const char* modeText = (tempGame.gameMode == 0) ? "Che Do: Co Dien" : "Che Do: Booming Caro";
                 int textY = startY + boardWidth + 50; 
-                DrawText(TextFormat("Slot %d", i+1), currentX + 20, textY, 30, DARKBLUE);
-                DrawText(tempGame.saveName, currentX + 20, textY + 40, 25, BLACK);
-                DrawText(modeText, currentX + 20, textY + 75, 20, DARKGRAY);
-                DrawText(tempGame.saveTime, currentX + 20, textY + 105, 20, GRAY);
-            } else {
-                DrawText(TextFormat("Slot %d", i+1), currentX + 20, startY + 20, 30, GRAY);
+                DrawTextCustom(ui.mainFont, TextFormat("Slot %d", i+1), currentX + 20, textY, 30, DARKBLUE);
+                DrawTextCustom(ui.mainFont, tempGame.saveName, currentX + 20, textY + 40, 25, BLACK);
+                DrawTextCustom(ui.mainFont, modeText, currentX + 20, textY + 75, 20, DARKGRAY);
+                DrawTextCustom(ui.mainFont, tempGame.saveTime, currentX + 20, textY + 105, 20, GRAY);
+            } else{
+                DrawTextCustom(ui.mainFont, TextFormat("Slot %d", i+1), currentX + 20, startY + 20, 30, GRAY);
                 const char* emptyText = "--- TRONG ---";
-                DrawText(emptyText, currentX + cardWidth/2 - MeasureText(emptyText, 25)/2, startY + cardHeight/2, 25, GRAY);
+                int emptyTextX = currentX + cardWidth/2 - MeasureTextCustom(ui.mainFont, emptyText, 25)/2; // UPDATE
+                DrawTextCustom(ui.mainFont, emptyText, emptyTextX, startY + cardHeight/2, 25, GRAY);
             }
         }
     }
     else if (ui.currentScreen == 6) {
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.8f));
-        DrawText("LUU TRO CHOI", 800, 300, 40, WHITE);
-        DrawText("1. Nhap ten cho ban luu nay (Toi da 29 ky tu):", 800, 380, 20, LIGHTGRAY);
+        DrawTextCustom(ui.mainFont, "LUU TRO CHOI", 800, 300, 40, WHITE);
+        DrawTextCustom(ui.mainFont, "1. Nhap ten cho ban luu nay (Toi da 29 ky tu):", 800, 380, 20, LIGHTGRAY);
         DrawRectangle(800, 420, 500, 50, WHITE);
-        DrawText(ui.nameInput, 810, 435, 20, BLACK);
+        DrawTextCustom(ui.mainFont, ui.nameInput, 810, 435, 20, BLACK);
         
         if (ui.letterCount < 29 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawText("_", 810 + MeasureText(ui.nameInput, 20), 435, 20, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 810 + MeasureTextCustom(ui.mainFont, ui.nameInput, 20), 435, 20, BLACK);
         }
 
-        DrawText("2. Chon vi tri Slot de ghi de (Dung Len/Xuong):", 800, 520, 20, LIGHTGRAY);
+        DrawTextCustom(ui.mainFont, "2. Chon vi tri Slot de ghi de (Dung Len/Xuong):", 800, 520, 20, LIGHTGRAY);
         for (int i = 0; i < 4; i++) {
             int yPos = 560 + i * 50;
             GameState tempGame;
@@ -349,37 +350,37 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             Color textColor = (i == ui.saveSelection) ? YELLOW : DARKGRAY;
             const char* cursor = (i == ui.saveSelection) ? "=>" : "  ";
 
-            if (hasData) DrawText(TextFormat("%s Slot %d: %s", cursor, i+1, tempGame.saveName), 800, yPos, 25, textColor);
-            else DrawText(TextFormat("%s Slot %d: -- TRONG --", cursor, i+1), 800, yPos, 25, textColor);
+            if (hasData) DrawTextCustom(ui.mainFont, TextFormat("%s Slot %d: %s", cursor, i+1, tempGame.saveName), 800, yPos, 25, textColor);
+            else DrawTextCustom(ui.mainFont, TextFormat("%s Slot %d: -- TRONG --", cursor, i+1), 800, yPos, 25, textColor);
         }
-        DrawText("Nhan [ENTER] de luu. Nhan [ESC] de quay lai game.", 800, 800, 20, GRAY);
+    DrawTextCustom(ui.mainFont, "Nhan [ENTER] de luu. Nhan [ESC] de quay lai game.", 800, 800, 20, GRAY);
     }
     else if (ui.currentScreen == 7) {
         DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.85f)); 
 
-        DrawText("THONG TIN NGUOI CHOI", 750, 300, 40, WHITE);
+        DrawTextCustom(ui.mainFont, "THONG TIN NGUOI CHOI", 750, 300, 40, WHITE);
         
         //Player 1
-        DrawText("Ten Player 1 (X) - Toi da 15 ky tu:", 750, 400, 25, LIGHTGRAY);
+        DrawTextCustom(ui.mainFont, "Ten Player 1 (X) - Toi da 15 ky tu:", 750, 400, 25, LIGHTGRAY);
         Color p1BoxColor = (ui.activeInputField == 0) ? RAYWHITE : DARKGRAY;
         DrawRectangle(750, 440, 400, 50, p1BoxColor);
-        DrawText(ui.p1NameInput, 760, 455, 25, BLACK);
+        DrawTextCustom(ui.mainFont, ui.p1NameInput, 760, 455, 25, BLACK);
         if (ui.activeInputField == 0 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawText("_", 760 + MeasureText(ui.p1NameInput, 25), 455, 25, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustom(ui.mainFont, ui.p1NameInput, 25), 455, 25, BLACK);
         }
 
         //Player 2
-        DrawText("Ten Player 2 (O) - Toi da 15 ky tu:", 750, 530, 25, LIGHTGRAY);
+        DrawTextCustom(ui.mainFont, "Ten Player 2 (O) - Toi da 15 ky tu:", 750, 530, 25, LIGHTGRAY);
         Color p2BoxColor = (ui.activeInputField == 1) ? RAYWHITE : DARKGRAY;
         DrawRectangle(750, 570, 400, 50, p2BoxColor);
-        DrawText(ui.p2NameInput, 760, 585, 25, BLACK);
+        DrawTextCustom(ui.mainFont, ui.p2NameInput, 760, 585, 25, BLACK);
         if (ui.activeInputField == 1 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawText("_", 760 + MeasureText(ui.p2NameInput, 25), 585, 25, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustom(ui.mainFont, ui.p2NameInput, 25), 585, 25, BLACK);
         }
 
-        DrawText("Dung phim [Len]/[Xuong] hoac [Tab] de chuyen o nhap.", 650, 700, 25, GRAY);
-        DrawText("Nhan [ENTER] de bat dau tran chien!", 750, 750, 25, YELLOW);
-        DrawText("Nhan [ESC] de quay lai Menu.", 850, 800, 20, DARKGRAY);
+        DrawTextCustom(ui.mainFont, "Dung phim [Len]/[Xuong] hoac [Tab] de chuyen o nhap.", 650, 700, 25, GRAY);
+        DrawTextCustom(ui.mainFont, "Nhan [ENTER] de bat dau tran chien!", 750, 750, 25, YELLOW);
+        DrawTextCustom(ui.mainFont, "Nhan [ESC] de quay lai Menu.", 850, 800, 20, DARKGRAY);
     }
 }

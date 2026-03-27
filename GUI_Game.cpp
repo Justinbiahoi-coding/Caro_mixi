@@ -102,48 +102,63 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float cy = ui.cellStartY + game.cursorRow * ui.cellSize;
         DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
     }
-    DrawText("THONG TIN VAN DAU", 820, 35, 30, BLACK);
-    DrawText(TextFormat("--- VONG CHOI %d ---", game.roundCount), 840, 70, 25, DARKBLUE);
-    if (game.matchStatus == 0) {
-        if (game.isPlayer1Turn) DrawText(TextFormat(">> LUOT CUA: %s (X) <<", game.player1.name), 790, 100, 30, RED);
-        else DrawText(TextFormat(">> LUOT CUA: %s (O) <<", game.player2.name), 790, 100, 30, BLUE);
-    }
+    const char* title = "THONG TIN VAN DAU";
+    float titleSize = 48;
+    float titleWidth = MeasureTextEx(ui.mainFont, title, titleSize, 0).x;
+    float titleX = GetScreenWidth() / 2.0f - titleWidth / 2.0f;
+    DrawTextCustom(ui.mainFont, title, titleX, 33.6, titleSize, WHITE);
 
-    if (game.inputType == 0) DrawText("Dieu khien: Chuot", 880, 140, 20, GRAY);
-    else DrawText("Dieu khien: WASD + Enter", 850, 140, 20, GRAY);
+    const char* round = TextFormat("--- VONG CHOI %d ---", game.roundCount);
+    float roundSize = 25;
+    float roundWidth = MeasureTextEx(ui.mainFont, round, roundSize, 0).x;
+    float roundX = GetScreenWidth() / 2.0f - roundWidth / 2.0f;
+    DrawTextCustom(ui.mainFont, round, roundX, 70, roundSize, WHITE);
+
+    // if (game.matchStatus == 0) {
+    //     if (game.isPlayer1Turn) DrawTextCustom(ui.mainFont, TextFormat(">> LUOT CUA: %s (X) <<", game.player1.name), 790, 100, 30, RED);
+    //     else DrawTextCustom(ui.mainFont, TextFormat(">> LUOT CUA: %s (O) <<", game.player2.name), 790, 100, 30, BLUE);
+    // }
+
+    // if (game.inputType == 0) DrawTextCustom(ui.mainFont, "Dieu khien: Chuot", 880, 140, 20, GRAY);
+    // else DrawTextCustom(ui.mainFont, "Dieu khien: WASD + Enter", 850, 140, 20, GRAY);
     
-    DrawText("Bam [L] de luu game | Nhan [M] de ve Menu", 720, 980, 25, DARKGRAY);
+    // DrawTextCustom(ui.mainFont, "Bam [L] de luu game | Nhan [M] de ve Menu", 720, 980, 25, WHITE);
+    const char* guide = "Bam [L] de luu game | Nhan [M] de ve Menu";
+    float guideSize = 25;
+    float guideWidth = MeasureTextEx(ui.mainFont, guide, guideSize, 0).x;
+    float guideX = GetScreenWidth() / 2.0f - guideWidth / 2.0f;
+    DrawTextCustom(ui.mainFont, guide, guideX, 980, guideSize, WHITE);
 
     int p1X = 150; 
     int p1Y = 350;
-    DrawText(game.player1.name, p1X, p1Y, 50, RED);
-    DrawText("Phe: X", p1X, p1Y + 70, 30, DARKGRAY);
-    DrawText(TextFormat("Thang: %d | Thua: %d", game.player1.winCount, game.player1.loseCount), p1X, p1Y + 120, 30, BLACK);
-    DrawText(TextFormat("So buoc van nay: %d", game.player1.stepCount), p1X, p1Y + 170, 25, GRAY);
+    DrawTextCustom(ui.mainFont, game.player1.name, p1X, p1Y, 50, WHITE);
+    // DrawTextCustom(ui.mainFont, "Phe: X", p1X, p1Y + 70, 30, DARKGRAY);
+    // DrawTextCustom(ui.mainFont, TextFormat("Thang: %d | Thua: %d", game.player1.winCount, game.player1.loseCount), p1X, p1Y + 120, 30, BLACK);
+    // DrawTextCustom(ui.mainFont, TextFormat("So buoc van nay: %d", game.player1.stepCount), p1X, p1Y + 170, 25, GRAY);
     
     if (game.gameMode == 1) {
-        DrawText(TextFormat("HP: %d / 3", game.player1.hp), p1X, p1Y + 220, 30, MAROON);
-        DrawText(TextFormat("Scan: %d", game.player1.scansLeft), p1X, p1Y + 270, 30, ORANGE);
+        DrawTextCustom(ui.mainFont, TextFormat("HP: %d / 3", game.player1.hp), p1X, p1Y + 220, 30, MAROON);
+        DrawTextCustom(ui.mainFont, TextFormat("Scan: %d", game.player1.scansLeft), p1X, p1Y + 270, 30, ORANGE);
     }
 
     int p2X = 1450; 
     int p2Y = 350;
-    DrawText(game.player2.name, p2X, p2Y, 50, BLUE);
-    DrawText("Phe: O", p2X, p2Y + 70, 30, DARKGRAY);
-    DrawText(TextFormat("Thang: %d | Thua: %d", game.player2.winCount, game.player2.loseCount), p2X, p2Y + 120, 30, BLACK);
-    DrawText(TextFormat("So buoc van nay: %d", game.player2.stepCount), p2X, p2Y + 170, 25, GRAY);
+    DrawTextCustom(ui.mainFont, game.player2.name, p2X, p2Y, 50, WHITE);
+    // DrawTextCustom(ui.mainFont, "Phe: O", p2X, p2Y + 70, 30, DARKGRAY);
+    // DrawTextCustom(ui.mainFont, TextFormat("Thang: %d | Thua: %d", game.player2.winCount, game.player2.loseCount), p2X, p2Y + 120, 30, BLACK);
+    // DrawTextCustom(ui.mainFont, TextFormat("So buoc van nay: %d", game.player2.stepCount), p2X, p2Y + 170, 25, GRAY);
     
     if (game.gameMode == 1) {
-        DrawText(TextFormat("HP: %d / 3", game.player2.hp), p2X, p2Y + 220, 30, MAROON);
-        DrawText(TextFormat("Scan: %d", game.player2.scansLeft), p2X, p2Y + 270, 30, ORANGE);
+        DrawTextCustom(ui.mainFont, TextFormat("HP: %d / 3", game.player2.hp), p2X, p2Y + 220, 30, MAROON);
+        DrawTextCustom(ui.mainFont, TextFormat("Scan: %d", game.player2.scansLeft), p2X, p2Y + 270, 30, ORANGE);
     }
     
     if (game.matchStatus != 0) {
         DrawRectangle(ui.cellStartX, ui.cellStartY, BOARD_SIZE * ui.cellSize, BOARD_SIZE * ui.cellSize, Fade(WHITE, 0.7f));
         
-        if (game.matchStatus == 1) DrawText(TextFormat("%s (X) THANG!", game.player1.name), 800, 500, 50, RED);
-        if (game.matchStatus == 2) DrawText(TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
-        if (game.matchStatus == 3) DrawText("HOA NHAU!", 850, 500, 50, GRAY);
+        if (game.matchStatus == 1) DrawTextCustom(ui.mainFont, TextFormat("%s (X) THANG!", game.player1.name), 800, 500, 50, RED);
+        if (game.matchStatus == 2) DrawTextCustom(ui.mainFont, TextFormat("%s (O) THANG!", game.player2.name), 800, 500, 50, BLUE);
+        if (game.matchStatus == 3) DrawTextCustom(ui.mainFont, "HOA NHAU!", 850, 500, 50, GRAY);
         Rectangle btnPlayAgain = { 720, 560, 220, 50 };
         Rectangle btnMenu = { 980, 560, 220, 50 };
 
@@ -152,12 +167,12 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
         DrawRectangleRec(btnPlayAgain, colorPlayAgain);
         DrawRectangleLinesEx(btnPlayAgain, 3.0f, BLACK);
-        DrawText("Choi Van Moi", 745, 572, 25, BLACK);
+        DrawTextCustom(ui.mainFont, "Choi Van Moi", 745, 572, 25, BLACK);
 
         DrawRectangleRec(btnMenu, colorMenu);
         DrawRectangleLinesEx(btnMenu, 3.0f, BLACK);
-        DrawText("Ve Menu", 1035, 572, 25, BLACK);
+        DrawTextCustom(ui.mainFont, "Ve Menu", 1035, 572, 25, BLACK);
 
-        DrawText("Dung [A]/[D] hoac Chuot de chon. [ENTER] de xac nhan.", 650, 640, 22, DARKGRAY);
+        DrawTextCustom(ui.mainFont, "Dung [A]/[D] hoac Chuot de chon. [ENTER] de xac nhan.", 650, 640, 22, DARKGRAY);
     }
 }

@@ -36,6 +36,8 @@ void InitGUI(UIState& ui) {
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");
     ui.pieceO     = LoadTexture("assets/board/piece_o.png");
 
+    ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
+
     ui.cellSize = 50.0f; 
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
@@ -72,6 +74,7 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.pieceX);
     UnloadTexture(ui.pieceO);
     UnloadTexture(ui.bgGame);
+    UnloadFont(ui.mainFont);
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
