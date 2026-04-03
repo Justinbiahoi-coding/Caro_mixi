@@ -75,7 +75,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
-            int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 30);
+            int textWidth = MeasureTextCustom(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
             setRects[i] = { (float)xPos, (float)yPos, (float)textWidth, 40 };
 
@@ -241,7 +241,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawRectangle(panelX, panelY, panelW, panelH, Fade(BLACK, 0.6f));
         DrawRectangleLines(panelX, panelY, panelW, panelH, WHITE);
         const char* title = "CAI DAT DIEU KHIEN";
-        int titleX = (1920 - MeasureTextCustomX(ui.mainFont, title, 40)) / 2;
+        int titleX = (1920 - MeasureTextCustom(ui.mainFont, title, 40)) / 2;
         DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 40, WHITE);
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
@@ -254,7 +254,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
-            int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 30);
+            int textWidth = MeasureTextCustom(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
             Rectangle btn = { (float)xPos - 20, (float)yPos - 10, (float)textWidth + 40, 50 };
             bool hover = CheckCollisionPointRec(mouse, btn);
@@ -326,7 +326,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             } else{
                 DrawTextCustom(ui.mainFont, TextFormat("Slot %d", i+1), currentX + 20, startY + 20, 30, GRAY);
                 const char* emptyText = "--- TRONG ---";
-                int emptyTextX = currentX + cardWidth/2 - MeasureTextCustomX(ui.mainFont, emptyText, 25)/2; // UPDATE
+                int emptyTextX = currentX + cardWidth/2 - MeasureTextCustom(ui.mainFont, emptyText, 25)/2; // UPDATE
                 DrawTextCustom(ui.mainFont, emptyText, emptyTextX, startY + cardHeight/2, 25, GRAY);
             }
         }
@@ -339,7 +339,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, ui.nameInput, 810, 435, 20, BLACK);
         
         if (ui.letterCount < 29 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawTextCustom(ui.mainFont, "_", 810 + MeasureTextCustomX(ui.mainFont, ui.nameInput, 20), 435, 20, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 810 + MeasureTextCustom(ui.mainFont, ui.nameInput, 20), 435, 20, BLACK);
         }
 
         DrawTextCustom(ui.mainFont, "2. Chon vi tri Slot de ghi de (Dung Len/Xuong):", 800, 520, 20, LIGHTGRAY);
@@ -367,7 +367,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawRectangle(750, 440, 400, 50, p1BoxColor);
         DrawTextCustom(ui.mainFont, ui.p1NameInput, 760, 455, 25, BLACK);
         if (ui.activeInputField == 0 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustomX(ui.mainFont, ui.p1NameInput, 25), 455, 25, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustom(ui.mainFont, ui.p1NameInput, 25), 455, 25, BLACK);
         }
 
         //Player 2
@@ -376,7 +376,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawRectangle(750, 570, 400, 50, p2BoxColor);
         DrawTextCustom(ui.mainFont, ui.p2NameInput, 760, 585, 25, BLACK);
         if (ui.activeInputField == 1 && ((int)(GetTime() * 2) % 2) == 0) {
-            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustomX(ui.mainFont, ui.p2NameInput, 25), 585, 25, BLACK);
+            DrawTextCustom(ui.mainFont, "_", 760 + MeasureTextCustom(ui.mainFont, ui.p2NameInput, 25), 585, 25, BLACK);
         }
 
         DrawTextCustom(ui.mainFont, "Dung phim [Len]/[Xuong] hoac [Tab] de chuyen o nhap.", 650, 700, 25, GRAY);

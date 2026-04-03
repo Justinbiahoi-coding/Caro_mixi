@@ -3,23 +3,6 @@
 
 void UpdateGUIGame(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
-    float dt = GetFrameTime();
-
-    // Chỉ animate phe đang có lượt, phe kia giữ frame 0
-    if (game.matchStatus == 0) {
-        CharAnim& active = game.isPlayer1Turn ? ui.charP1 : ui.charP2;
-        CharAnim& idle   = game.isPlayer1Turn ? ui.charP2 : ui.charP1;
-
-        active.frameTimer += dt;
-        if (active.frameTimer >= active.frameDuration) {
-            active.frameTimer = 0.0f;
-            active.currentFrame = (active.currentFrame + 1) % active.frameCount;
-        }
-
-        // Phe chờ: reset về frame 0
-        idle.currentFrame = 0;
-        idle.frameTimer   = 0.0f;
-    }
 
     if (game.matchStatus == 0) { 
         if (game.inputType == 0) {
@@ -80,21 +63,6 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     }
 }
 
-static void DrawCharAnim(const CharAnim& c,
-                         float x, float y, float drawW, float drawH,
-                         bool flipH, bool isActive)
-{
-    Rectangle srcRec = {
-        (float)(c.currentFrame * c.frameWidth),
-        0,
-        flipH ? -(float)c.frameWidth : (float)c.frameWidth,
-        (float)c.frameHeight
-    };
-    Rectangle dstRec = { x, y, drawW, drawH };
-    Color tint = isActive ? WHITE : Fade(GRAY, 0.5f);
-    DrawTexturePro(c.spriteSheet, srcRec, dstRec, {0,0}, 0.0f, tint);
-}
-
 void DrawGUIGame(const GameState& game, const UIState& ui) {
     DrawTexturePro(ui.bgGame, { 0, 0, (float)ui.bgGame.width, (float)ui.bgGame.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
     Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
@@ -134,11 +102,17 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float cy = ui.cellStartY + game.cursorRow * ui.cellSize;
         DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
     }
-    DrawBadgeText(ui.mainFont, ui.titleBadge, "THONG TIN VAN DAU", 15, 402.3f, 84.7f, 48, WHITE);
+    const char* title = "THONG TIN VAN DAU";
+    float titleSize = 48;
+    float titleWidth = MeasureTextEx(ui.mainFont, title, titleSize, 0).x;
+    float titleX = GetScreenWidth() / 2.0f - titleWidth / 2.0f;
+    DrawTextCustom(ui.mainFont, title, titleX, 33.6, titleSize, WHITE);
 
-    char roundText[30];
-    sprintf(roundText, "VONG CHOI %d", game.roundCount);
-    DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 100, 261.1f, 74.6f, 39, WHITE);
+    const char* round = TextFormat("--- VONG CHOI %d ---", game.roundCount);
+    float roundSize = 25;
+    float roundWidth = MeasureTextEx(ui.mainFont, round, roundSize, 0).x;
+    float roundX = GetScreenWidth() / 2.0f - roundWidth / 2.0f;
+    DrawTextCustom(ui.mainFont, round, roundX, 70, roundSize, WHITE);
 
     // if (game.matchStatus == 0) {
     //     if (game.isPlayer1Turn) DrawTextCustom(ui.mainFont, TextFormat(">> LUOT CUA: %s (X) <<", game.player1.name), 790, 100, 30, RED);
@@ -153,24 +127,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float guideSize = 25;
     float guideWidth = MeasureTextEx(ui.mainFont, guide, guideSize, 0).x;
     float guideX = GetScreenWidth() / 2.0f - guideWidth / 2.0f;
-    DrawTextCustom(ui.mainFont, guide, guideX, 1000, guideSize, WHITE);
+    DrawTextCustom(ui.mainFont, guide, guideX, 980, guideSize, WHITE);
 
-    // Kích thước cố định cho badge tên người chơi
-    int badgePWidth = 504;
-    int badgePHeight = 109;
-
-    // --- Player 1 (Bên Trái) ---
-    float p1X = 31.2; 
-    float p1Y = 386.7 ;
-    // Vẽ badge dưới tên
-    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
-                   {(float)p1X, (float)p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
-    
-    // Căn giữa text tên người chơi vào trong badge
-    int p1NameWidth = MeasureTextCustomX(ui.mainFont, game.player1.name, 72);
-    DrawTextCustom(ui.mainFont, game.player1.name, p1X + (badgePWidth - p1NameWidth) / 2, p1Y + 15, 72, WHITE);
-
-
+    int p1X = 150; 
+    int p1Y = 350;
+    DrawTextCustom(ui.mainFont, game.player1.name, p1X, p1Y, 50, WHITE);
     // DrawTextCustom(ui.mainFont, "Phe: X", p1X, p1Y + 70, 30, DARKGRAY);
     // DrawTextCustom(ui.mainFont, TextFormat("Thang: %d | Thua: %d", game.player1.winCount, game.player1.loseCount), p1X, p1Y + 120, 30, BLACK);
     // DrawTextCustom(ui.mainFont, TextFormat("So buoc van nay: %d", game.player1.stepCount), p1X, p1Y + 170, 25, GRAY);
@@ -180,15 +141,9 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, TextFormat("Scan: %d", game.player1.scansLeft), p1X, p1Y + 270, 30, ORANGE);
     }
 
-    float p2X = 1388.4; 
-    float p2Y = 386.7 ;
-    // Vẽ badge dưới tên
-    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
-                   {(float)p2X, (float)p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
-    
-    // Căn giữa text tên người chơi vào trong badge
-    int p2NameWidth = MeasureTextCustomX(ui.mainFont, game.player2.name, 72);
-    DrawTextCustom(ui.mainFont, game.player2.name, p2X + (badgePWidth - p2NameWidth) / 2, p2Y + 15, 72, WHITE);
+    int p2X = 1450; 
+    int p2Y = 350;
+    DrawTextCustom(ui.mainFont, game.player2.name, p2X, p2Y, 50, WHITE);
     // DrawTextCustom(ui.mainFont, "Phe: O", p2X, p2Y + 70, 30, DARKGRAY);
     // DrawTextCustom(ui.mainFont, TextFormat("Thang: %d | Thua: %d", game.player2.winCount, game.player2.loseCount), p2X, p2Y + 120, 30, BLACK);
     // DrawTextCustom(ui.mainFont, TextFormat("So buoc van nay: %d", game.player2.stepCount), p2X, p2Y + 170, 25, GRAY);
@@ -198,25 +153,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, TextFormat("Scan: %d", game.player2.scansLeft), p2X, p2Y + 270, 30, ORANGE);
     }
     
-    float P1charW = 356.0f, P1charH = 356.0f;
-    float P2charW = 356.0f, P2charH = 356.0f;
-
-    // Player 1 — không flip
-    bool p1Active = game.isPlayer1Turn && (game.matchStatus == 0);
-    DrawCharAnim(ui.charP1,
-                135.0f,
-                640.0f,
-                P1charW, P1charH,
-                false, p1Active);
-
-    // Player 2 — flip ngang
-    bool p2Active = !game.isPlayer1Turn && (game.matchStatus == 0);
-    DrawCharAnim(ui.charP2,
-                1467.0f,
-                640.0f,
-                P2charW, P2charH,
-                true, p2Active);
-
     if (game.matchStatus != 0) {
         DrawRectangle(ui.cellStartX, ui.cellStartY, BOARD_SIZE * ui.cellSize, BOARD_SIZE * ui.cellSize, Fade(WHITE, 0.7f));
         
