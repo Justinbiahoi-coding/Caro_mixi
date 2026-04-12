@@ -65,6 +65,18 @@ void InitGUI(UIState& ui) {
 
     ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
     ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
+
+    InitAudioDevice();
+
+    ui.bgMusic = LoadMusicStream("assets/music/bgm.ogg");
+
+    ui.musicVolume = 0.8f;
+    ui.musicEnabled = true;
+    ui.draggingVolume = false;
+
+
+    PlayMusicStream(ui.bgMusic);
+    SetMusicVolume(ui.bgMusic, ui.musicVolume);
 }
 
 void UnloadGUI(UIState& ui) {
@@ -86,6 +98,8 @@ void UnloadGUI(UIState& ui) {
     UnloadFont(ui.mainFont);
     UnloadCharAnim(ui.charP1);
     UnloadCharAnim(ui.charP2);
+    UnloadMusicStream(ui.bgMusic);
+    CloseAudioDevice();
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
@@ -94,6 +108,7 @@ void UpdateGUI(GameState& game, UIState& ui) {
     } else {
         UpdateMenuScreens(game, ui);
     }
+
 }
 
 void DrawGUI(const GameState& game, const UIState& ui) {

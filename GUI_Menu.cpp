@@ -1,8 +1,8 @@
-#include "GUI_Menu.h"
+﻿#include "GUI_Menu.h"
 #include "LogicControl.h"
 
 const int TOTAL_MENU_ITEMS = 6;
-const int TOTAL_SETTING_ITEMS = 3;
+const int TOTAL_SETTING_ITEMS = 5;
 
 void UpdateMenuScreens(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
@@ -47,55 +47,92 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ui.p2NameInput[0] = '\0'; ui.p2LetterCount = 0;
                 } break;
                 case 1: ui.currentScreen = 5; ui.loadSelection = 0; break;
-                case 2: ui.currentScreen = 2; ui.settingSelection = game.inputType; break;
+                case 2: ui.currentScreen = 2; ui.settingSelection = game.inputType; ui.draggingVolume = false; break;
                 case 3: break;
                 case 4: ui.currentScreen = 3; break;
                 case 5: ui.shouldExit = true; break;
             }
         }
     }
+   
     else if (ui.currentScreen == 2) {
-        if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
-            ui.settingSelection--;
-            if (ui.settingSelection < 0) ui.settingSelection = TOTAL_SETTING_ITEMS - 1;
+        Vector2 mouse = GetMousePosition();
+
+        const int barWidth = 340;
+        const int barHeight = 18;
+        const int barX = (1920 - barWidth) / 2;
+        const int barY = 300 + 2 * 70 + 55;
+
+        Rectangle volumeBar = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
+
+        Rectangle knob = {
+            barX + ui.musicVolume * (barWidth - 24.0f),
+            (float)barY - 10.0f,
+            24.0f,
+            38.0f
+        };
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (CheckCollisionPointRec(mouse, volumeBar) ||
+                CheckCollisionPointRec(mouse, knob)) {
+                ui.draggingVolume = true;
+            }
         }
 
-        if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
-            ui.settingSelection++;
-            if (ui.settingSelection >= TOTAL_SETTING_ITEMS) ui.settingSelection = 0;
+        if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            ui.draggingVolume = false;
         }
+
+        if (ui.draggingVolume) {
+            float t = (mouse.x - barX) / (float)barWidth;
+            if (t < 0.0f) t = 0.0f;
+            if (t > 1.0f) t = 1.0f;
+
+            ui.musicVolume = t;
+            SetMusicVolume(ui.bgMusic, ui.musicVolume);
+        }
+
+        if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP))
+            ui.settingSelection = (ui.settingSelection - 1 + TOTAL_SETTING_ITEMS) % TOTAL_SETTING_ITEMS;
+
+        if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN))
+            ui.settingSelection = (ui.settingSelection + 1) % TOTAL_SETTING_ITEMS;
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
             "Dung Chuot (Khuyen Nghi)",
             "Dung Ban Phim (WASD + Enter)",
+            "Am Luong Nhac",
+            "Bat / Tat Nhac Nen",
             "Quay lai Menu"
         };
 
         Rectangle setRects[TOTAL_SETTING_ITEMS];
-
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
             int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
-            setRects[i] = { (float)xPos, (float)yPos, (float)textWidth, 40 };
+            setRects[i] = { (float)(xPos - 40), (float)(yPos - 18), (float)(textWidth + 80), 55 };
 
             if (CheckCollisionPointRec(mouse, setRects[i]))
                 ui.settingSelection = i;
         }
 
-        bool confirmSet = false;
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection]))
-            confirmSet = true;
-        if (IsKeyPressed(KEY_ENTER))
-            confirmSet = true;
-
-        if (confirmSet) {
+        if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection])) ||
+            IsKeyPressed(KEY_ENTER)) {
             if (ui.settingSelection == 0) game.inputType = 0;
             else if (ui.settingSelection == 1) game.inputType = 1;
-            else if (ui.settingSelection == 2) ui.currentScreen = 0;
+            else if (ui.settingSelection == 3) {
+                ui.musicEnabled = !ui.musicEnabled;
+                if (ui.musicEnabled) PlayMusicStream(ui.bgMusic);
+                else PauseMusicStream(ui.bgMusic);
+            }
+            else if (ui.settingSelection == 4) {
+                ui.currentScreen = 0;
+            }
         }
 
-        if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
+        if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE))
+            ui.currentScreen = 0;
     }
     else if (ui.currentScreen == 3) {
         if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
@@ -219,6 +256,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         for (int i = 0; i < TOTAL_MENU_ITEMS; i++) {
             Color tint = (ui.menuSelection == i) ? YELLOW : WHITE;
             DrawTexture(*textures[i], (int)rectsToDraw[i].x, (int)rectsToDraw[i].y, tint);
+
         }
     } 
     else if (ui.currentScreen == 2) {
@@ -229,12 +267,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         DrawTexture(ui.bgSettings, -cloudOffset, 0, WHITE);
         DrawTexture(ui.bgSettings, ui.bgSettings.width - cloudOffset, 0, WHITE);
-
         if (cloudOffset >= ui.bgSettings.width) direction = -1;
         if (cloudOffset <= 0) direction = 1;
 
-        int panelW = 600;
-        int panelH = 350;
+        int panelW = 700;
+        int panelH = 550;
         int panelX = (1920 - panelW) / 2;
         int panelY = 250;
 
@@ -245,29 +282,51 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 40, WHITE);
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
-            "Dung Chuot (Khuyen Nghi)",
-            "Dung Ban Phim (WASD + Enter)",
-            "Quay lai Menu"
+          "Dung Chuot (Khuyen Nghi)",
+          "Dung Ban Phim (WASD + Enter)",
+          "Am Luong Nhac",
+          "Bat / Tat Nhac Nen",
+          "Quay lai Menu"
         };
 
         Vector2 mouse = GetMousePosition();
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
+            if (i >= 3) yPos += 50;
             int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
-            Rectangle btn = { (float)xPos - 20, (float)yPos - 10, (float)textWidth + 40, 50 };
-            bool hover = CheckCollisionPointRec(mouse, btn);
-            Color color = WHITE;
 
+            Color color = WHITE;
             if (i == 0 && game.inputType == 0) color = GREEN;
             if (i == 1 && game.inputType == 1) color = GREEN;
-            if (hover || i == ui.settingSelection) color = SKYBLUE;
-            if (hover || i == ui.settingSelection)
-                DrawRectangle(xPos - 25, yPos - 10, textWidth + 50, 45, Fade(SKYBLUE, 0.12f));
+            if (i == ui.settingSelection) color = SKYBLUE;
 
-            DrawTextCustom(ui.mainFont, setOptions[i], xPos, yPos, 30, color);
+            if (i == 3) { 
+                const char* status = ui.musicEnabled ? " [ON]" : " [OFF]";
+                DrawText(TextFormat("%s%s", setOptions[i], status), xPos, yPos, 30, color);
+            }
+            else {
+                DrawText(setOptions[i], xPos, yPos, 30, color);
+            }
         }
+
+        const int barWidth = 340;
+        const int barHeight = 18;
+        const int barX = (1920 - barWidth) / 2;
+        const int barY = 300 + 2 * 70 + 55;
+
+        Rectangle volumeBar = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
+
+        DrawRectangleRec(volumeBar, DARKGRAY);
+        DrawRectangle(barX, barY, (int)(barWidth* ui.musicVolume), barHeight, LIME);
+
+        float knobX = barX + ui.musicVolume * (barWidth - 20.0f);
+        Rectangle knob = { knobX, (float)barY - 9, 20, 34 };
+
+        DrawRectangleRec(knob, ui.draggingVolume ? YELLOW : RAYWHITE);
+        DrawRectangleLinesEx(knob, 3, BLACK);
+        DrawText(TextFormat("%d%%", (int)(ui.musicVolume * 100)), barX + barWidth + 30, barY - 15, 26, WHITE);
     }
     else if (ui.currentScreen == 3) {
         DrawTextCustom(ui.mainFont, "Credits: Thien, @b1nhan", 100, 200, 40, DARKBLUE);

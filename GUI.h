@@ -59,6 +59,11 @@ struct UIState {
 
     CharAnim charP1; 
     CharAnim charP2; 
+
+    Music bgMusic;
+    float musicVolume = 0.8f;
+    bool musicEnabled;
+    bool draggingVolume = false;
 };
 
 void InitGUI(UIState& ui);
