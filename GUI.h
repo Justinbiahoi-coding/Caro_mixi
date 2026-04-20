@@ -19,7 +19,9 @@ struct UIState {
     int settingSelection;
     int loadSelection;
     int saveSelection;
-    
+    int p1HeroSelection; 
+    int p2HeroSelection; 
+    int selectionPhase; 
     int endGameSelection; 
 
     char nameInput[30];
@@ -54,7 +56,8 @@ struct UIState {
     Texture2D btnCredits;
     Texture2D btnExit;
     Texture2D bgSettings;
-
+    Texture2D bgSaveLoad;
+    Texture2D bgLoadGame;
     Font mainFont;
 
     CharAnim charP1; 
@@ -88,25 +91,23 @@ inline int MeasureTextCustomY(Font font, const char *text, int fontSize) {
     return (int)MeasureTextEx(font, text, (float)fontSize, fontSpacing).y;
 }
 
-inline void DrawBadgeText(Font font, Texture2D badge, const char *text, int y, float badgeWidth, float badgeHeight, int textFontSize, Color textColor) {
+inline void DrawBadgeText(Font font, Texture2D badge, const char *text, int y, float badgeWidth, float badgeHeight, int textFontSize, Color textColor, float offsetY = 0.0f) {
     // 1. Tính toán vị trí Badge để căn giữa ngang
-    float badgeX = (1920.0f - badgeWidth) / 2.0f; // Căn giữa 1920
+    float badgeX = (1920.0f - badgeWidth) / 2.0f; 
 
-    // 2. Tính toán độ rộng của text (dùng helper MeasureTextCustom)
+    // 2. Tính toán độ rộng/cao của text
     float textWidth = (float)MeasureTextCustomX(font, text, textFontSize);
     float textHeight = (float)MeasureTextCustomY(font, text, textFontSize);
 
-    // 3. Tính toán vị trí Text để căn giữa badge
+    // 3. Tính toán vị trí Text để căn giữa (Đã bỏ công thức cũ, thay bằng offsetY an toàn hơn)
     float textX = badgeX + (badgeWidth - textWidth) / 2.0f;
-    float textY = (y + (badgeHeight - textHeight) / 2.0f)
-    // fix tam
-     - (textFontSize* textFontSize* 0.0036f); // Căn giữa dọc
+    float textY = y + (badgeHeight - textHeight) / 2.0f + offsetY; 
 
-    // 4. Vẽ Badge (dùng DrawTexturePro để scale đúng kích thước mong muốn)
+    // 4. Vẽ Badge 
     DrawTexturePro(badge, {0, 0, (float)badge.width, (float)badge.height}, 
                    {badgeX, (float)y, badgeWidth, badgeHeight}, {0, 0}, 0.0f, WHITE);
 
-    // 5. Vẽ Text lên trên (dùng DrawTextCustom đã refactor)
+    // 5. Vẽ Text lên trên
     DrawTextCustom(font, text, (int)textX, (int)textY, textFontSize, textColor);
 }
 
