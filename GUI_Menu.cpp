@@ -358,9 +358,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         DrawRectangle(panelX, panelY, panelW, panelH, Fade(BLACK, 0.6f));
         DrawRectangleLines(panelX, panelY, panelW, panelH, WHITE);
-        const char* title = "CAI DAT DIEU KHIEN";
+        const char* title = "CONTROL SETTINGS";
         int titleX = (1920 - MeasureTextCustomX(ui.mainFont, title, 40)) / 2;
-        DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 40, WHITE);
+        DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 80, WHITE);
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
           "Dung Chuot (Khuyen Nghi)",
