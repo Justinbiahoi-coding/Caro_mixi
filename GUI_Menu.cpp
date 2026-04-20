@@ -305,10 +305,10 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
             if (i == 3) { 
                 const char* status = ui.musicEnabled ? " [ON]" : " [OFF]";
-                DrawText(TextFormat("%s%s", setOptions[i], status), xPos, yPos, 30, color);
+                DrawTextCustom(ui.mainFont, TextFormat("%s%s", setOptions[i], status), xPos, yPos, 30, color);
             }
             else {
-                DrawText(setOptions[i], xPos, yPos, 30, color);
+                DrawTextCustom(ui.mainFont, setOptions[i], xPos, yPos, 30, color);
             }
         }
 
