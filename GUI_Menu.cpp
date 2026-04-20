@@ -109,7 +109,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         Rectangle setRects[TOTAL_SETTING_ITEMS];
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 300 + i * 70;
-            int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 30);
+            if (i >= 3) yPos += 50;
+            int textWidth = MeasureText(setOptions[i], 30);
             int xPos = (1920 - textWidth) / 2;
             setRects[i] = { (float)(xPos - 40), (float)(yPos - 18), (float)(textWidth + 80), 55 };
 
@@ -117,8 +118,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 ui.settingSelection = i;
         }
 
-        if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection])) ||
-            IsKeyPressed(KEY_ENTER)) {
+        if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection])
+            && !ui.draggingVolume) || IsKeyPressed(KEY_ENTER)) {
             if (ui.settingSelection == 0) game.inputType = 0;
             else if (ui.settingSelection == 1) game.inputType = 1;
             else if (ui.settingSelection == 3) {
