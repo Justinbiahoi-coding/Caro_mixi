@@ -297,7 +297,18 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 ui.p2LetterCount--;
                 ui.p2NameInput[ui.p2LetterCount] = '\0';
             }
-            if (IsKeyPressed(KEY_ENTER)) ui.currentScreen = 1; 
+            if (IsKeyPressed(KEY_ENTER)){
+                int savedInput = game.inputType;
+                InitGame(game, 0); 
+                game.inputType = savedInput;
+                
+                if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
+                else strcpy(game.player1.name, "Player 1");
+                
+                if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
+                else strcpy(game.player2.name, "Player 2");
+                ui.currentScreen = 1; 
+            } 
         }
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
     }

@@ -40,7 +40,7 @@ void InitGUI(UIState& ui) {
     ui.roundBadge = LoadTexture("assets/board/round_badge.png");
     ui.titleBadge = LoadTexture("assets/board/title_badge.png");
 
-    ui.mainFont = LoadFontEx("assets/font/blasphemous.ttf", 64, 0, 250);
+    ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
 
     ui.charP1 = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.12f);
     ui.charP2 = LoadCharAnim("assets/Character/fire_knight/idle.png", 4, 0.12f);
