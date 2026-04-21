@@ -5,12 +5,12 @@
 
 struct CharAnim {
     Texture2D spriteSheet;
-    int frameCount;      // tổng số frame
+    int frameCount;      // total number of frames in the sprite sheet
     int frameWidth;      // width 1 frame = sheet.width / frameCount
-    int frameHeight;     // = sheet.height (vì 1 hàng)
+    int frameHeight;     // = sheet.height 
     int currentFrame;
     float frameTimer;
-    float frameDuration; // giây mỗi frame, ví dụ 0.12f
+    float frameDuration; // each second 1 frame
 };
 
 struct UIState {
@@ -41,7 +41,6 @@ struct UIState {
     Texture2D playerBadge;
     Texture2D roundBadge; 
     Texture2D titleBadge;
-
     float cellSize;       
     float cellStartX;     
     float cellStartY;     
@@ -58,6 +57,8 @@ struct UIState {
     Texture2D bgSettings;
     Texture2D bgSaveLoad;
     Texture2D bgLoadGame;
+    Texture2D bgSelect; 
+
     Font mainFont;
 
     CharAnim charP1; 

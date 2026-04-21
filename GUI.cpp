@@ -31,7 +31,7 @@ void InitGUI(UIState& ui) {
     ui.bgSaveLoad  = LoadTexture("assets/menu/bg_saveload.png");
     ui.bgLoadGame = LoadTexture("assets/menu/loadbg.png");
     ui.bgGame      = LoadTexture("assets/board/bg_game.png"); 
-    
+    ui.bgSelect = LoadTexture("assets/menu/bg_select.png");
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");

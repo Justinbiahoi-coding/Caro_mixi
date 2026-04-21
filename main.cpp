@@ -3,11 +3,10 @@
 #include "GUI.h"
 
 int main() {
-    // 1. Cho phép cửa sổ có thể kéo giãn (Resize) thoải mái
+    //make sure the window is resizable and has VSync enabled for smoother animation
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     
-    // 2. Mở cửa sổ nhỏ hơn một chút cho vừa Mac (Ví dụ 1600x900)
-    InitWindow(1600, 900, "Do An Caro - Booming Mode");
+    InitWindow(1600, 900, "Do An Caro");
     SetTargetFPS(60);
 
     SetExitKey(0);
@@ -18,35 +17,34 @@ int main() {
     UIState ui;
     InitGUI(ui); // put pic to ram
 
-    // 3. TẠO TẤM BẠT ẢO ĐÚNG CHUẨN 1920x1080
+    //1920x1080
     RenderTexture2D target = LoadRenderTexture(1920, 1080);
-    SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR); // Chống vỡ hạt khi thu nhỏ
+    SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR); 
 
     // Game loop
     while (!ui.shouldExit && !WindowShouldClose()) {
 
-        // --- BỘ TÍNH TOÁN THU PHÓNG (SCALE) ---
+        // scale factor
         float scaleW = (float)GetScreenWidth() / 1920.0f;
         float scaleH = (float)GetScreenHeight() / 1080.0f;
-        float scale = (scaleW < scaleH) ? scaleW : scaleH; // Giữ nguyên tỷ lệ 16:9
+        float scale = (scaleW < scaleH) ? scaleW : scaleH; //16:9
 
-        // Báo cho Raylib biết màn hình bị thu nhỏ để nó tính lại tọa độ Click chuột
+        // adjust mouse input to account for letterboxing
         SetMouseOffset(-(GetScreenWidth() - (1920.0f * scale)) * 0.5f, -(GetScreenHeight() - (1080.0f * scale)) * 0.5f);
         SetMouseScale(1.0f / scale, 1.0f / scale);
 
         UpdateGUI(game, ui);
         
-        // --- BƯỚC A: VẼ MỌI THỨ LÊN TẤM BẠT ẢO ---
+        // draw to the render texture 
         BeginTextureMode(target);
             ClearBackground(RAYWHITE);
             DrawGUI(game, ui);
         EndTextureMode();
 
-        // --- BƯỚC B: IN TẤM BẠT ẢO LÊN MÀN HÌNH MÁY TÍNH ---
+        // scaling to fit while maintaining aspect ratio
         BeginDrawing();
-            ClearBackground(BLACK); // Viền đen bên ngoài nếu màn hình không phải 16:9
+            ClearBackground(BLACK); // draw a black background to create letterboxing effect when aspect ratio doesn't match
 
-            // Vẽ bạt ảo ra giữa màn hình (Lưu ý height của sourceRec phải là số âm do chuẩn OpenGL)
             Rectangle sourceRec = { 0.0f, 0.0f, (float)target.texture.width, (float)-target.texture.height };
             Rectangle destRec = { 
                 (GetScreenWidth() - (1920.0f * scale)) * 0.5f, 

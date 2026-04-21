@@ -17,7 +17,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (ui.menuSelection >= TOTAL_MENU_ITEMS) ui.menuSelection = 0;
         }
 
-        float centerX = 400.0f; 
+        float centerX = 1500.0f; 
         float startY = 420.0f;
         float gap = ui.btnNewGame.height + 42.0f;
 
@@ -239,7 +239,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
     }
     else if (ui.currentScreen == 8) {
-        // --- CẬP NHẬT ANIMATION CHO CẢ 2 TƯỚNG ---
+        // Animate hero selection sprites
         ui.charP1.frameTimer += GetFrameTime();
         if (ui.charP1.frameTimer >= ui.charP1.frameDuration) {
             ui.charP1.currentFrame = (ui.charP1.currentFrame + 1) % ui.charP1.frameCount;
@@ -251,16 +251,16 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             ui.charP2.frameTimer = 0.0f;
         }
 
-        // --- LOGIC 4 BƯỚC TUẦN TỰ ---
+        const int MAX_HEROES = 4; // set number of heroes available
+
         if (ui.selectionPhase == 0) {
-            // BƯỚC 0: P1 CHỌN TƯỚNG
-            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) {
-                ui.p1HeroSelection = (ui.p1HeroSelection == 0) ? 1 : 0;
-            }
+            // p1 pick hero
+            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p1HeroSelection = (ui.p1HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
+            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p1HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
             if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 1; 
         }
         else if (ui.selectionPhase == 1) {
-            // BƯỚC 1: P1 GÕ TÊN
+            // p1 set name
             int key = GetCharPressed();
             while (key > 0) {
                 if ((key >= 32) && (key <= 125) && ui.p1LetterCount < 10) {
@@ -277,14 +277,13 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 2; 
         }
         else if (ui.selectionPhase == 2) {
-            // BƯỚC 2: P2 CHỌN TƯỚNG
-            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) {
-                ui.p2HeroSelection = (ui.p2HeroSelection == 0) ? 1 : 0;
-            }
+            // p2 pick hero
+            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
+            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p2HeroSelection = (ui.p2HeroSelection + 1) % MAX_HEROES;
             if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 3; 
         }
         else if (ui.selectionPhase == 3) {
-            // BƯỚC 3: P2 GÕ TÊN
+            // p2 set name 
             int key = GetCharPressed();
             while (key > 0) {
                 if ((key >= 32) && (key <= 125) && ui.p2LetterCount < 10) {
@@ -298,20 +297,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 ui.p2LetterCount--;
                 ui.p2NameInput[ui.p2LetterCount] = '\0';
             }
-            if (IsKeyPressed(KEY_ENTER)) {
-                // VÀO GAME
-                int savedInput = game.inputType;
-                InitGame(game, 0); 
-                game.inputType = savedInput;
-                
-                if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
-                else strcpy(game.player1.name, "Player 1");
-                
-                if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
-                else strcpy(game.player2.name, "Player 2");
-
-                ui.currentScreen = 1; 
-            }
+            if (IsKeyPressed(KEY_ENTER)) ui.currentScreen = 1; 
         }
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
     }
@@ -410,24 +396,23 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawText(TextFormat("%d%%", (int)(ui.musicVolume * 100)), barX + barWidth + 30, barY - 15, 26, WHITE);
     }
     else if (ui.currentScreen == 3) {
-        DrawTextCustom(ui.mainFont, "Credits: Thien, @b1nhan", 100, 200, 40, DARKBLUE);
+        DrawTextCustom(ui.mainFont, "Credits: Thien", 100, 200, 40, DARKBLUE);
         DrawTextCustom(ui.mainFont, "Nhan [M] de quay lai Menu", 250, 250, 20, GRAY);
     }
    else if (ui.currentScreen == 5) {
-        // --- MA THUẬT CUỘN MƯỢT (SMOOTH SCROLL) ---
-        // Biến static này sẽ tự động chạy theo ui.loadSelection để tạo hiệu ứng trượt
+        // static variant can follow ui.loadSelection with a smooth animation effect
         static float smoothScroll = (float)ui.loadSelection;
         smoothScroll += (ui.loadSelection - smoothScroll) * 12.0f * GetFrameTime();
 
-        // --- 2. VẼ ẢNH NỀN (Có hiệu ứng Parallax trượt nhẹ theo thẻ) ---
+        // Background with parallax effect
         float bgParallax = -smoothScroll * 60.0f; 
         DrawTexturePro(ui.bgLoadGame, { 0, 0, (float)ui.bgLoadGame.width, (float)ui.bgLoadGame.height }, { bgParallax, 0, 1920.0f + 250.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
-        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.6f)); // Lớp sương mù làm nền tối đi
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.6f)); // fog effect
 
         Color goldColor = { 253, 249, 0, 255 }; 
         Color silverColor = { 200, 200, 200, 255 };
 
-        // Tiêu đề
+        // title & guide
         const char* title = "CHON FILE DE TAI";
         int titleW = MeasureTextCustomX(ui.mainFont, title, 50);
         DrawTextCustom(ui.mainFont, title, 1920 / 2 - titleW / 2, 40, 50, goldColor);
@@ -436,14 +421,14 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         int guideW = MeasureTextCustomX(ui.mainFont, guide, 22);
         DrawTextCustom(ui.mainFont, guide, 1920 / 2 - guideW / 2, 100, 22, silverColor);
 
-        // --- 3. GIAO DIỆN CAROUSEL (BĂNG CHUYỀN) ---
-        int cardWidth = 600;  // Thẻ siêu to khổng lồ
+        // draw 4 save slots with a horizontal carousel effect       
+        int cardWidth = 600;  
         int cardHeight = 800; 
-        float spacing = 800.0f; // Khoảng cách giữa các thẻ khi trượt
+        float spacing = 800.0f; 
         float startY = 160.0f;
 
         for (int i = 0; i < 4; i++) {
-            // Tọa độ X được tính toán dựa trên độ trượt (smoothScroll)
+            // point x is calculated based on the scroll position 
             float offsetX = (i - smoothScroll) * spacing;
             float currentX = (1920.0f / 2.0f) - (cardWidth / 2.0f) + offsetX;
 
@@ -452,12 +437,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             GameState tempGame;
             bool hasData = PeekGameSlot(i, tempGame);
 
-            // Xác định độ mờ: Thẻ ở giữa sẽ sáng (alpha=1), thẻ dạt ra biên sẽ mờ dần (alpha=0.3)
             float distance = fabs(i - smoothScroll);
             float alpha = 1.0f - (distance * 0.7f);
             if (alpha < 0.2f) alpha = 0.2f;
 
-            // Vẽ Nền thẻ (Phủ pha lê đen) & Viền Kép
+            // draw card background with a subtle border
             DrawRectangleRec(cardRec, Fade(BLACK, 0.85f * alpha));
             Color borderColor = (i == ui.loadSelection) ? goldColor : silverColor;
             DrawRectangleLinesEx(cardRec, 3.0f, Fade(borderColor, alpha));
@@ -468,23 +452,21 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             }
 
             if (hasData) {
-                // --- HEADER ---
                 DrawTextCustom(ui.mainFont, TextFormat("SLOT %d", i + 1), currentX + 30, startY + 30, 40, Fade(goldColor, alpha));
                 DrawTextCustom(ui.mainFont, tempGame.saveTime, currentX + cardWidth - MeasureTextCustomX(ui.mainFont, tempGame.saveTime, 22) - 30, startY + 45, 22, Fade(silverColor, alpha));
                 DrawLineEx({currentX + 30, startY + 90}, {currentX + cardWidth - 30, startY + 90}, 2.0f, Fade(silverColor, alpha * 0.3f));
 
-                // --- MIDDLE: SA BÀN KHỔNG LỒ CỰC RÕ NÉT ---
                 int nameW = MeasureTextCustomX(ui.mainFont, tempGame.saveName, 45);
                 DrawTextCustom(ui.mainFont, tempGame.saveName, currentX + cardWidth/2 - nameW/2, startY + 120, 45, Fade(WHITE, alpha));
 
-                float miniBoardSize = 420.0f; // Bàn cờ to gần gấp đôi bản cũ
+                float miniBoardSize = 420.0f; 
                 float mbX = currentX + (cardWidth - miniBoardSize) / 2.0f;
                 float mbY = startY + 200.0f;
 
-                // Khung bàn cờ
+                // borders and background for mini board
                 DrawTexturePro(ui.boardFrame, { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height }, { mbX, mbY, miniBoardSize, miniBoardSize }, {0,0}, 0.0f, Fade(WHITE, alpha));
 
-                // Tính toán tỷ lệ ô cờ
+                // calculate inner area for cells
                 float innerX = mbX + miniBoardSize * 0.073f;
                 float innerY = mbY + miniBoardSize * 0.13f;
                 float innerW = miniBoardSize * (1.0f - 0.073f - 0.070f);
@@ -492,7 +474,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 float mCellW = innerW / BOARD_SIZE;
                 float mCellH = innerH / BOARD_SIZE;
 
-                // Vẽ 225 ô gạch và các quân cờ
+                // draw cells and pieces
                 for (int r = 0; r < BOARD_SIZE; r++) {
                     for (int c = 0; c < BOARD_SIZE; c++) {
                         Rectangle dest = { innerX + c * mCellW, innerY + r * mCellH, mCellW, mCellH };
@@ -503,7 +485,6 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                     }
                 }
 
-                // --- BOTTOM ---
                 DrawLineEx({currentX + 30, mbY + miniBoardSize + 40}, {currentX + cardWidth - 30, mbY + miniBoardSize + 40}, 2.0f, Fade(silverColor, alpha * 0.3f));
                 
                 const char* modeText = (tempGame.gameMode == 0) ? "Che Do: Co Dien" : "Che Do: Booming Caro";
@@ -511,36 +492,29 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 DrawTextCustom(ui.mainFont, TextFormat("So Vong: %d", tempGame.roundCount), currentX + cardWidth - 200, mbY + miniBoardSize + 70, 30, Fade(WHITE, alpha));
 
             } else {
-                // Thẻ trống
-                const char* emptyText = "--- SLOT TRONG ---";
+                const char* emptyText = "SLOT TRONG";
                 int emptyW = MeasureTextCustomX(ui.mainFont, emptyText, 40);
                 DrawTextCustom(ui.mainFont, emptyText, currentX + cardWidth/2 - emptyW/2, startY + cardHeight/2, 40, Fade(silverColor, alpha));
             }
         }
     }
     else if (ui.currentScreen == 6) {
-
-        // ==========================================
-        // 2. VẼ GIAO DIỆN (Valhalla AAA Style)
-        // ==========================================
-        
-        // 1. Vẽ Ảnh nền Tuyệt đẹp và phủ một lớp đen mờ 50% để nổi chữ
+        // draw background 
         DrawTexturePro(ui.bgSaveLoad, { 0, 0, (float)ui.bgSaveLoad.width, (float)ui.bgSaveLoad.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.5f));
 
-        // Màu sắc đặc trưng của Valhalla
-        Color valhallaTeal = { 40, 200, 200, 255 };  // Xanh Cyan ngọc
-        Color textColor = { 230, 230, 230, 255 };    // Trắng hơi xám
-        Color mutedText = { 150, 150, 150, 255 };    // Xám mờ
+        // set color palette 
+        Color valhallaTeal = { 40, 200, 200, 255 };  // Cyan
+        Color textColor = { 230, 230, 230, 255 };    // light gray
+        Color mutedText = { 150, 150, 150, 255 };    // muted gray
 
-        // --- TIÊU ĐỀ BÊN TRÁI ---
+        // left panel with title and separator
         DrawTextCustom(ui.mainFont, "LUU TRO CHOI", 250, 120, 60, WHITE);
-        DrawLineEx({250, 190}, {1670, 190}, 2.0f, Fade(WHITE, 0.2f)); // Đường kẻ mảnh chia layout
+        DrawLineEx({250, 190}, {1670, 190}, 2.0f, Fade(WHITE, 0.2f)); 
 
-        // --- Ô NHẬP TÊN (Minimalist) ---
+        // cell for name input 
         DrawTextCustom(ui.mainFont, "Nhap ten ban luu:", 250, 230, 30, valhallaTeal);
         Rectangle inputBox = { 550, 220, 1120, 50 };
-        // Không vẽ hộp nữa, chỉ vẽ một đường kẻ gạch dưới (Underline)
         DrawLineEx({inputBox.x, inputBox.y + inputBox.height}, {inputBox.x + inputBox.width, inputBox.y + inputBox.height}, 1.0f, Fade(WHITE, 0.3f));
         DrawTextCustom(ui.mainFont, ui.nameInput, inputBox.x + 10, inputBox.y + 10, 35, WHITE);
         
@@ -549,7 +523,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawTextCustom(ui.mainFont, "_", inputBox.x + 10 + textW, inputBox.y + 10, 35, valhallaTeal);
         }
 
-        // --- DANH SÁCH SLOT (List không viền) ---
+        // slot list
         int startX = 250;
         int startY = 320;
         int slotWidth = 1420;
@@ -562,11 +536,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             GameState tempGame;
             bool hasData = PeekGameSlot(i, tempGame);
 
-            // Kẻ đường kẻ ngang mỏng ở ĐỈNH mỗi Slot
             DrawLineEx({(float)startX, (float)currentY}, {(float)(startX + slotWidth), (float)currentY}, 1.0f, Fade(WHITE, 0.15f));
 
             if (i == ui.saveSelection) {
-                // Hiệu ứng Hover: Nền sáng mờ và Vệt kẻ dọc (Vertical Highlight) đặc trưng AAA
                 DrawRectangleRec(slotRec, Fade(WHITE, 0.08f)); 
                 DrawRectangle(startX, currentY, 5, slotHeight, valhallaTeal); 
             }
@@ -580,7 +552,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 const char* detailText = TextFormat("Che Do: %s   |   Vong: %d", modeText, tempGame.roundCount);
                 DrawTextCustom(ui.mainFont, detailText, startX + 40, currentY + 65, 25, mutedText);
 
-                // Thời gian ép sang phải
+                //time
                 int dateW = MeasureTextCustomX(ui.mainFont, tempGame.saveTime, 25);
                 DrawTextCustom(ui.mainFont, tempGame.saveTime, startX + slotWidth - dateW - 20, currentY + 35, 25, (i == ui.saveSelection) ? valhallaTeal : mutedText);
             } else {
@@ -589,10 +561,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             }
         }
         
-        // Đường kẻ ngang cuối cùng chốt sổ danh sách
         DrawLineEx({(float)startX, (float)(startY + 4 * (slotHeight + gap))}, {(float)(startX + slotWidth), (float)(startY + 4 * (slotHeight + gap))}, 1.0f, Fade(WHITE, 0.15f));
 
-        // --- FOOTER CHỈ DẪN ---
+        //guide 
         const char* footerBtn = "Nhan [ENTER] de Luu      Nhan [ESC] de Quay lai";
         int footerW = MeasureTextCustomX(ui.mainFont, footerBtn, 25);
         DrawTextCustom(ui.mainFont, footerBtn, 1920 / 2 - footerW / 2, 950, 25, mutedText);
@@ -626,89 +597,71 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, "Nhan [ESC] de quay lai Menu.", 850, 800, 20, DARKGRAY);
     }
     else if (ui.currentScreen == 8) {
-        DrawTexturePro(ui.bgSaveLoad, { 0, 0, (float)ui.bgSaveLoad.width, (float)ui.bgSaveLoad.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
-        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.7f)); 
+        //background 
+        DrawTexturePro(ui.bgSelect, { 0, 0, (float)ui.bgSelect.width, (float)ui.bgSelect.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.2f)); 
 
         Color goldColor = { 253, 249, 0, 255 }; 
         Color silverColor = { 200, 200, 200, 255 };
-        Color darkSilver = { 100, 100, 100, 255 };
 
-        // Tiêu đề
-        const char* title = "TIEU SU CHIEN BINH";
-        int titleW = MeasureTextCustomX(ui.mainFont, title, 50);
-        DrawTextCustom(ui.mainFont, title, 1920 / 2 - titleW / 2, 80, 50, goldColor);
+        const char* title = "Lua chon nhan vat";
+        DrawTextCustom(ui.mainFont, title, 1920 / 2 - MeasureTextCustomX(ui.mainFont, title, 50) / 2, 60, 50, goldColor);
 
-        int pedestalY = 700;
-        DrawEllipseLines(1920/2 - 400, pedestalY, 200, 50, Fade(silverColor, 0.5f)); 
-        DrawEllipseLines(1920/2 + 400, pedestalY, 200, 50, Fade(silverColor, 0.5f)); 
+        // draw flipped hero preview on sides with lock effect if not selected yet
+        auto DrawPreviewHero = [&](int heroID, float x, float y, bool isFlipped, bool isLocked) {
+            CharAnim anim;
+            if (heroID == 0) anim = ui.charP1;
+            else if (heroID == 1) anim = ui.charP2;
+            else return; 
 
-        // Hàm helper vẽ Sprite CÓ HIỆU ỨNG CHUYỂN ĐỘNG (Cắt đúng Frame)
-        auto DrawBigSprite = [&](CharAnim charAnim, int x, int y) {
-            Rectangle source = { (float)charAnim.currentFrame * charAnim.frameWidth, 0.0f, (float)charAnim.frameWidth, (float)charAnim.frameHeight }; 
-            Rectangle dest = { (float)x - (charAnim.frameWidth*6)/2.0f, (float)y - charAnim.frameHeight*6 + 25, (float)charAnim.frameWidth * 6, (float)charAnim.frameHeight * 6 }; 
-            DrawTexturePro(charAnim.spriteSheet, source, dest, {0,0}, 0.0f, WHITE);
+            float drawScale = 8.0f;
+            Rectangle source = { (float)anim.currentFrame * anim.frameWidth, 0.0f, isFlipped ? -(float)anim.frameWidth : (float)anim.frameWidth, (float)anim.frameHeight }; 
+            Rectangle dest = { x - (anim.frameWidth * drawScale) / 2, y - (anim.frameHeight * drawScale), anim.frameWidth * drawScale, anim.frameHeight * drawScale };
+            DrawTexturePro(anim.spriteSheet, source, dest, {0,0}, 0.0f, isLocked ? WHITE : Fade(WHITE, 0.4f));
         };
 
-        // Hàm helper vẽ mũi tên Slider nhấp nháy
-        auto DrawSliderArrows = [&](int x, int y) {
-            if (((int)(GetTime() * 3) % 2) == 0) { // Nhấp nháy theo thời gian
-                DrawTextCustom(ui.mainFont, "<", x - 180, y - 180, 60, silverColor);
-                DrawTextCustom(ui.mainFont, ">", x + 150, y - 180, 60, silverColor);
-            }
-        };
-
-        // --- HIỂN THỊ P1 ---
-        if (ui.selectionPhase <= 1) {
-            if (ui.p1HeroSelection == 0) DrawBigSprite(ui.charP1, 1920/2 - 400, pedestalY);
-            else DrawBigSprite(ui.charP2, 1920/2 - 400, pedestalY);
-            
-            if (ui.selectionPhase == 0) DrawSliderArrows(1920/2 - 400, pedestalY); // Hiện mũi tên lúc chọn
-
-            const char* heroName = (ui.p1HeroSelection == 0) ? "Hiep Si Den" : "Kiem Khach Lua";
-            DrawTextCustom(ui.mainFont, heroName, 1920/2 - 400 - MeasureTextCustomX(ui.mainFont, heroName, 30)/2, pedestalY + 50, 30, silverColor);
-        } else {
-            if (ui.p1HeroSelection == 0) DrawBigSprite(ui.charP1, 1920/2 - 400, pedestalY);
-            else DrawBigSprite(ui.charP2, 1920/2 - 400, pedestalY);
-            DrawTextCustom(ui.mainFont, ui.p1NameInput, 1920/2 - 400 - MeasureTextCustomX(ui.mainFont, ui.p1NameInput, 35)/2, pedestalY + 50, 35, goldColor);
-        }
-
-        // --- HIỂN THỊ P2 ---
+        //p1
+        DrawPreviewHero(ui.p1HeroSelection, 400, 800, false, (ui.selectionPhase >= 1));
+        //p2
         if (ui.selectionPhase >= 2) {
-            if (ui.p2HeroSelection == 0) DrawBigSprite(ui.charP1, 1920/2 + 400, pedestalY);
-            else DrawBigSprite(ui.charP2, 1920/2 + 400, pedestalY);
-            
-            if (ui.selectionPhase == 2) DrawSliderArrows(1920/2 + 400, pedestalY); // Hiện mũi tên lúc chọn
-            
-            if (ui.selectionPhase == 2) {
-                const char* heroName = (ui.p2HeroSelection == 0) ? "Hiep Si Den" : "Kiem Khach Lua";
-                DrawTextCustom(ui.mainFont, heroName, 1920/2 + 400 - MeasureTextCustomX(ui.mainFont, heroName, 30)/2, pedestalY + 50, 30, silverColor);
-            } else {
-                DrawTextCustom(ui.mainFont, ui.p2NameInput, 1920/2 + 400 - MeasureTextCustomX(ui.mainFont, ui.p2NameInput, 35)/2, pedestalY + 50, 35, goldColor);
-            }
+            DrawPreviewHero(ui.p2HeroSelection, 1520, 800, true, (ui.selectionPhase >= 3));
         }
 
-        // --- BẢNG ĐIỀU KHIỂN ---
-        int boxY = 820;
-        DrawRectangle(0, boxY, 1920, 1080 - boxY, Fade(BLACK, 0.85f));
-        DrawLineEx({0, (float)boxY}, {1920, (float)boxY}, 2.0f, darkSilver);
+        // avatar selection area
+        int avatarSize = 120;
+        int gap = 30;
+        int totalWidth = (4 * avatarSize) + (3 * gap);
+        int startX = (1920 - totalWidth) / 2;
+        int startY = 820;
 
-        if (ui.selectionPhase == 0) {
-            DrawTextCustom(ui.mainFont, "LUOT NGUOI CHOI 1 (X) - CHON TUONG", 1920/2 - MeasureTextCustomX(ui.mainFont, "LUOT NGUOI CHOI 1 (X) - CHON TUONG", 35)/2, boxY + 40, 35, goldColor);
-            DrawTextCustom(ui.mainFont, "Dung [A]/[D] hoac [Trai]/[Phai] de xem. Nhan [ENTER] de Chot.", 1920/2 - MeasureTextCustomX(ui.mainFont, "Dung [A]/[D] hoac [Trai]/[Phai] de xem. Nhan [ENTER] de Chot.", 25)/2, boxY + 110, 25, silverColor);
+        for (int i = 0; i < 4; i++) {
+            Rectangle avtRec = { (float)startX + i * (avatarSize + gap), (float)startY, (float)avatarSize, (float)avatarSize };
+            
+            // avatar border
+            bool isCurrent = (ui.selectionPhase <= 1 && ui.p1HeroSelection == i) || (ui.selectionPhase >= 2 && ui.p2HeroSelection == i);
+            DrawRectangleLinesEx(avtRec, 2, isCurrent ? goldColor : silverColor);
+            if (isCurrent) DrawRectangleRec(avtRec, Fade(goldColor, 0.2f));
+
+            // avatar
+            if (i == 0) DrawTexturePro(ui.charP1.spriteSheet, {0, 0, (float)ui.charP1.frameWidth, (float)ui.charP1.frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
+            else if (i == 1) DrawTexturePro(ui.charP2.spriteSheet, {0, 0, (float)ui.charP2.frameWidth, (float)ui.charP2.frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
+            else DrawTextCustom(ui.mainFont, "?", avtRec.x + 45, avtRec.y + 35, 40, GRAY); // Slot Coming Soon
         }
-        else if (ui.selectionPhase == 1) {
-            DrawTextCustom(ui.mainFont, "LUOT NGUOI CHOI 1 (X) - NHAP TEN TUNG HOANG", 1920/2 - MeasureTextCustomX(ui.mainFont, "LUOT NGUOI CHOI 1 (X) - NHAP TEN TUNG HOANG", 35)/2, boxY + 40, 35, goldColor);
-            DrawTextCustom(ui.mainFont, ui.p1NameInput, 1920/2 - MeasureTextCustomX(ui.mainFont, ui.p1NameInput, 40)/2, boxY + 110, 40, WHITE);
-            if (((int)(GetTime() * 2) % 2) == 0) DrawTextCustom(ui.mainFont, "_", 1920/2 + MeasureTextCustomX(ui.mainFont, ui.p1NameInput, 40)/2 + 5, boxY + 110, 40, goldColor);
-        }
-        else if (ui.selectionPhase == 2) {
-             DrawTextCustom(ui.mainFont, "LUOT NGUOI CHOI 2 (O) - CHON TUONG", 1920/2 - MeasureTextCustomX(ui.mainFont, "LUOT NGUOI CHOI 2 (O) - CHON TUONG", 35)/2, boxY + 40, 35, goldColor);
-             DrawTextCustom(ui.mainFont, "Dung [A]/[D] hoac [Trai]/[Phai] de xem. Nhan [ENTER] de Chot.", 1920/2 - MeasureTextCustomX(ui.mainFont, "Dung [A]/[D] hoac [Trai]/[Phai] de xem. Nhan [ENTER] de Chot.", 25)/2, boxY + 110, 25, silverColor);
-        }
-        else if (ui.selectionPhase == 3) {
-            DrawTextCustom(ui.mainFont, "LUOT NGUOI CHOI 2 (O) - NHAP TEN TUNG HOANG", 1920/2 - MeasureTextCustomX(ui.mainFont, "LUOT NGUOI CHOI 2 (O) - NHAP TEN TUNG HOANG", 35)/2, boxY + 40, 35, goldColor);
-            DrawTextCustom(ui.mainFont, ui.p2NameInput, 1920/2 - MeasureTextCustomX(ui.mainFont, ui.p2NameInput, 40)/2, boxY + 110, 40, WHITE);
-            if (((int)(GetTime() * 2) % 2) == 0) DrawTextCustom(ui.mainFont, "_", 1920/2 + MeasureTextCustomX(ui.mainFont, ui.p2NameInput, 40)/2 + 5, boxY + 110, 40, goldColor);
+
+        //input for name entry during selection phases
+        if (ui.selectionPhase == 1 || ui.selectionPhase == 3) {
+            DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.5f)); 
+            const char* prompt = (ui.selectionPhase == 1) ? "PLAYER 1 - NHAP TEN" : "PLAYER 2 - NHAP TEN";
+            const char* input = (ui.selectionPhase == 1) ? ui.p1NameInput : ui.p2NameInput;
+            
+            int boxW = 800, boxH = 200;
+            Rectangle box = { (float)(1920/2 - boxW/2), (float)(1080/2 - boxH/2), (float)boxW, (float)boxH };
+            DrawRectangleRec(box, Fade(BLACK, 0.9f));
+            DrawRectangleLinesEx(box, 2, goldColor);
+
+            DrawTextCustom(ui.mainFont, prompt, box.x + 40, box.y + 40, 30, silverColor);
+            DrawTextCustom(ui.mainFont, input, box.x + 40, box.y + 110, 50, WHITE);
+            if (((int)(GetTime() * 2) % 2) == 0) DrawTextCustom(ui.mainFont, "_", box.x + 45 + MeasureTextCustomX(ui.mainFont, input, 50), box.y + 110, 50, goldColor);
         }
     }
 }

@@ -6,20 +6,17 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
     float dt = GetFrameTime();
 
-    // Chỉ animate phe đang có lượt, phe kia giữ frame 0
-    if (game.matchStatus == 0) {
-        CharAnim& active = game.isPlayer1Turn ? ui.charP1 : ui.charP2;
-        CharAnim& idle   = game.isPlayer1Turn ? ui.charP2 : ui.charP1;
-
-        active.frameTimer += dt;
-        if (active.frameTimer >= active.frameDuration) {
-            active.frameTimer = 0.0f;
-            active.currentFrame = (active.currentFrame + 1) % active.frameCount;
-        }
-
-        // Phe chờ: reset về frame 0
-        idle.currentFrame = 0;
-        idle.frameTimer   = 0.0f;
+    // just update animation frames for idle characters
+    ui.charP1.frameTimer += dt;
+    if (ui.charP1.frameTimer >= ui.charP1.frameDuration) {
+        ui.charP1.frameTimer = 0.0f;
+        ui.charP1.currentFrame = (ui.charP1.currentFrame + 1) % ui.charP1.frameCount;
+    }
+    
+    ui.charP2.frameTimer += dt;
+    if (ui.charP2.frameTimer >= ui.charP2.frameDuration) {
+        ui.charP2.frameTimer = 0.0f;
+        ui.charP2.currentFrame = (ui.charP2.currentFrame + 1) % ui.charP2.frameCount;
     }
 
     if (game.matchStatus == 0) { 
@@ -134,7 +131,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float cy = ui.cellStartY + game.cursorRow * ui.cellSize;
         DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
     }
-   // --- 1. THÔNG TIN VÁN ĐẤU (offsetY = 8.0f và 5.0f để đẩy chữ xuống cho khớp khung) ---
+   //match information (offsetY = 8.0f và 5.0f)
     DrawBadgeText(ui.mainFont, ui.titleBadge, "THONG TIN VAN DAU", 15, 402.3f, 84.7f, 48, WHITE, 0.5f);
 
     char roundText[30];
@@ -147,12 +144,12 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float guideX = 1920.0f / 2.0f - guideWidth / 2.0f; 
     DrawTextCustom(ui.mainFont, guide, guideX, 1000, guideSize, WHITE);
 
-    // --- 2. THÔNG TIN NGƯỜI CHƠI ---
+    // player badges
     int badgePWidth = 504;
     int badgePHeight = 109;
-    int nameFontSize = 55; // Giảm từ 72 xuống 55 để chữ không bị tràn viền
+    int nameFontSize = 55; 
 
-    // Player 1 (Bên Trái)
+    // Player 1
     float p1X = 31.2f; 
     float p1Y = 386.7f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
@@ -168,7 +165,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, TextFormat("Scan: %d", game.player1.scansLeft), p1X + 150, p1Y + 170, 30, ORANGE);
     }
 
-    // Player 2 (Bên Phải)
+    // Player 2
     float p2X = 1388.4f; 
     float p2Y = 386.7f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
@@ -185,27 +182,19 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     }
     float P1charW = 356.0f, P1charH = 356.0f;
     float P2charW = 356.0f, P2charH = 356.0f;
+    const CharAnim& p1Anim = (ui.p1HeroSelection == 0) ? ui.charP1 : ui.charP2;
+    const CharAnim& p2Anim = (ui.p2HeroSelection == 0) ? ui.charP1 : ui.charP2;
+    // Player 1 no flip, active if it's their turn and game is ongoing
+   bool p1Active = game.isPlayer1Turn && (game.matchStatus == 0);
+    DrawCharAnim(p1Anim, 135.0f, 640.0f, P1charW, P1charH, false, p1Active);
 
-    // Player 1 — không flip
-    bool p1Active = game.isPlayer1Turn && (game.matchStatus == 0);
-    DrawCharAnim(ui.charP1,
-                135.0f,
-                640.0f,
-                P1charW, P1charH,
-                false, p1Active);
-
-    // Player 2 — flip ngang
+    //Player 2 
     bool p2Active = !game.isPlayer1Turn && (game.matchStatus == 0);
-    DrawCharAnim(ui.charP2,
-                1467.0f,
-                640.0f,
-                P2charW, P2charH,
-                true, p2Active);
+    DrawCharAnim(p2Anim, 1467.0f, 640.0f, P2charW, P2charH, true, p2Active);
     if (game.matchStatus != 0) {
-        // 1. Làm mờ bàn cờ
         DrawRectangle((int)ui.cellStartX, (int)ui.cellStartY, BOARD_SIZE * (int)ui.cellSize, BOARD_SIZE * (int)ui.cellSize, Fade(WHITE, 0.7f));
         
-        // 2. Tự động đo độ dài chữ và Căn giữa thông báo Thắng/Thua
+        // additional info about the match result
         const char* winText = "";
         Color winColor = WHITE;
         if (game.matchStatus == 1) { winText = TextFormat("%s (X) THANG!", game.player1.name); winColor = RED; }
@@ -215,7 +204,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         int winWidth = MeasureTextCustomX(ui.mainFont, winText, 50);
         DrawTextCustom(ui.mainFont, winText, 960 - winWidth / 2, 470, 50, winColor);
 
-        // 3. Vẽ Khung 2 nút bấm
+        // draw buttons and guide text
         Rectangle btnPlayAgain = { 960 - 240, 550, 220, 50 };
         Rectangle btnMenu      = { 960 + 20,  550, 220, 50 };
 
@@ -228,7 +217,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawRectangleRec(btnMenu, colorMenu);
         DrawRectangleLinesEx(btnMenu, 3.0f, BLACK);
 
-        // 4. Tự động căn giữa chữ bên TRONG từng nút bấm
+        // auto-center text on buttons
         const char* txtPlay = "Choi Van Moi";
         const char* txtMenu = "Ve Menu";
         int wPlay = MeasureTextCustomX(ui.mainFont, txtPlay, 25);
@@ -237,7 +226,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, txtPlay, btnPlayAgain.x + (btnPlayAgain.width - wPlay) / 2, btnPlayAgain.y + 12, 25, BLACK);
         DrawTextCustom(ui.mainFont, txtMenu, btnMenu.x + (btnMenu.width - wMenu) / 2, btnMenu.y + 12, 25, BLACK);
 
-        // 5. Căn giữa dòng Hướng dẫn thao tác
+        // center guide text below buttons
         const char* guideEnd = "Dung [A]/[D] hoac Chuot de chon. [ENTER] de xac nhan.";
         int guideEndW = MeasureTextCustomX(ui.mainFont, guideEnd, 22);
         DrawTextCustom(ui.mainFont, guideEnd, 960 - guideEndW / 2, 620, 22, DARKGRAY);
