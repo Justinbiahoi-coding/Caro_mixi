@@ -338,15 +338,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         }
     } 
     else if (ui.currentScreen == 2) {
-        static float cloudOffset = 0;
-        static int direction = 1;
-
-        cloudOffset += direction * 60 * GetFrameTime();
-
-        DrawTexture(ui.bgSettings, -cloudOffset, 0, WHITE);
-        DrawTexture(ui.bgSettings, ui.bgSettings.width - cloudOffset, 0, WHITE);
-        if (cloudOffset >= ui.bgSettings.width) direction = -1;
-        if (cloudOffset <= 0) direction = 1;
+        DrawTexturePro(ui.bgSettings, { 0, 0, (float)ui.bgSettings.width, (float)ui.bgSettings.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
         int panelW = 700;
         int panelH = 550;
@@ -356,7 +348,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawRectangle(panelX, panelY, panelW, panelH, Fade(BLACK, 0.6f));
         DrawRectangleLines(panelX, panelY, panelW, panelH, WHITE);
         const char* title = "CONTROL SETTINGS";
-        int titleX = (1920 - MeasureTextCustomX(ui.mainFont, title, 40)) / 2;
+        int titleX = (1920 - MeasureTextCustomX(ui.mainFont, title, 80)) / 2;
         DrawTextCustom(ui.mainFont, title, titleX, panelY - 80, 80, WHITE);
 
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
