@@ -284,11 +284,15 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     // --- VẼ NHÂN VẬT ---
     const CharAnim& p1Anim = ui.isP1Attacking ? ui.heroAttack[ui.p1HeroSelection] : ui.heroIdle[ui.p1HeroSelection];
     bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
-    DrawCharAnim(p1Anim, 135.0f, 640.0f, 356.0f, 356.0f, false, p1Active);
+    Vector2 p1Size = ui.heroDrawSize[ui.p1HeroSelection];
+    Vector2 p1Offset = ui.heroDrawOffset[ui.p1HeroSelection];
+    DrawCharAnim(p1Anim, 135.0f + p1Offset.x, 640.0f + p1Offset.y, p1Size.x, p1Size.y, false, p1Active); //size-char
 
     const CharAnim& p2Anim = ui.isP2Attacking ? ui.heroAttack[ui.p2HeroSelection] : ui.heroIdle[ui.p2HeroSelection];
     bool p2Active = (!game.isPlayer1Turn && game.matchStatus == 0) || ui.isP2Attacking;
-    DrawCharAnim(p2Anim, 1467.0f, 640.0f, 356.0f, 356.0f, true, p2Active);
+    Vector2 p2Size = ui.heroDrawSize[ui.p2HeroSelection];
+    Vector2 p2Offset = ui.heroDrawOffset[ui.p2HeroSelection];
+    DrawCharAnim(p2Anim, 1467.0f + p2Offset.x, 640.0f + p2Offset.y, p2Size.x, p2Size.y, true, p2Active); //size-char
 
     // VẼ MÀN HÌNH END GAME
     if (game.matchStatus != 0) {

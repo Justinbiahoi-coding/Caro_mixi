@@ -71,6 +71,8 @@ struct UIState {
 
     CharAnim heroIdle[4];     // Idle animations for 4 heroes
     CharAnim heroAttack[4];   // Attack animations for 4 heroes
+    Vector2 heroDrawSize[4];  // Shared size for each hero (idle + attack_s1) //size-char
+    Vector2 heroDrawOffset[4]; // Position adjustment for each hero
     // Legacy support (charP1 and charP2 now point to heroIdle[0] and heroIdle[1])
     CharAnim& charP1 = heroIdle[0]; 
     CharAnim& charP2 = heroIdle[1]; 
