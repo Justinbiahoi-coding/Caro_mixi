@@ -1,7 +1,8 @@
 #ifndef GUI_H
 #define GUI_H
 #define _CRT_SECURE_NO_WARNINGS
-#include "Library.h"
+#include <raylib.h>
+#include "DataStruct.h"
 
 struct CharAnim {
     Texture2D spriteSheet;
@@ -32,6 +33,7 @@ struct UIState {
     char p2NameInput[16];
     int p1LetterCount;
     int p2LetterCount;
+    
     int activeInputField; 
     
     Texture2D boardFrame;
@@ -41,11 +43,17 @@ struct UIState {
     Texture2D playerBadge;
     Texture2D roundBadge; 
     Texture2D titleBadge;
+
+    Texture2D uiBase;
+    Texture2D uiHp;
+    Texture2D uiRadar;
+    
     float cellSize;       
     float cellStartX;     
     float cellStartY;     
     Rectangle boardFrameRec;
-
+    Texture2D cursorNormal; 
+    Texture2D cursorClick;  
     Texture2D bgMenu;
     Texture2D btnNewGame;
     Texture2D btnLoadGame;
@@ -63,7 +71,10 @@ struct UIState {
 
     CharAnim charP1; 
     CharAnim charP2; 
-
+    CharAnim atkP1;       
+    CharAnim atkP2;       
+    bool isP1Attacking;   
+    bool isP2Attacking;
     Music bgMusic;
     float musicVolume = 0.8f;
     bool musicEnabled;

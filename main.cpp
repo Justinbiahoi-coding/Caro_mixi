@@ -1,6 +1,4 @@
 #include "Library.h"
-#include "LogicControl.h"
-#include "GUI.h"
 
 int main() {
     //make sure the window is resizable and has VSync enabled for smoother animation

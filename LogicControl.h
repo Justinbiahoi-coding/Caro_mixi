@@ -1,11 +1,11 @@
 #ifndef LOGIC_CONTROL_H
 #define LOGIC_CONTROL_H
 
-#include "DataStruct.h"
-#include <stdio.h>
+#include "Library.h"
 
 void InitGame(GameState& game, int mode);
 bool MakeMove(GameState& game, int row, int col);
+bool ScanMine(GameState& game, int centerRow, int centerCol);
 int CheckWin(GameState& game, int lastRow, int lastCol);
 void ResetRound(GameState& game);
 //save game
