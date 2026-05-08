@@ -613,8 +613,10 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         // draw flipped hero preview on sides with lock effect if not selected yet
         auto DrawPreviewHero = [&](int heroID, float x, float y, bool isFlipped, bool isLocked) {
             CharAnim anim;
-            if (heroID == 0) anim = ui.charP1;
-            else if (heroID == 1) anim = ui.charP2;
+            if (heroID == 0) anim = ui.heroIdle[0];
+            else if (heroID == 1) anim = ui.heroIdle[1];
+            else if (heroID == 2) anim = ui.heroIdle[2];
+            else if (heroID == 3) anim = ui.heroIdle[3];
             else return; 
 
             float drawScale = 8.0f;
@@ -645,10 +647,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawRectangleLinesEx(avtRec, 2, isCurrent ? goldColor : silverColor);
             if (isCurrent) DrawRectangleRec(avtRec, Fade(goldColor, 0.2f));
 
-            // avatar
-            if (i == 0) DrawTexturePro(ui.charP1.spriteSheet, {0, 0, (float)ui.charP1.frameWidth, (float)ui.charP1.frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
-            else if (i == 1) DrawTexturePro(ui.charP2.spriteSheet, {0, 0, (float)ui.charP2.frameWidth, (float)ui.charP2.frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
-            else DrawTextCustom(ui.mainFont, "?", avtRec.x + 45, avtRec.y + 35, 40, GRAY); // Slot Coming Soon
+            // avatar - display all 4 heroes
+            if (i == 0) DrawTexturePro(ui.heroIdle[0].spriteSheet, {0, 0, (float)ui.heroIdle[0].frameWidth, (float)ui.heroIdle[0].frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
+            else if (i == 1) DrawTexturePro(ui.heroIdle[1].spriteSheet, {0, 0, (float)ui.heroIdle[1].frameWidth, (float)ui.heroIdle[1].frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
+            else if (i == 2) DrawTexturePro(ui.heroIdle[2].spriteSheet, {0, 0, (float)ui.heroIdle[2].frameWidth, (float)ui.heroIdle[2].frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
+            else if (i == 3) DrawTexturePro(ui.heroIdle[3].spriteSheet, {0, 0, (float)ui.heroIdle[3].frameWidth, (float)ui.heroIdle[3].frameHeight}, avtRec, {0,0}, 0.0f, WHITE);
         }
 
         //input for name entry during selection phases

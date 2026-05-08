@@ -69,10 +69,13 @@ struct UIState {
 
     Font mainFont;
 
-    CharAnim charP1; 
-    CharAnim charP2; 
-    CharAnim atkP1;       
-    CharAnim atkP2;       
+    CharAnim heroIdle[4];     // Idle animations for 4 heroes
+    CharAnim heroAttack[4];   // Attack animations for 4 heroes
+    // Legacy support (charP1 and charP2 now point to heroIdle[0] and heroIdle[1])
+    CharAnim& charP1 = heroIdle[0]; 
+    CharAnim& charP2 = heroIdle[1]; 
+    CharAnim& atkP1 = heroAttack[0];       
+    CharAnim& atkP2 = heroAttack[1];       
     bool isP1Attacking;   
     bool isP2Attacking;
     Music bgMusic;

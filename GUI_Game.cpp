@@ -6,7 +6,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
 
     if (ui.isP1Attacking) {
-        CharAnim& atkAnim = (ui.p1HeroSelection == 0) ? ui.atkP1 : ui.atkP2;
+        CharAnim& atkAnim = ui.heroAttack[ui.p1HeroSelection];
         atkAnim.frameTimer += dt;
         if (atkAnim.frameTimer >= atkAnim.frameDuration) {
             atkAnim.frameTimer = 0.0f;
@@ -17,15 +17,16 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             }
         }
     } else {
-        ui.charP1.frameTimer += dt;
-        if (ui.charP1.frameTimer >= ui.charP1.frameDuration) {
-            ui.charP1.frameTimer = 0.0f;
-            ui.charP1.currentFrame = (ui.charP1.currentFrame + 1) % ui.charP1.frameCount;
+        CharAnim& idleAnim = ui.heroIdle[ui.p1HeroSelection];
+        idleAnim.frameTimer += dt;
+        if (idleAnim.frameTimer >= idleAnim.frameDuration) {
+            idleAnim.frameTimer = 0.0f;
+            idleAnim.currentFrame = (idleAnim.currentFrame + 1) % idleAnim.frameCount;
         }
     }
     
     if (ui.isP2Attacking) {
-        CharAnim& atkAnim = (ui.p2HeroSelection == 0) ? ui.atkP1 : ui.atkP2;
+        CharAnim& atkAnim = ui.heroAttack[ui.p2HeroSelection];
         atkAnim.frameTimer += dt;
         if (atkAnim.frameTimer >= atkAnim.frameDuration) {
             atkAnim.frameTimer = 0.0f;
@@ -36,10 +37,11 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             }
         }
     } else {
-        ui.charP2.frameTimer += dt;
-        if (ui.charP2.frameTimer >= ui.charP2.frameDuration) {
-            ui.charP2.frameTimer = 0.0f;
-            ui.charP2.currentFrame = (ui.charP2.currentFrame + 1) % ui.charP2.frameCount;
+        CharAnim& idleAnim = ui.heroIdle[ui.p2HeroSelection];
+        idleAnim.frameTimer += dt;
+        if (idleAnim.frameTimer >= idleAnim.frameDuration) {
+            idleAnim.frameTimer = 0.0f;
+            idleAnim.currentFrame = (idleAnim.currentFrame + 1) % idleAnim.frameCount;
         }
     }
 
@@ -89,12 +91,12 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             if (moveMade) {
                 if (wasP1) {
                     ui.isP1Attacking = true;
-                    if (ui.p1HeroSelection == 0) { ui.atkP1.currentFrame = 0; ui.atkP1.frameTimer = 0.0f; }
-                    else { ui.atkP2.currentFrame = 0; ui.atkP2.frameTimer = 0.0f; }
+                    ui.heroAttack[ui.p1HeroSelection].currentFrame = 0; 
+                    ui.heroAttack[ui.p1HeroSelection].frameTimer = 0.0f;
                 } else {
                     ui.isP2Attacking = true;
-                    if (ui.p2HeroSelection == 0) { ui.atkP1.currentFrame = 0; ui.atkP1.frameTimer = 0.0f; }
-                    else { ui.atkP2.currentFrame = 0; ui.atkP2.frameTimer = 0.0f; }
+                    ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
+                    ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
                 }
             }
         }
@@ -280,11 +282,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         }
     }
     // --- VẼ NHÂN VẬT ---
-    const CharAnim& p1Anim = ui.isP1Attacking ? ((ui.p1HeroSelection == 0) ? ui.atkP1 : ui.atkP2) : ((ui.p1HeroSelection == 0) ? ui.charP1 : ui.charP2);
+    const CharAnim& p1Anim = ui.isP1Attacking ? ui.heroAttack[ui.p1HeroSelection] : ui.heroIdle[ui.p1HeroSelection];
     bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
     DrawCharAnim(p1Anim, 135.0f, 640.0f, 356.0f, 356.0f, false, p1Active);
 
-    const CharAnim& p2Anim = ui.isP2Attacking ? ((ui.p2HeroSelection == 0) ? ui.atkP1 : ui.atkP2) : ((ui.p2HeroSelection == 0) ? ui.charP1 : ui.charP2);
+    const CharAnim& p2Anim = ui.isP2Attacking ? ui.heroAttack[ui.p2HeroSelection] : ui.heroIdle[ui.p2HeroSelection];
     bool p2Active = (!game.isPlayer1Turn && game.matchStatus == 0) || ui.isP2Attacking;
     DrawCharAnim(p2Anim, 1467.0f, 640.0f, 356.0f, 356.0f, true, p2Active);
 

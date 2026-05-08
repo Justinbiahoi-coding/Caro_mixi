@@ -50,10 +50,23 @@ void InitGUI(UIState& ui) {
 
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
 
-    ui.charP1 = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.12f);
-    ui.atkP1 = LoadCharAnim("assets/Character/black_knight/attack.png", 22, 0.03f);
-    ui.atkP2 = LoadCharAnim("assets/Character/fire_knight/attack.png", 6, 0.08f);
-    ui.charP2 = LoadCharAnim("assets/Character/fire_knight/idle.png", 4, 0.12f);
+    // Load hero animations for all 4 heroes
+    // Hero 0: black_knight
+    ui.heroIdle[0] = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.12f);
+    ui.heroAttack[0] = LoadCharAnim("assets/Character/black_knight/attack_s1.png", 12, 0.03f);
+    
+    // Hero 1: fire_knight
+    ui.heroIdle[1] = LoadCharAnim("assets/Character/fire_knight/idle.png", 8, 0.12f);
+    ui.heroAttack[1] = LoadCharAnim("assets/Character/fire_knight/attack_s1.png", 11, 0.08f);
+    
+    // Hero 2: green_archer
+    ui.heroIdle[2] = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.12f);
+    ui.heroAttack[2] = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.05f);
+    
+    // Hero 3: wind_assassin
+    ui.heroIdle[3] = LoadCharAnim("assets/Character/wind_assassin/idle.png", 8, 0.12f);
+    ui.heroAttack[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8, 0.04f);
+    
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
     ui.cellSize = 50.0f; 
@@ -117,10 +130,13 @@ void UnloadGUI(UIState& ui) {
     
     UnloadTexture(ui.bgGame);
     UnloadFont(ui.mainFont);
-    UnloadCharAnim(ui.charP1);
-    UnloadCharAnim(ui.charP2);
-    UnloadCharAnim(ui.atkP1);
-    UnloadCharAnim(ui.atkP2);
+    
+    // Unload all hero animations
+    for (int i = 0; i < 4; i++) {
+        UnloadCharAnim(ui.heroIdle[i]);
+        UnloadCharAnim(ui.heroAttack[i]);
+    }
+    
     UnloadMusicStream(ui.bgMusic);
     CloseAudioDevice();
 }
