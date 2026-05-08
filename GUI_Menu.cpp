@@ -399,7 +399,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawText(TextFormat("%d%%", (int)(ui.musicVolume * 100)), barX + barWidth + 30, barY - 15, 26, WHITE);
     }
     else if (ui.currentScreen == 3) {
-        DrawTextCustom(ui.mainFont, "Credits: Thien", 100, 200, 40, DARKBLUE);
+        DrawTextCustom(ui.mainFont, "Credits: Thien & Thien ", 100, 200, 40, DARKBLUE);
         DrawTextCustom(ui.mainFont, "Nhan [M] de quay lai Menu", 250, 250, 20, GRAY);
     }
    else if (ui.currentScreen == 5) {

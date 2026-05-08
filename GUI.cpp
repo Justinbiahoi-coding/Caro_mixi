@@ -20,6 +20,9 @@ void InitGUI(UIState& ui) {
     ui.p2LetterCount = 0;
     ui.activeInputField = 0;
     
+    HideCursor(); 
+    ui.cursorNormal = LoadTexture("assets/cursor/GothicCursor-1.png.png");
+    ui.cursorClick  = LoadTexture("assets/cursor/GloveCursor-1.png.png");
     ui.bgMenu      = LoadTexture("assets/menu/background.png");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
@@ -40,11 +43,19 @@ void InitGUI(UIState& ui) {
     ui.roundBadge = LoadTexture("assets/board/round_badge.png");
     ui.titleBadge = LoadTexture("assets/board/title_badge.png");
 
+    
+    ui.uiBase  = LoadTexture("assets/board/ui_base.png");
+    ui.uiHp    = LoadTexture("assets/board/ui_hp.png");
+    ui.uiRadar = LoadTexture("assets/board/ui_radar.png");
+
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
 
     ui.charP1 = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.12f);
+    ui.atkP1 = LoadCharAnim("assets/Character/black_knight/attack.png", 22, 0.03f);
+    ui.atkP2 = LoadCharAnim("assets/Character/fire_knight/attack.png", 6, 0.08f);
     ui.charP2 = LoadCharAnim("assets/Character/fire_knight/idle.png", 4, 0.12f);
-
+    ui.isP1Attacking = false;
+    ui.isP2Attacking = false;
     ui.cellSize = 50.0f; 
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
@@ -81,6 +92,8 @@ void InitGUI(UIState& ui) {
 }
 
 void UnloadGUI(UIState& ui) {
+    UnloadTexture(ui.cursorNormal);
+    UnloadTexture(ui.cursorClick);
     UnloadTexture(ui.bgMenu);
     UnloadTexture(ui.btnNewGame);
     UnloadTexture(ui.btnLoadGame);
@@ -97,10 +110,17 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.playerBadge);
     UnloadTexture(ui.roundBadge);
     UnloadTexture(ui.titleBadge);
+
+    UnloadTexture(ui.uiBase);
+    UnloadTexture(ui.uiHp);
+    UnloadTexture(ui.uiRadar);
+    
     UnloadTexture(ui.bgGame);
     UnloadFont(ui.mainFont);
     UnloadCharAnim(ui.charP1);
     UnloadCharAnim(ui.charP2);
+    UnloadCharAnim(ui.atkP1);
+    UnloadCharAnim(ui.atkP2);
     UnloadMusicStream(ui.bgMusic);
     CloseAudioDevice();
 }
@@ -121,4 +141,9 @@ void DrawGUI(const GameState& game, const UIState& ui) {
     } else {
         DrawMenuScreens(game, ui);
     }
+    Vector2 mouse = GetMousePosition();
+    
+    Texture2D activeCursor = IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? ui.cursorClick : ui.cursorNormal;
+    float cursorScale = 0.2f;
+    DrawTextureEx(activeCursor, mouse, 0.0f, cursorScale, WHITE);
 }
