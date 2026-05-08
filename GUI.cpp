@@ -20,7 +20,7 @@ void InitGUI(UIState& ui) {
     ui.p2LetterCount = 0;
     ui.activeInputField = 0;
     
-    ui.bgMenu      = LoadTexture("assets/menu/background.jpg");
+    ui.bgMenu      = LoadTexture("assets/menu/background.png");
     ui.btnNewGame  = LoadTexture("assets/menu/NewGame.png");
     ui.btnLoadGame = LoadTexture("assets/menu/LoadGame.png");
     ui.btnSettings = LoadTexture("assets/menu/Settings.png");
@@ -28,9 +28,10 @@ void InitGUI(UIState& ui) {
     ui.btnCredits  = LoadTexture("assets/menu/Credits.png");
     ui.btnExit     = LoadTexture("assets/menu/Exit.png");
     ui.bgSettings  = LoadTexture("assets/menu/bgSettings.png");
-    
+    ui.bgSaveLoad  = LoadTexture("assets/menu/bg_saveload.png");
+    ui.bgLoadGame = LoadTexture("assets/menu/loadbg.png");
     ui.bgGame      = LoadTexture("assets/board/bg_game.png"); 
-    
+    ui.bgSelect = LoadTexture("assets/menu/bg_select.png");
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.pieceX     = LoadTexture("assets/board/piece_x.png");
@@ -87,6 +88,8 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.btnHelp);
     UnloadTexture(ui.btnCredits);
     UnloadTexture(ui.btnExit);
+    UnloadTexture(ui.bgSaveLoad);
+    UnloadTexture(ui.bgLoadGame);
     UnloadTexture(ui.boardFrame);
     UnloadTexture(ui.cell);
     UnloadTexture(ui.pieceX);
@@ -103,6 +106,7 @@ void UnloadGUI(UIState& ui) {
 }
 
 void UpdateGUI(GameState& game, UIState& ui) {
+    UpdateMusicStream(ui.bgMusic);
     if (ui.currentScreen == 1) {
         UpdateGUIGame(game, ui);
     } else {
