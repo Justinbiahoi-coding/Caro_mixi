@@ -16,6 +16,7 @@ struct CharAnim {
 struct UIState {
     int currentScreen; 
     int menuSelection;
+    int modeSelection;
     int settingSelection;
     int loadSelection;
     int saveSelection;

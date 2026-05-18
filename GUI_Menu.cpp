@@ -41,7 +41,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         if (confirmSelection) {
             switch (ui.menuSelection) {
                 case 0: { 
-                    ui.currentScreen = 8; 
+                    ui.currentScreen = 9; 
+                    ui.modeSelection = 0;
                     ui.p1HeroSelection = 0;
                     ui.p2HeroSelection = 0; 
                     ui.selectionPhase = 0; 
@@ -280,7 +281,29 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             // p2 pick hero
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p2HeroSelection = (ui.p2HeroSelection + 1) % MAX_HEROES;
-            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 3; 
+            if (IsKeyPressed(KEY_ENTER)) {
+
+                if (game.isVsBot) {
+
+                    int savedInput = game.inputType;
+
+                    InitGame(game, 0);
+
+                    game.inputType = savedInput;
+
+                    if (ui.p1LetterCount > 0)
+                        strcpy(game.player1.name, ui.p1NameInput);
+                    else
+                        strcpy(game.player1.name, "Player 1");
+
+                    strcpy(game.player2.name, "BOT");
+
+                    ui.currentScreen = 1;
+                }
+                else {
+                    ui.selectionPhase = 3;
+                }
+            }
         }
         else if (ui.selectionPhase == 3) {
             // p2 set name 
@@ -311,6 +334,29 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             } 
         }
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
+    }
+    else if (ui.currentScreen == 9) {
+
+        if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP))
+            ui.modeSelection = 0;
+
+        if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN))
+            ui.modeSelection = 1;
+
+        if (IsKeyPressed(KEY_ENTER)) {
+
+            if (ui.modeSelection == 0) {
+                game.isVsBot = false;
+            }
+            else {
+                game.isVsBot = true;
+            }
+
+            ui.currentScreen = 8;
+        }
+
+        if (IsKeyPressed(KEY_ESCAPE))
+            ui.currentScreen = 0;
     }
 }
 
@@ -666,5 +712,22 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawTextCustom(ui.mainFont, input, box.x + 40, box.y + 110, 50, WHITE);
             if (((int)(GetTime() * 2) % 2) == 0) DrawTextCustom(ui.mainFont, "_", box.x + 45 + MeasureTextCustomX(ui.mainFont, input, 50), box.y + 110, 50, goldColor);
         }
+    }
+    else if (ui.currentScreen == 9) {
+
+        DrawTexturePro(ui.bgMenu,
+            { 0,0,(float)ui.bgMenu.width,(float)ui.bgMenu.height },
+            { 0,0,1920,1080 },
+            { 0,0 },
+            0,
+            WHITE);
+
+        DrawText("CHON CHE DO", 760, 250, 60, WHITE);
+
+        Color c1 = (ui.modeSelection == 0) ? YELLOW : WHITE;
+        Color c2 = (ui.modeSelection == 1) ? YELLOW : WHITE;
+
+        DrawText("Player vs Player", 700, 450, 40, c1);
+        DrawText("Player vs Bot", 700, 550, 40, c2);
     }
 }

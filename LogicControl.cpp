@@ -1,7 +1,7 @@
 #include "LogicControl.h"
-#include "LogicControl.h"
 #include <string.h> 
 #include <time.h>   
+
 void InitGame(GameState& game, int mode) {
     // Reset the chessboard matrix to 0 (no one has played yet)
     for (int i = 0; i < BOARD_SIZE; i++) {
@@ -19,6 +19,10 @@ void InitGame(GameState& game, int mode) {
     game.moveCount = 0;
     game.gameMode = mode;
     game.matchStatus = 0; // 0 mean is playing
+
+    // Initialize bot 
+    game.isVsBot = true;
+    game.botPlayer = 2;
     
     // Initialize health and scan turns for 2 players (for Booming mode)
     game.player1.hp = 3;
@@ -145,6 +149,94 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
     }
     return 0;
 }
+
+int CountDirection(GameState& game, int row, int col, int dx, int dy, int player)
+{
+    int count = 0;
+
+    int r = row + dx;
+    int c = col + dy;
+
+    while (r >= 0 && r < BOARD_SIZE &&
+        c >= 0 && c < BOARD_SIZE &&
+        game.board[r][c].c == player)
+    {
+        count++;
+        r += dx;
+        c += dy;
+    }
+
+    return count;
+}
+
+int EvaluatePosition(GameState& game, int row, int col)
+{
+    int AttackScore[6] = { 0, 2, 18, 162, 1458, 13112 };
+    int DefenseScore[6] = { 0, 1, 9, 81, 729, 6561 };
+
+    int totalScore = 0;
+
+    int directions[4][2] =
+    {
+        {0,1},
+        {1,0},
+        {1,1},
+        {1,-1}
+    };
+
+    for (int i = 0; i < 4; i++)
+    {
+        int dx = directions[i][0];
+        int dy = directions[i][1];
+
+        // ===== ATTACK =====
+        int attackCount =
+            CountDirection(game, row, col, dx, dy, 2) +
+            CountDirection(game, row, col, -dx, -dy, 2);
+
+        totalScore += AttackScore[attackCount];
+
+        // ===== DEFENSE =====
+        int defenseCount =
+            CountDirection(game, row, col, dx, dy, 1) +
+            CountDirection(game, row, col, -dx, -dy, 1);
+
+        totalScore += DefenseScore[defenseCount];
+    }
+
+    return totalScore;
+}
+
+void BotMove(GameState& game)
+{
+    int bestScore = -1;
+    int bestRow = -1;
+    int bestCol = -1;
+
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            if (game.board[i][j].c == 0)
+            {
+                int score = EvaluatePosition(game, i, j);
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestRow = i;
+                    bestCol = j;
+                }
+            }
+        }
+    }
+
+    if (bestRow != -1)
+    {
+        MakeMove(game, bestRow, bestCol);
+    }
+}
+
 // slot save 
 
 bool SaveGameSlot(GameState& game, int slot, const char* customName) {

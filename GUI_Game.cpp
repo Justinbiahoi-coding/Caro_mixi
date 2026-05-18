@@ -1,6 +1,5 @@
 #include "GUI_Game.h"
 #include "LogicControl.h"
-
 void UpdateGUIGame(GameState& game, UIState& ui) {
 
     Vector2 mouse = GetMousePosition();
@@ -30,7 +29,15 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     
                     int col = (mouse.x - ui.cellStartX) / ui.cellSize;
                     int row = (mouse.y - ui.cellStartY) / ui.cellSize;
-                    MakeMove(game, row, col);
+                    if (MakeMove(game, row, col))
+                    {
+                        if (game.isVsBot &&
+                            !game.isPlayer1Turn &&
+                            game.matchStatus == 0)
+                        {
+                            BotMove(game);
+                        }
+                    }
                 }
             }
         } else if (game.inputType == 1) {
@@ -38,7 +45,18 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             if (IsKeyPressed(KEY_S) && game.cursorRow < BOARD_SIZE - 1) game.cursorRow++;
             if (IsKeyPressed(KEY_A) && game.cursorCol > 0) game.cursorCol--;
             if (IsKeyPressed(KEY_D) && game.cursorCol < BOARD_SIZE - 1) game.cursorCol++;
-            if (IsKeyPressed(KEY_ENTER)) MakeMove(game, game.cursorRow, game.cursorCol);
+            if (IsKeyPressed(KEY_ENTER))
+            {
+                if (MakeMove(game, game.cursorRow, game.cursorCol))
+                {
+                    if (game.isVsBot &&
+                        !game.isPlayer1Turn &&
+                        game.matchStatus == 0)
+                    {
+                        BotMove(game);
+                    }
+                }
+            }
         }
     } 
     else { 
