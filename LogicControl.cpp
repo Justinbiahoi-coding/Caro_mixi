@@ -21,7 +21,6 @@ void InitGame(GameState& game, int mode) {
     game.matchStatus = 0; // 0 mean is playing
 
     // Initialize bot 
-    game.isVsBot = true;
     game.botPlayer = 2;
     
     // Initialize health and scan turns for 2 players (for Booming mode)
