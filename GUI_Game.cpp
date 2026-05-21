@@ -189,6 +189,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     DrawTextCustom(ui.mainFont, guide, 1920.0f / 2.0f - guideWidth / 2.0f, 1000, guideSize, WHITE);
 
     // VẼ TÊN PLAYER 1 & 2
+    // VẼ TÊN PLAYER 1 & 2
     int badgePWidth = 504, badgePHeight = 109, nameFontSize = 55; 
     
     float p1X = 31.2f, p1Y = 386.7f;
@@ -196,89 +197,13 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     int p1NameWidth = MeasureTextCustomX(ui.mainFont, game.player1.name, nameFontSize);
     int p1NameHeight = MeasureTextCustomY(ui.mainFont, game.player1.name, nameFontSize);
     DrawTextCustom(ui.mainFont, game.player1.name, p1X + (badgePWidth - p1NameWidth) / 2.0f, p1Y + (badgePHeight - p1NameHeight) / 2.0f - 5.0f, nameFontSize, WHITE);
-   // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 1 ---
-   if (game.gameMode == 1) {
-        float uiScale = 0.35f; // Chỉnh độ to nhỏ của toàn bộ UI ở đây
-        float uiX_P1 = p1X - 10.0f; 
-        float uiY_P1 = p1Y + 110.0f;
 
-        // 1. Vẽ Khung sắt Base
-        DrawTextureEx(ui.uiBase, { uiX_P1, uiY_P1 }, 0.0f, uiScale, WHITE);
-
-        // ==========================================
-        // 🛠️ TỌA ĐỘ VÀ KÍCH THƯỚC ĐÃ ĐƯỢC ÉP TỶ LỆ CHUẨN
-        // Dựa vào ảnh gốc: Khe nhét bắt đầu ở vị trí ~37.5% chiều ngang
-        // ==========================================
-        // Tính toán khe nhét MÁU
-        float hp_X = uiX_P1 + (ui.uiBase.width * 0.375f * uiScale); // Lùi sang phải 37.5%
-        float hp_Y = uiY_P1 + (ui.uiBase.height * 0.18f * uiScale);  // Lùi xuống 18%
-        float hp_W = ui.uiBase.width * 0.585f * uiScale;            // Độ rộng khe máu
-        float hp_H = ui.uiBase.height * 0.23f * uiScale;             // Độ cao khe máu
-
-        // Tính toán khe nhét RADAR
-        float radar_X = uiX_P1 + (ui.uiBase.width * 0.375f * uiScale);
-        float radar_Y = uiY_P1 + (ui.uiBase.height * 0.58f * uiScale); // Lùi xuống sâu hơn (58%)
-        float radar_W = ui.uiBase.width * 0.38f * uiScale;            // Độ rộng khe radar (ngắn hơn)
-        float radar_H = ui.uiBase.height * 0.22f * uiScale;
-        // ==========================================
-
-        // 2. Vẽ Máu P1
-        float hpPercentP1 = (float)game.player1.hp / 2.0f;
-        if (hpPercentP1 > 0) {
-            Rectangle hpSrc = { 0, 0, ui.uiHp.width * hpPercentP1, (float)ui.uiHp.height };
-            // Tự động kéo dãn chiều width/height cho khớp với khe hp_W và hp_H
-            Rectangle hpDest = { hp_X, hp_Y, hp_W * hpPercentP1, hp_H };
-            DrawTexturePro(ui.uiHp, hpSrc, hpDest, {0, 0}, 0.0f, WHITE);
-        }
-
-        // 3. Vẽ Radar P1
-        float scanPercentP1 = (float)game.player1.scansLeft / 2.0f;
-        if (scanPercentP1 > 0) {
-            Rectangle scanSrc = { 0, 0, ui.uiRadar.width * scanPercentP1, (float)ui.uiRadar.height };
-            Rectangle scanDest = { radar_X, radar_Y, radar_W * scanPercentP1, radar_H };
-            DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
-        }
-    }
     float p2X = 1388.4f, p2Y = 386.7f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     int p2NameWidth = MeasureTextCustomX(ui.mainFont, game.player2.name, nameFontSize);
     int p2NameHeight = MeasureTextCustomY(ui.mainFont, game.player2.name, nameFontSize);
     DrawTextCustom(ui.mainFont, game.player2.name, p2X + (badgePWidth - p2NameWidth) / 2.0f, p2Y + (badgePHeight - p2NameHeight) / 2.0f - 5.0f, nameFontSize, WHITE);
-    // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 2 ---
-    if (game.gameMode == 1) {
-        float uiScale = 0.35f; 
-        float uiX_P2 = p2X - 10.0f; 
-        float uiY_P2 = p2Y + 110.0f;
 
-        DrawTextureEx(ui.uiBase, { uiX_P2, uiY_P2 }, 0.0f, uiScale, WHITE);
-
-        // Dùng chung tỷ lệ như Player 1
-        float hp_X = uiX_P2 + (ui.uiBase.width * 0.375f * uiScale);
-        float hp_Y = uiY_P2 + (ui.uiBase.height * 0.18f * uiScale);
-        float hp_W = ui.uiBase.width * 0.585f * uiScale;
-        float hp_H = ui.uiBase.height * 0.23f * uiScale;
-
-        float radar_X = uiX_P2 + (ui.uiBase.width * 0.375f * uiScale);
-        float radar_Y = uiY_P2 + (ui.uiBase.height * 0.58f * uiScale);
-        float radar_W = ui.uiBase.width * 0.38f * uiScale;
-        float radar_H = ui.uiBase.height * 0.22f * uiScale;
-
-        // Vẽ Máu P2
-        float hpPercentP2 = (float)game.player2.hp / 2.0f;
-        if (hpPercentP2 > 0) {
-            Rectangle hpSrc = { 0, 0, ui.uiHp.width * hpPercentP2, (float)ui.uiHp.height };
-            Rectangle hpDest = { hp_X, hp_Y, hp_W * hpPercentP2, hp_H };
-            DrawTexturePro(ui.uiHp, hpSrc, hpDest, {0, 0}, 0.0f, WHITE);
-        }
-
-        // Vẽ Radar P2
-        float scanPercentP2 = (float)game.player2.scansLeft / 2.0f;
-        if (scanPercentP2 > 0) {
-            Rectangle scanSrc = { 0, 0, ui.uiRadar.width * scanPercentP2, (float)ui.uiRadar.height };
-            Rectangle scanDest = { radar_X, radar_Y, radar_W * scanPercentP2, radar_H };
-            DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
-        }
-    }
     // --- VẼ NHÂN VẬT ---
     const CharAnim& p1Anim = ui.isP1Attacking ? ((ui.p1HeroSelection == 0) ? ui.atkP1 : ui.atkP2) : ((ui.p1HeroSelection == 0) ? ui.charP1 : ui.charP2);
     bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
@@ -286,8 +211,68 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
     const CharAnim& p2Anim = ui.isP2Attacking ? ((ui.p2HeroSelection == 0) ? ui.atkP1 : ui.atkP2) : ((ui.p2HeroSelection == 0) ? ui.charP1 : ui.charP2);
     bool p2Active = (!game.isPlayer1Turn && game.matchStatus == 0) || ui.isP2Attacking;
-    DrawCharAnim(p2Anim, 1467.0f, 640.0f, 356.0f, 356.0f, true, p2Active);
+    DrawCharAnim(p2Anim, 1430.0f, 640.0f, 356.0f, 356.0f, true, p2Active);
 
+    // --- VẼ UI MÁU TRÊN ĐẦU VÀ RADAR GÓC MÀN HÌNH ---
+    if (game.gameMode == 1) {
+        float hpScale = 4.0f; // Chỉnh độ to nhỏ của thanh máu
+
+        // ==========================================
+        // 1. THANH MÁU PLAYER 1 (Lơ lửng trên đầu)
+        // ==========================================
+        float p1HeadX = 65.0f + (356.0f / 2.0f); // Tọa độ X căn giữa đỉnh đầu P1
+        float p1HeadY = 480.0f; // Tọa độ Y (Giảm số này để thanh máu bay cao hơn)
+        
+        Texture2D currentHpP1 = ui.hp0; // Mặc định là thanh rỗng (0 máu)
+        if (game.player1.hp == 2) currentHpP1 = ui.hp100; // Đầy máu
+        else if (game.player1.hp == 1) currentHpP1 = ui.hp50; // Nửa máu
+
+        float hpWidthP1 = currentHpP1.width * hpScale;
+        Vector2 posHpP1 = { p1HeadX - (hpWidthP1 / 2.0f), p1HeadY }; // Căn giữa
+
+        DrawTextureEx(currentHpP1, posHpP1, 0.0f, hpScale, WHITE);
+        DrawTextureEx(ui.hpFrame, posHpP1, 0.0f, hpScale, WHITE);
+
+        // ==========================================
+        // 2. THANH MÁU PLAYER 2 (Lơ lửng trên đầu)
+        // ==========================================
+        float p2HeadX = 1420.0f + (356.0f / 2.0f); // Tọa độ X căn giữa đỉnh đầu P2
+        float p2HeadY = 480.0f; // Tọa độ Y (Giảm số này để thanh máu bay cao hơn)
+
+        Texture2D currentHpP2 = ui.hp0;
+        if (game.player2.hp == 2) currentHpP2 = ui.hp100;
+        else if (game.player2.hp == 1) currentHpP2 = ui.hp50;
+
+        float hpWidthP2 = currentHpP2.width * hpScale;
+        Vector2 posHpP2 = { p2HeadX - (hpWidthP2 / 2.0f), p2HeadY };
+
+        DrawTextureEx(currentHpP2, posHpP2, 0.0f, hpScale, WHITE);
+        DrawTextureEx(ui.hpFrame, posHpP2, 0.0f, hpScale, WHITE);
+
+        // ==========================================
+        // 3. RADAR KỸ NĂNG Ở HAI GÓC TRÊN CÙNG
+        // ==========================================
+        float radarScale = 0.4f; // Chỉnh độ to nhỏ của cục cam Radar
+        
+        // Góc Trái (Cho Player 1)
+        DrawTextCustom(ui.mainFont, "RADAR", 50, 30, 35, ORANGE);
+        float scanPercentP1 = (float)game.player1.scansLeft / 2.0f;
+        if (scanPercentP1 > 0) {
+            Rectangle scanSrcP1 = { 0, 0, ui.uiRadar.width * scanPercentP1, (float)ui.uiRadar.height };
+            Rectangle scanDestP1 = { 50, 70, ui.uiRadar.width * scanPercentP1 * radarScale, ui.uiRadar.height * radarScale };
+            DrawTexturePro(ui.uiRadar, scanSrcP1, scanDestP1, {0, 0}, 0.0f, WHITE);
+        }
+
+        // Góc Phải (Cho Player 2)
+        DrawTextCustom(ui.mainFont, "RADAR", 1920 - 200, 30, 35, ORANGE);
+        float scanPercentP2 = (float)game.player2.scansLeft / 2.0f;
+        if (scanPercentP2 > 0) {
+            Rectangle scanSrcP2 = { 0, 0, ui.uiRadar.width * scanPercentP2, (float)ui.uiRadar.height };
+            // Neo Radar của P2 vào góc phải
+            Rectangle scanDestP2 = { 1920 - 200, 70, ui.uiRadar.width * scanPercentP2 * radarScale, ui.uiRadar.height * radarScale };
+            DrawTexturePro(ui.uiRadar, scanSrcP2, scanDestP2, {0, 0}, 0.0f, WHITE);
+        }
+    }
     // VẼ MÀN HÌNH END GAME
     if (game.matchStatus != 0) {
         DrawRectangle((int)ui.cellStartX, (int)ui.cellStartY, BOARD_SIZE * (int)ui.cellSize, BOARD_SIZE * (int)ui.cellSize, Fade(WHITE, 0.7f));

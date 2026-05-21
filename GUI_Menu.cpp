@@ -299,7 +299,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
             if (IsKeyPressed(KEY_ENTER)){
                 int savedInput = game.inputType;
-                InitGame(game, 0); 
+                InitGame(game, 1); 
                 game.inputType = savedInput;
                 
                 if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);

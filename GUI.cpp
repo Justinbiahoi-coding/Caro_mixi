@@ -44,8 +44,10 @@ void InitGUI(UIState& ui) {
     ui.titleBadge = LoadTexture("assets/board/title_badge.png");
 
     
-    ui.uiBase  = LoadTexture("assets/board/ui_base.png");
-    ui.uiHp    = LoadTexture("assets/board/ui_hp.png");
+    ui.hp0     = LoadTexture("assets/board/0.png");
+    ui.hp50    = LoadTexture("assets/board/50.png");
+    ui.hp100   = LoadTexture("assets/board/100.png");
+    ui.hpFrame = LoadTexture("assets/board/Frame.png");
     ui.uiRadar = LoadTexture("assets/board/ui_radar.png");
 
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
@@ -111,8 +113,10 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.roundBadge);
     UnloadTexture(ui.titleBadge);
 
-    UnloadTexture(ui.uiBase);
-    UnloadTexture(ui.uiHp);
+    UnloadTexture(ui.hp0);
+    UnloadTexture(ui.hp50);
+    UnloadTexture(ui.hp100);
+    UnloadTexture(ui.hpFrame);
     UnloadTexture(ui.uiRadar);
     
     UnloadTexture(ui.bgGame);

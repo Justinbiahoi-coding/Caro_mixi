@@ -44,10 +44,12 @@ struct UIState {
     Texture2D roundBadge; 
     Texture2D titleBadge;
 
-    Texture2D uiBase;
-    Texture2D uiHp;
+    Texture2D hp0;
+    Texture2D hp50;
+    Texture2D hp100;
+    Texture2D hpFrame;
     Texture2D uiRadar;
-    
+
     float cellSize;       
     float cellStartX;     
     float cellStartY;     
