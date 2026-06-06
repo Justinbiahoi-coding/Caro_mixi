@@ -160,6 +160,133 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
     return 0;
 }
 
+void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player, int& count, int& blocks)
+{
+    count = 0; // Không bao gồm bản thân ô hiện tại (ô đang xét)
+    blocks = 0;
+
+    // Chiều xuôi (+dx, +dy)
+    int r = row + dx;
+    int c = col + dy;
+    while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player)
+    {
+        count++;
+        r += dx;
+        c += dy;
+    }
+    // Kiểm tra xem có bị chặn ở đầu này không
+    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player))
+    {
+        blocks++;
+    }
+
+    // Chiều ngược (-dx, -dy)
+    r = row - dx;
+    c = col - dy;
+    while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player)
+    {
+        count++;
+        r -= dx;
+        c -= dy;
+    }
+    // Kiểm tra xem có bị chặn ở đầu này không
+    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player))
+    {
+        blocks++;
+    }
+}
+
+int EvaluatePosition(GameState& game, int row, int col)
+{
+    // Điểm được tính theo: Score[blocks][count]
+    // blocks: 0 (mở 2 đầu), 1 (chặn 1 đầu), 2 (chặn 2 đầu)
+    // count: số lượng quân liên tiếp (0 đến 5)
+    int AttackScore[3][6] = {
+        { 0, 9, 54, 162, 1458, 13112 }, // 0 đầu bị chặn
+        { 0, 2, 18, 54,  729,  13112 }, // 1 đầu bị chặn
+        { 0, 0, 0,  0,   0,    0     }  // 2 đầu bị chặn (Vô dụng)
+    };
+
+    int DefenseScore[3][6] = {
+        { 0, 3, 27, 99,  729,  6561 },
+        { 0, 1, 9,  33,  364,  6561 },
+        { 0, 0, 0,  0,   0,    0    }
+    };
+
+    int totalScore = 0;
+
+    int directions[4][2] =
+    {
+        {0,1},
+        {1,0},
+        {1,1},
+        {1,-1}
+    };
+
+    for (int i = 0; i < 4; i++)
+    {
+        int dx = directions[i][0];
+        int dy = directions[i][1];
+
+        // ===== ATTACK =====
+        int attackCount = 0;
+        int attackBlocks = 0;
+        GetLineStatus(game, row, col, dx, dy, 2, attackCount, attackBlocks);
+        
+        if (attackCount > 5) attackCount = 5; // Giới hạn chống tràn mảng
+        totalScore += AttackScore[attackBlocks][attackCount];
+
+        // ===== DEFENSE =====
+        int defenseCount = 0;
+        int defenseBlocks = 0;
+        GetLineStatus(game, row, col, dx, dy, 1, defenseCount, defenseBlocks);
+        
+        if (defenseCount > 5) defenseCount = 5; // Giới hạn chống tràn mảng
+        totalScore += DefenseScore[defenseBlocks][defenseCount];
+    }
+
+    return totalScore;
+}
+
+void BotMove(GameState& game)
+{
+    int bestScore = -1;
+    
+    // Khai báo mảng để lưu các nước đi tốt nhất
+    struct Move { int r; int c; };
+    Move bestMoves[BOARD_SIZE * BOARD_SIZE];
+    int bestMoveCount = 0;
+
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            if (game.board[i][j].c == 0)
+            {
+                int score = EvaluatePosition(game, i, j);
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMoves[0] = {i, j};
+                    bestMoveCount = 1;
+                }
+                else if (score == bestScore && score > 0)
+                {
+                    bestMoves[bestMoveCount] = {i, j};
+                    bestMoveCount++;
+                }
+            }
+        }
+    }
+
+    if (bestMoveCount > 0)
+    {
+        int randomIndex = GetRandomValue(0, bestMoveCount - 1);
+        MakeMove(game, bestMoves[randomIndex].r, bestMoves[randomIndex].c);
+    }
+}
+
 bool SaveGameSlot(GameState& game, int slot, const char* customName) {
     char filename[30]; snprintf(filename, sizeof(filename), "save_%d.bin", slot);
     strncpy(game.saveName, customName, 29); game.saveName[29] = '\0';

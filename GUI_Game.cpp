@@ -61,8 +61,10 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     int row = (mouse.y - ui.cellStartY) / ui.cellSize;
     
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                        // Click Trái -> Đánh cờ
-                        moveMade = MakeMove(game, row, col); 
+                        moveMade = MakeMove(game, row, col);
+                        if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
+                            BotMove(game);
+                        }
                     } 
                     else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
                         // Click Phải -> Gọi Logic Quét Mìn (Không vẽ)
@@ -78,7 +80,10 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 
                 if (IsKeyPressed(KEY_ENTER)) {
                     // Phím Enter -> Đánh cờ
-                    moveMade = MakeMove(game, game.cursorRow, game.cursorCol); 
+                    moveMade = MakeMove(game, game.cursorRow, game.cursorCol);
+                    if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
+                        BotMove(game);
+                    }
                 }
                 if (IsKeyPressed(KEY_SPACE)) {
                     // Phím Space -> Gọi Logic Quét Mìn (Không vẽ)

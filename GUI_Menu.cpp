@@ -1,4 +1,4 @@
-﻿#include "GUI_Menu.h"
+#include "GUI_Menu.h"
 #include "LogicControl.h"
 
 const int TOTAL_MENU_ITEMS = 6;
@@ -44,7 +44,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ui.currentScreen = 8; 
                     ui.p1HeroSelection = 0;
                     ui.p2HeroSelection = 0; 
-                    ui.selectionPhase = 0; 
+                    ui.selectionPhase = -1; 
                     
                     ui.p1NameInput[0] = '\0'; ui.p1LetterCount = 0;
                     ui.p2NameInput[0] = '\0'; ui.p2LetterCount = 0;
@@ -253,7 +253,13 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         const int MAX_HEROES = 4; // set number of heroes available
 
-        if (ui.selectionPhase == 0) {
+        if (ui.selectionPhase == -1) {
+            // Chon che do choi: VS Player hoac VS Bot
+            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) game.isVsBot = false;
+            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) game.isVsBot = true;
+            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 0;
+        }
+        else if (ui.selectionPhase == 0) {
             // p1 pick hero
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p1HeroSelection = (ui.p1HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p1HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
@@ -274,7 +280,22 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 ui.p1LetterCount--;
                 ui.p1NameInput[ui.p1LetterCount] = '\0';
             }
-            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 2; 
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (game.isVsBot) {
+                    int savedInput = game.inputType;
+                    InitGame(game, 0); 
+                    game.inputType = savedInput;
+                    
+                    if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
+                    else strcpy(game.player1.name, "Player 1");
+                    
+                    strcpy(game.player2.name, "BOT");
+                    ui.p2HeroSelection = 3;
+                    ui.currentScreen = 1; 
+                } else {
+                    ui.selectionPhase = 2; 
+                }
+            }
         }
         else if (ui.selectionPhase == 2) {
             // p2 pick hero
@@ -655,7 +676,24 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         }
 
         //input for name entry during selection phases
-        if (ui.selectionPhase == 1 || ui.selectionPhase == 3) {
+        if (ui.selectionPhase == -1) {
+            DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.5f)); 
+            const char* prompt = "CHON CHE DO CHOI";
+            const char* input = game.isVsBot ? "< Choi Voi May >" : "< Choi Voi Nguoi >";
+            
+            int boxW = 800, boxH = 200;
+            Rectangle box = { (float)(1920/2 - boxW/2), (float)(1080/2 - boxH/2), (float)boxW, (float)boxH };
+            DrawRectangleRec(box, Fade(BLACK, 0.9f));
+            DrawRectangleLinesEx(box, 2, goldColor);
+
+            int promptW = MeasureTextCustomX(ui.mainFont, prompt, 30);
+            int inputW = MeasureTextCustomX(ui.mainFont, input, 50);
+
+            DrawTextCustom(ui.mainFont, prompt, box.x + boxW/2 - promptW/2, box.y + 40, 30, silverColor);
+            DrawTextCustom(ui.mainFont, input, box.x + boxW/2 - inputW/2, box.y + 110, 50, WHITE);
+            DrawTextCustom(ui.mainFont, "[A]/[D] de chuyen, [ENTER] de chon", box.x + boxW/2 - 200, box.y + 180, 20, DARKGRAY);
+        }
+        else if (ui.selectionPhase == 1 || ui.selectionPhase == 3) {
             DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.5f)); 
             const char* prompt = (ui.selectionPhase == 1) ? "PLAYER 1 - NHAP TEN" : "PLAYER 2 - NHAP TEN";
             const char* input = (ui.selectionPhase == 1) ? ui.p1NameInput : ui.p2NameInput;

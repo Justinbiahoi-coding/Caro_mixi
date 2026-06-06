@@ -8,6 +8,9 @@ bool MakeMove(GameState& game, int row, int col);
 bool ScanMine(GameState& game, int centerRow, int centerCol);
 int CheckWin(GameState& game, int lastRow, int lastCol);
 void ResetRound(GameState& game);
+void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player, int& count, int& blocks);
+int EvaluatePosition(GameState& game, int row, int col);
+void BotMove(GameState& game);
 //save game
 bool SaveGameSlot(GameState& game, int slot, const char* customName);
 
