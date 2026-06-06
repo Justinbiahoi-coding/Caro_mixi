@@ -9,7 +9,7 @@ void InitGame(GameState& game, int mode);
 bool MakeMove(GameState& game, int row, int col);
 int CheckWin(GameState& game, int lastRow, int lastCol);
 void ResetRound(GameState& game);
-int CountDirection(GameState& game, int row, int col, int dx, int dy, int player);
+void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player, int& count, int& blocks);
 int EvaluatePosition(GameState& game, int row, int col);
 void BotMove(GameState& game);
 //save game
