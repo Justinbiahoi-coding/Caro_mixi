@@ -50,30 +50,31 @@ void InitGUI(UIState& ui) {
 
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
 
+    // config: frame_count, frame_duration
     // Load hero animations for all 4 heroes
     // Hero 0: black_knight
-    ui.heroIdle[0] = LoadCharAnim("assets/Character/black_knight/idle.png", 6, 0.2f); //animation-time
-    ui.heroAttack[0] = LoadCharAnim("assets/Character/black_knight/attack_s1.png", 12, 0.12f); //animation-time
-    ui.heroDrawSize[0] = { 356.0f, 356.0f }; //size-char
-    ui.heroDrawOffset[0] = { 0.0f, 0.0f };
+    ui.heroIdle[0] = LoadCharAnim("assets/Character/black_knight/idle.png", 8, 0.2f); //animation-time
+    ui.heroAttack[0] = LoadCharAnim("assets/Character/black_knight/attack_s1.png", 8, 0.12f); //animation-time
+    ui.heroDrawSize[0] = { 900.0f, 900.0f }; //size-char
+    ui.heroDrawOffset[0] = { -300.0f, -250.0f };
     
     // Hero 1: fire_knight
     ui.heroIdle[1] = LoadCharAnim("assets/Character/fire_knight/idle.png", 8, 0.12f); //animation-time
     ui.heroAttack[1] = LoadCharAnim("assets/Character/fire_knight/attack_s1.png", 11, 0.08f); //animation-time
-    ui.heroDrawSize[1] = { 500.0f, 500.0f }; //size-char
-    ui.heroDrawOffset[1] = { 0.0f, -50.0f };
+    ui.heroDrawSize[1] = { 1200.0f, 600.0f }; //size-char
+    ui.heroDrawOffset[1] = { -400.0f, -250.0f };
     
     // Hero 2: green_archer
-    ui.heroIdle[2] = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.12f); //animation-time
-    ui.heroAttack[2] = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.05f); //animation-time
-    ui.heroDrawSize[2] = { 356.0f, 356.0f }; //size-char
-    ui.heroDrawOffset[2] = { 0.0f, 0.0f };
+    ui.heroIdle[2] = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.20f); //animation-time
+    ui.heroAttack[2] = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.07f); //animation-time
+    ui.heroDrawSize[2] = { 1200.0f, 700.0f }; //size-char
+    ui.heroDrawOffset[2] = { -400.0f, -350.0f };
     
     // Hero 3: wind_assassin
     ui.heroIdle[3] = LoadCharAnim("assets/Character/wind_assassin/idle.png", 8, 0.12f); //animation-time
-    ui.heroAttack[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8, 0.04f); //animation-time
-    ui.heroDrawSize[3] = { 356.0f, 356.0f }; //size-char
-    ui.heroDrawOffset[3] = { 0.0f, 0.0f };
+    ui.heroAttack[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8, 0.1f); //animation-time
+    ui.heroDrawSize[3] = { 1200.0f, 700.0f }; //size-char
+    ui.heroDrawOffset[3] = { -400.0f, -350.0f };
     
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
