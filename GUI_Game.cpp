@@ -64,6 +64,9 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                         moveMade = MakeMove(game, row, col);
                         if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
                             BotMove(game);
+                            ui.isP2Attacking = true;
+                            ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
+                            ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
                         }
                     } 
                     else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
@@ -83,6 +86,9 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     moveMade = MakeMove(game, game.cursorRow, game.cursorCol);
                     if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
                         BotMove(game);
+                        ui.isP2Attacking = true;
+                        ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
+                        ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
                     }
                 }
                 if (IsKeyPressed(KEY_SPACE)) {
