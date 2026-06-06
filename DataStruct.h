@@ -41,6 +41,9 @@ struct GameState {
     int cursorCol;  // X coordinate of the keyboard cursor
     int inputType;  //0: Play with Mouse, 1: Play with Keyboard
 
+    bool isVsBot;
+    int botPlayer;
+
     char saveName[30];
     char saveTime[30];
 };
