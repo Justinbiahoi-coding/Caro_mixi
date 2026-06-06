@@ -49,7 +49,7 @@ void InitGUI(UIState& ui) {
     ui.uiRadar = LoadTexture("assets/board/ui_radar.png");
 
     ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
-
+// 0 co gi --------- 
     // config: frame_count, frame_duration
     // Load hero animations for all 4 heroes
     // Hero 0: black_knight
