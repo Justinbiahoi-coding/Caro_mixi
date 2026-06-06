@@ -52,7 +52,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     
             if (game.isVsBot && !game.isPlayer1Turn) {
                 game.botThinkTimer += dt;
-                if (game.botThinkTimer >= 0.5f) { // Thoi gian bot suy nghi (0.5s)
+                if (game.botThinkTimer >= 1.5f) { // Thoi gian bot suy nghi (1.5s)
                     game.botThinkTimer = 0.0f;
                     BotMove(game);
                     ui.isP2Attacking = true;
