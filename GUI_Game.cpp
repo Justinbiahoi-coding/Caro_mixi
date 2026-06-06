@@ -50,7 +50,17 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             bool moveMade = false;
             bool wasP1 = game.isPlayer1Turn;
     
-            if (game.inputType == 0) { // CHẾ ĐỘ CHUỘT
+            if (game.isVsBot && !game.isPlayer1Turn) {
+                game.botThinkTimer += dt;
+                if (game.botThinkTimer >= 0.5f) { // Thoi gian bot suy nghi (0.5s)
+                    game.botThinkTimer = 0.0f;
+                    BotMove(game);
+                    ui.isP2Attacking = true;
+                    ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
+                    ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
+                }
+            } else {
+                if (game.inputType == 0) { // CHẾ ĐỘ CHUỘT
                 float gridWidth = BOARD_SIZE * ui.cellSize;
                 float gridHeight = BOARD_SIZE * ui.cellSize;
     
@@ -62,12 +72,6 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                         moveMade = MakeMove(game, row, col);
-                        if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
-                            BotMove(game);
-                            ui.isP2Attacking = true;
-                            ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
-                            ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
-                        }
                     } 
                     else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
                         // Click Phải -> Gọi Logic Quét Mìn (Không vẽ)
@@ -84,18 +88,13 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 if (IsKeyPressed(KEY_ENTER)) {
                     // Phím Enter -> Đánh cờ
                     moveMade = MakeMove(game, game.cursorRow, game.cursorCol);
-                    if (moveMade && game.isVsBot && !game.isPlayer1Turn && game.matchStatus == 0) {
-                        BotMove(game);
-                        ui.isP2Attacking = true;
-                        ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
-                        ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
-                    }
                 }
                 if (IsKeyPressed(KEY_SPACE)) {
                     // Phím Space -> Gọi Logic Quét Mìn (Không vẽ)
                     ScanMine(game, game.cursorRow, game.cursorCol); 
                 }
             }
+            } // Ket thuc khoi else (khong phai luot bot)
 
             // --- 3. KÍCH HOẠT ANIMATION CHÉM NẾU ĐÁNH THÀNH CÔNG ---
             // (Đoạn này giữ nguyên của bạn)

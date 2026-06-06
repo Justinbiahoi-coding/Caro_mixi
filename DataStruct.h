@@ -43,6 +43,7 @@ struct GameState {
 
     bool isVsBot;
     int botPlayer;
+    float botThinkTimer;
 
     char saveName[30];
     char saveTime[30];

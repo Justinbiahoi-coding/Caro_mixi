@@ -28,6 +28,7 @@ void InitGame(GameState& game, int mode) {
     game.moveCount = 0;
     game.gameMode = mode;
     game.matchStatus = 0; 
+    game.botThinkTimer = 0.0f;
     
     game.player1.hp = 2; game.player1.scansLeft = 2; game.player1.stepCount = 0;
     game.player1.winCount = 0; game.player1.loseCount = 0;
@@ -66,6 +67,7 @@ void ResetRound(GameState& game) {
     game.isPlayer1Turn = !game.isPlayer1Turn; 
     game.moveCount = 0;
     game.matchStatus = 0; 
+    game.botThinkTimer = 0.0f;
     
     game.player1.hp = 2; game.player1.scansLeft = 2; game.player1.stepCount = 0;
     game.player2.hp = 2; game.player2.scansLeft = 2; game.player2.stepCount = 0;
