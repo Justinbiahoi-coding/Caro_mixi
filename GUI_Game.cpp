@@ -93,9 +93,11 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             deathAnim.currentFrame++;
             if (deathAnim.currentFrame >= deathAnim.frameCount) {
                 deathAnim.currentFrame = deathAnim.frameCount - 1;
-                game.matchStatus = ui.pendingWinStatus;
+                if (ui.pendingWinStatus != 0) {
+                    game.matchStatus = ui.pendingWinStatus;
+                    ui.pendingWinStatus = 0;
+                }
                 ui.pendingWin = false;
-                ui.pendingWinStatus = 0;
                 ui.isP1Dying = false;
                 ui.isP1Dead = true;
             }
@@ -130,9 +132,11 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             deathAnim.currentFrame++;
             if (deathAnim.currentFrame >= deathAnim.frameCount) {
                 deathAnim.currentFrame = deathAnim.frameCount - 1;
-                game.matchStatus = ui.pendingWinStatus;
+                if (ui.pendingWinStatus != 0) {
+                    game.matchStatus = ui.pendingWinStatus;
+                    ui.pendingWinStatus = 0;
+                }
                 ui.pendingWin = false;
-                ui.pendingWinStatus = 0;
                 ui.isP2Dying = false;
                 ui.isP2Dead = true;
             }
