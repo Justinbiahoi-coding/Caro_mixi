@@ -297,19 +297,23 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             ui.charP2.frameTimer = 0.0f;
         }
 
-        const int MAX_HEROES = 4; // set number of heroes available
+        const int MAX_HEROES = 3; // black_knight hidden (index 0 reserved)
+        // Maps selection index (0,1,2) → asset index (1,2,3) skipping black_knight
+        const int heroMap[3] = {1, 2, 3};
 
         if (ui.selectionPhase == -1) {
             // Chon che do choi: VS Player hoac VS Bot
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) game.isVsBot = false;
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) game.isVsBot = true;
             if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 0;
+            if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
         }
         else if (ui.selectionPhase == 0) {
             // p1 pick hero
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p1HeroSelection = (ui.p1HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p1HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
-            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 1; 
+            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 1;
+            if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = -1;
         }
         else if (ui.selectionPhase == 1) {
             // p1 set name
@@ -320,29 +324,25 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ui.p1NameInput[ui.p1LetterCount+1] = '\0';
                     ui.p1LetterCount++;
                 }
-                key = GetCharPressed(); 
+                key = GetCharPressed();
             }
             if (IsKeyPressed(KEY_BACKSPACE) && ui.p1LetterCount > 0) {
                 ui.p1LetterCount--;
                 ui.p1NameInput[ui.p1LetterCount] = '\0';
             }
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                ui.selectionPhase = 0; // back to P1 hero select
-            }
-            if (IsKeyPressed(KEY_ENTER)) {
+            if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 0;
+            else if (IsKeyPressed(KEY_ENTER)) {
                 if (game.isVsBot) {
                     int savedInput = game.inputType;
-                    InitGame(game, 0); 
+                    InitGame(game, 0);
                     game.inputType = savedInput;
-                    
                     if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
                     else strcpy(game.player1.name, "Player 1");
-                    
                     strcpy(game.player2.name, "BOT");
-                    ui.p2HeroSelection = 3;
-                    ui.currentScreen = 1; 
+                    ui.p2HeroSelection = 2; // wind_assassin (map index 2 → asset 3)
+                    ui.currentScreen = 1;
                 } else {
-                    ui.selectionPhase = 2; 
+                    ui.selectionPhase = 2;
                 }
             }
         }
@@ -350,10 +350,11 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             // p2 pick hero
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p2HeroSelection = (ui.p2HeroSelection + 1) % MAX_HEROES;
-            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 3; 
+            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 3;
+            if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 1;
         }
         else if (ui.selectionPhase == 3) {
-            // p2 set name 
+            // p2 set name
             int key = GetCharPressed();
             while (key > 0) {
                 if ((key >= 32) && (key <= 125) && ui.p2LetterCount < 10) {
@@ -361,37 +362,31 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ui.p2NameInput[ui.p2LetterCount+1] = '\0';
                     ui.p2LetterCount++;
                 }
-                key = GetCharPressed(); 
+                key = GetCharPressed();
             }
             if (IsKeyPressed(KEY_BACKSPACE) && ui.p2LetterCount > 0) {
                 ui.p2LetterCount--;
                 ui.p2NameInput[ui.p2LetterCount] = '\0';
             }
-            if (IsKeyPressed(KEY_ESCAPE)) {
-                ui.selectionPhase = 2; // back to P2 hero select
-            }
-            if (IsKeyPressed(KEY_ENTER)){
+            if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 2;
+            else if (IsKeyPressed(KEY_ENTER)) {
                 int savedInput = game.inputType;
-                InitGame(game, 0); 
+                InitGame(game, 0);
                 game.inputType = savedInput;
-                
                 if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
                 else strcpy(game.player1.name, "Player 1");
-                
                 if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
                 else strcpy(game.player2.name, "Player 2");
-                ui.currentScreen = 1; 
+                ui.currentScreen = 1;
             }
         }
-        if (IsKeyPressed(KEY_ESCAPE) && ui.selectionPhase != 1 && ui.selectionPhase != 3)
-            ui.currentScreen = 0;
 
         // ── Update char select particles ──
         {
             const float cardW   = 400.0f;
             const float cardH   = 538.0f;
             const float cardGap = 40.0f;
-            const float totalCW = 4*cardW + 3*cardGap;
+            const float totalCW = 3*cardW + 2*cardGap;
             const float cardStartX = (1920.0f - totalCW) / 2.0f;
             const float cardY      = 310.0f;
             int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
@@ -1101,8 +1096,10 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         Color p1Color     = {255, 160,  40, 255};
         Color p2Color     = {100, 160, 255, 255};
 
-        // ── Hero names ──
-        const char* heroNames[4] = {"Black Knight", "Fire Knight", "Wind Archer", "Wind Assassin"};
+        // ── Hero names (3 active heroes, black_knight hidden) ──
+        const char* heroNames[3] = {"Fire Knight", "Wind Archer", "Wind Assassin"};
+        // Maps selection index (0,1,2) → asset index (1,2,3)
+        const int heroMap[3] = {1, 2, 3};
 
         // ── Ornate helpers ──
         auto DD8 = [](float cx, float cy, float w, float h, Color col) {
@@ -1133,11 +1130,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2+3, 106, 68, Fade(BLACK,0.9f));
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2,   102, 68, gothicGold);
 
-        // ── 4 Hero card slots — chia đều ngang ──
+        // ── 3 Hero card slots — chia đều ngang ──
         const float cardW   = 400.0f;
         const float cardH   = 538.0f;
         const float cardGap = 40.0f;
-        const float totalCW = 4*cardW + 3*cardGap;
+        const float totalCW = 3*cardW + 2*cardGap;
         const float cardStartX = (1920.0f - totalCW) / 2.0f;
         const float cardY   = 310.0f;
 
@@ -1145,20 +1142,20 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
         bool isP1turn = (ui.selectionPhase == 0 || ui.selectionPhase == 1);
 
-        // Per-hero color theme
-        Color heroTheme[4] = {
-            {130,  50, 200, 255},  // black_knight  — purple
+        // Per-hero color theme (index 0=fire, 1=archer, 2=assassin)
+        Color heroTheme[3] = {
             {220,  70,  20, 255},  // fire_knight   — red-orange
             { 40, 170, 110, 255},  // wind_archer   — teal-green
             { 60, 110, 220, 255},  // wind_assassin — royal blue
         };
 
-        // Hero bottom-pixel anchors (measured from sprite top)
-        struct HeroBot { float bottomPx; } bots[4] = {
-            {166.0f}, {126.0f}, {126.0f}, {126.0f},
+        // Hero bottom-pixel anchors — all 3 remaining heroes use 126px
+        struct HeroBot { float bottomPx; } bots[3] = {
+            {126.0f}, {126.0f}, {126.0f},
         };
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
+            int assetID = heroMap[i]; // translate to asset index
             float cx = cardStartX + i*(cardW+cardGap);
             bool isSelected = (curSel == i);
             bool p1owns = (ui.selectionPhase >= 1 && ui.p1HeroSelection == i);
@@ -1232,9 +1229,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DD8(cx+cardW,       cy+cardH-crnSz, crnSz, crnSz, crnCol);
 
             // ── Hero sprite ──
-            const CharAnim& anim = ui.heroIdle[i];
+            const CharAnim& anim = ui.heroIdle[assetID];
             float botPx   = bots[i].bottomPx;
-            float heroScaleMult = (i == 0) ? 1.0f : 1.3f;
+            float heroScaleMult = 1.3f; // all 3 remaining heroes use same scale
             float scale8  = (cardW * 3.0f) / (float)anim.frameWidth * heroScaleMult;
             float heroW   = anim.frameWidth  * scale8;
             float heroH   = anim.frameHeight * scale8;
@@ -1295,8 +1292,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         // ── Draw char select particles ──
         {
-            Color heroThemeParts[4] = {
-                {180,  80, 255, 255},  // black_knight  — purple
+            Color heroThemeParts[3] = {
                 {255, 120,  30, 255},  // fire_knight   — orange-red
                 { 60, 220, 130, 255},  // wind_archer   — bright teal
                 { 80, 150, 255, 255},  // wind_assassin — sky blue

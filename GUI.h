@@ -69,17 +69,23 @@ struct UIState {
 
     Font mainFont;
 
-    CharAnim heroIdle[4];     // Idle animations for 4 heroes
-    CharAnim heroAttack[4];   // Attack animations for 4 heroes
-    Vector2 heroDrawSize[4];  // Shared size for each hero (idle + attack_s1) //size-char
-    Vector2 heroDrawOffset[4]; // Position adjustment for each hero
-    // Legacy support (charP1 and charP2 now point to heroIdle[0] and heroIdle[1])
-    CharAnim& charP1 = heroIdle[0]; 
-    CharAnim& charP2 = heroIdle[1]; 
-    CharAnim& atkP1 = heroAttack[0];       
-    CharAnim& atkP2 = heroAttack[1];       
+    CharAnim heroIdle[4];        // Idle animations for 4 heroes
+    CharAnim heroAttack[4];      // attack_s1
+    CharAnim heroAttack2[4];     // attack_s2
+    CharAnim heroAttack3[4];     // attack_s3
+    Vector2 heroDrawSize[4];
+    Vector2 heroDrawOffset[4];
+    // Legacy support
+    CharAnim& charP1 = heroIdle[0];
+    CharAnim& charP2 = heroIdle[1];
+    CharAnim& atkP1 = heroAttack[0];
+    CharAnim& atkP2 = heroAttack[1];
     bool isP1Attacking;
     bool isP2Attacking;
+    int p1AttackVariant; // 0/1/2 = s1/s2/s3
+    int p2AttackVariant;
+    bool pendingWin;     // true khi đang chờ attack_s3 kết thúc để hiện win screen
+    int  pendingWinStatus; // matchStatus thật sự (1 or 2) đang bị giữ lại
     Music bgMusic;
     float musicVolume = 0.8f;
     bool musicEnabled;
@@ -114,6 +120,9 @@ struct UIState {
     // Smooth menu scroll
     float menuScrollY = 0.0f; // vị trí highlight hiện tại (pixel, nội suy)
 };
+
+// Maps selection index (0,1,2) → asset index (1,2,3), black_knight hidden
+static const int HERO_MAP[3] = {1, 2, 3};
 
 void InitGUI(UIState& ui);
 void UnloadGUI(UIState& ui);
