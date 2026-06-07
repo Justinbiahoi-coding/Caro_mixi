@@ -197,7 +197,11 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (ui.loadSelection > 3) ui.loadSelection = 0;
         }
         if (IsKeyPressed(KEY_ENTER)) {
-            if (LoadGameSlot(game, ui.loadSelection)) ui.currentScreen = 1; 
+            if (LoadGameSlot(game, ui.loadSelection)) {
+                ui.p1HeroSelection = game.p1HeroSelection;
+                ui.p2HeroSelection = game.p2HeroSelection;
+                ui.currentScreen = 1;
+            }
         }
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_DELETE)) {
             DeleteGameSlot(ui.loadSelection);
@@ -355,17 +359,28 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     snprintf(game.player2.name, sizeof(game.player2.name),
                         "BOT - %s", heroNamesUpd[ui.p2HeroSelection]);
 
+                    game.p1HeroSelection = ui.p1HeroSelection;
+                    game.p2HeroSelection = ui.p2HeroSelection;
                     ui.currentScreen = 1;
                 } else {
+                    // Đảm bảo P2 bắt đầu ở hero khác P1
+                    if (ui.p2HeroSelection == ui.p1HeroSelection)
+                        ui.p2HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
                     ui.selectionPhase = 2;
                 }
             }
         }
         else if (ui.selectionPhase == 2) {
-            // p2 pick hero
-            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES;
-            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p2HeroSelection = (ui.p2HeroSelection + 1) % MAX_HEROES;
-            if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 3;
+            // p2 pick hero — skip hero P1 đã chọn
+            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) {
+                do { ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES; }
+                while (ui.p2HeroSelection == ui.p1HeroSelection);
+            }
+            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) {
+                do { ui.p2HeroSelection = (ui.p2HeroSelection + 1) % MAX_HEROES; }
+                while (ui.p2HeroSelection == ui.p1HeroSelection);
+            }
+            if (IsKeyPressed(KEY_ENTER) && ui.p2HeroSelection != ui.p1HeroSelection) ui.selectionPhase = 3;
             if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 1;
         }
         else if (ui.selectionPhase == 3) {
@@ -401,6 +416,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 else
                     snprintf(game.player2.name, sizeof(game.player2.name),
                         "P2 - %s", heroNamesUpd[ui.p2HeroSelection]);
+                game.p1HeroSelection = ui.p1HeroSelection;
+                game.p2HeroSelection = ui.p2HeroSelection;
                 ui.currentScreen = 1;
             }
         }
@@ -962,20 +979,31 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 {0,0,(float)ui.boardFrame.width,(float)ui.boardFrame.height},
                 {boardX, boardY, boardSize, boardSize}, {0,0}, 0.0f, WHITE);
 
-            float ix2 = boardX + boardSize*0.073f;
-            float iy2 = boardY + boardSize*0.13f;
-            float iw2 = boardSize*(1.0f-0.073f-0.070f);
-            float ih2 = boardSize*(1.0f-0.13f-0.050f);
+            float margin = 0.055f;
+            float ix2 = boardX + boardSize*margin;
+            float iy2 = boardY + boardSize*margin;
+            float iw2 = boardSize*(1.0f - margin*2.0f);
+            float ih2 = boardSize*(1.0f - margin*2.0f);
             float cw2 = iw2/BOARD_SIZE, ch2 = ih2/BOARD_SIZE;
 
+            const Texture2D& icon1 = ui.heroIcon[HERO_MAP[selGame.p1HeroSelection]];
+            const Texture2D& icon2 = ui.heroIcon[HERO_MAP[selGame.p2HeroSelection]];
             for (int r = 0; r < BOARD_SIZE; r++) {
                 for (int c = 0; c < BOARD_SIZE; c++) {
                     Rectangle dest = {ix2+c*cw2, iy2+r*ch2, cw2, ch2};
-                    DrawTexturePro(ui.cell,   {0,0,(float)ui.cell.width,  (float)ui.cell.height},   dest,{0,0},0.0f,WHITE);
-                    if (selGame.board[r][c].c == 1)
-                        DrawTexturePro(ui.pieceX,{0,0,(float)ui.pieceX.width,(float)ui.pieceX.height},dest,{0,0},0.0f,WHITE);
-                    if (selGame.board[r][c].c == 2)
-                        DrawTexturePro(ui.pieceO,{0,0,(float)ui.pieceO.width,(float)ui.pieceO.height},dest,{0,0},0.0f,WHITE);
+                    DrawTexturePro(ui.cell, {0,0,(float)ui.cell.width,(float)ui.cell.height}, dest, {0,0}, 0.0f, WHITE);
+                    if (selGame.board[r][c].c == 1) {
+                        float pad = cw2 * 0.10f;
+                        Rectangle src = {0,0,(float)icon1.width,(float)icon1.height};
+                        Rectangle dst = {dest.x+pad, dest.y+pad, cw2-pad*2, ch2-pad*2};
+                        DrawTexturePro(icon1, src, dst, {0,0}, 0.0f, WHITE);
+                    }
+                    if (selGame.board[r][c].c == 2) {
+                        float pad = cw2 * 0.10f;
+                        Rectangle src = {0,0,(float)icon2.width,(float)icon2.height};
+                        Rectangle dst = {dest.x+pad, dest.y+pad, cw2-pad*2, ch2-pad*2};
+                        DrawTexturePro(icon2, src, dst, {0,0}, 0.0f, WHITE);
+                    }
                 }
             }
 
@@ -1168,11 +1196,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         // Per-hero color theme (index 0=fire, 1=archer, 2=assassin, 3=metal_blade, 4=water_mage)
         Color heroTheme[5] = {
-            {220,  70,  20, 255},  // fire_knight   — red-orange
-            { 40, 170, 110, 255},  // wind_archer   — teal-green
-            { 60, 110, 220, 255},  // wind_assassin — royal blue
-            {180, 160,  60, 255},  // metal_blade   — gold/steel
-            { 30, 160, 220, 255},  // water_mage    — sky blue
+            {220,  70,  20, 255},  // fire_knight    — red-orange
+            { 40, 170, 110, 255},  // green_archer   — teal-green
+            {180, 160,  60, 255},  // earth_assassin — gold (từ metal_blade cũ)
+            {180, 185, 195, 255},  // metal_blade    — bạc/xám thép
+            { 30, 160, 220, 255},  // water_mage     — sky blue
         };
 
         // Hero bottom-pixel anchors — all 5 heroes use 126px
@@ -1319,11 +1347,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         // ── Draw char select particles ──
         {
             Color heroThemeParts[5] = {
-                {255, 120,  30, 255},  // fire_knight   — orange-red
-                { 60, 220, 130, 255},  // wind_archer   — bright teal
-                { 80, 150, 255, 255},  // wind_assassin — sky blue
-                {220, 200,  60, 255},  // metal_blade   — gold shimmer
-                { 40, 200, 255, 255},  // water_mage    — aqua
+                {255, 120,  30, 255},  // fire_knight    — orange-red
+                { 60, 220, 130, 255},  // green_archer   — bright teal
+                {220, 200,  60, 255},  // earth_assassin — gold shimmer (từ metal_blade cũ)
+                {210, 220, 230, 255},  // metal_blade    — bạc sáng
+                { 40, 200, 255, 255},  // water_mage     — aqua
             };
             for (int k = 0; k < UIState::MAX_CHAR_PARTICLES; k++) {
                 const UIState::CharParticle& p = ui.charParticles[k];

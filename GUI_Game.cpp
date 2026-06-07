@@ -264,8 +264,10 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.endGameSelection = 0;
         if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.endGameSelection = 1;
 
-        Rectangle btnPlayAgain = { 960 - 240, 550, 220, 50 }; 
-        Rectangle btnMenu      = { 960 + 20,  550, 220, 50 };
+        float btnW = 220.0f, btnH = 52.0f, btnGap = 20.0f;
+        float btnY = ui.boardFrameRec.y + ui.boardFrameRec.height + 14.0f;
+        Rectangle btnPlayAgain = { 960.0f - btnW - btnGap*0.5f, btnY, btnW, btnH };
+        Rectangle btnMenu      = { 960.0f + btnGap*0.5f,        btnY, btnW, btnH };
         if (CheckCollisionPointRec(mouse, btnPlayAgain)) ui.endGameSelection = 0;
         if (CheckCollisionPointRec(mouse, btnMenu)) ui.endGameSelection = 1;
 
@@ -474,8 +476,8 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         {150, 150, 150, 255},  // 0: black_knight (hidden)
         {220,  70,  20, 255},  // 1: fire_knight
         { 40, 170, 110, 255},  // 2: green_archer
-        { 60, 110, 220, 255},  // 3: wind_assassin
-        {180, 160,  60, 255},  // 4: metal_blade
+        {180, 160,  60, 255},  // 3: earth_assassin — gold (từ metal_blade cũ)
+        {180, 185, 195, 255},  // 4: metal_blade    — bạc/xám thép
         { 30, 160, 220, 255},  // 5: water_mage
     };
     Color p1ThemeCol = heroThemeColors[HERO_MAP[ui.p1HeroSelection]];
@@ -779,32 +781,105 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
     // VẼ MÀN HÌNH END GAME
     if (game.matchStatus != 0) {
-        DrawRectangle((int)ui.cellStartX, (int)ui.cellStartY, BOARD_SIZE * (int)ui.cellSize, BOARD_SIZE * (int)ui.cellSize, Fade(WHITE, 0.7f));
-        
-        const char* winText = "";
-        Color winColor = WHITE;
-        if (game.matchStatus == 1) { winText = TextFormat("%s (X) WINS!", game.player1.name); winColor = RED; }
-        else if (game.matchStatus == 2) { winText = TextFormat("%s (O) WINS!", game.player2.name); winColor = BLUE; }
-        else if (game.matchStatus == 3) { winText = "DRAW!"; winColor = GRAY; }
-        
-        int winWidth = MeasureTextCustomX(ui.mainFont, winText, 50);
-        DrawTextCustom(ui.mainFont, winText, 960 - winWidth / 2, 470, 50, winColor);
+        float t      = (float)GetTime();
+        float pulse  = 0.5f + 0.5f * sinf(t * 3.0f);
 
-        Rectangle btnPlayAgain = { 960 - 240, 550, 220, 50 };
-        Rectangle btnMenu      = { 960 + 20,  550, 220, 50 };
-        Color colorPlayAgain = (ui.endGameSelection == 0) ? YELLOW : LIGHTGRAY;
-        Color colorMenu = (ui.endGameSelection == 1) ? YELLOW : LIGHTGRAY;
+        bool isDraw    = (game.matchStatus == 3);
+        int  winPlayer = game.matchStatus;
+        float winnerAnchorX = (winPlayer == 1) ? 230.0f : 1690.0f;
+        float winnerBadgeX  = winnerAnchorX;           // tâm badge tên
+        float winnerBadgeY  = 374.0f;                  // y badge tên (p1Y = p2Y = 374)
+        Color winTheme = isDraw
+            ? Color{180,180,180,255}
+            : heroThemeColors[(winPlayer==1)
+                ? HERO_MAP[ui.p1HeroSelection]
+                : HERO_MAP[ui.p2HeroSelection]];
 
-        DrawRectangleRec(btnPlayAgain, colorPlayAgain); DrawRectangleLinesEx(btnPlayAgain, 3.0f, BLACK);
-        DrawRectangleRec(btnMenu, colorMenu); DrawRectangleLinesEx(btnMenu, 3.0f, BLACK);
+        float bfy = ui.boardFrameRec.y;
+        float bfh = ui.boardFrameRec.height;
 
-        int wPlay = MeasureTextCustomX(ui.mainFont, "Play Again", 25);
-        int wMenu = MeasureTextCustomX(ui.mainFont, "Main Menu", 25);
-        DrawTextCustom(ui.mainFont, "Play Again", btnPlayAgain.x + (btnPlayAgain.width - wPlay) / 2, btnPlayAgain.y + 12, 25, BLACK);
-        DrawTextCustom(ui.mainFont, "Main Menu", btnMenu.x + (btnMenu.width - wMenu) / 2, btnMenu.y + 12, 25, BLACK);
+        // ── HIGHLIGHT 5 Ô THẮNG — chỉ kẻ đường qua tâm 5 ô ──
+        if (!isDraw) {
+            float x0 = ui.cellStartX + game.winLine[0][1]*ui.cellSize + ui.cellSize*0.5f;
+            float y0 = ui.cellStartY + game.winLine[0][0]*ui.cellSize + ui.cellSize*0.5f;
+            float x4 = ui.cellStartX + game.winLine[4][1]*ui.cellSize + ui.cellSize*0.5f;
+            float y4 = ui.cellStartY + game.winLine[4][0]*ui.cellSize + ui.cellSize*0.5f;
+            // Glow dày
+            DrawLineEx({x0,y0},{x4,y4}, 8.0f, Fade(winTheme, 0.30f + 0.15f*pulse));
+            // Đường chính
+            DrawLineEx({x0,y0},{x4,y4}, 3.5f, Fade(winTheme, 0.95f));
+            // Lõi trắng mỏng
+            DrawLineEx({x0,y0},{x4,y4}, 1.5f, Fade(WHITE,   0.70f + 0.30f*pulse));
+        }
 
-        const char* guideEnd = "Use [A]/[D] or Mouse to select. [ENTER] to confirm.";
-        int guideEndW = MeasureTextCustomX(ui.mainFont, guideEnd, 22);
-        DrawTextCustom(ui.mainFont, guideEnd, 960 - guideEndW / 2, 620, 22, DARKGRAY);
+        // ── 4. PARTICLE bay quanh chân hero thắng ──
+        if (!isDraw) {
+            for (int k = 0; k < 60; k++) {
+                float phase  = (float)k / 60.0f;
+                float cycleT = fmodf(t * 0.50f + phase, 1.0f);
+                float px = winnerAnchorX + sinf(phase*17.3f + cycleT*6.28f)*90.0f;
+                float py = 1010.0f - cycleT * (380.0f + 160.0f*sinf(phase*11.7f));
+                float alpha = (cycleT < 0.2f) ? cycleT/0.2f
+                            : (cycleT > 0.7f) ? (1.0f-cycleT)/0.3f : 1.0f;
+                alpha *= 0.80f;
+                float sz = 2.0f + 2.5f*sinf(phase*9.1f);
+                DrawCircleV({px,py}, sz,        Fade(winTheme, alpha));
+                DrawCircleV({px,py}, sz*2.3f,   Fade(winTheme, alpha*0.20f));
+            }
+        }
+
+        // ── 5. TEXT "WINS!" — phía trên badge tên hero thắng ──
+        if (!isDraw) {
+            const char* winText = "WINS!";
+            int wTw = MeasureTextCustomX(ui.mainFont, winText, 52);
+            float textX = winnerBadgeX - wTw * 0.5f;
+            float textY = winnerBadgeY - 68.0f;  // trên badge tên ~68px
+            // Shadow
+            DrawTextCustom(ui.mainFont, winText, (int)(textX+2), (int)(textY+2), 52, Fade(BLACK, 0.75f));
+            // Glow halo
+            DrawTextCustom(ui.mainFont, winText, (int)(textX-1), (int)(textY-1), 52, Fade(winTheme, 0.30f*pulse));
+            // Text chính pulse
+            Color tc = {winTheme.r, winTheme.g, winTheme.b, (unsigned char)(205+50*pulse)};
+            DrawTextCustom(ui.mainFont, winText, (int)textX, (int)textY, 52, tc);
+        } else {
+            // DRAW — ở giữa trên bàn cờ
+            const char* drawText = "DRAW!";
+            int dw = MeasureTextCustomX(ui.mainFont, drawText, 58);
+            float textY = bfy - 68.0f;
+            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f+2), (int)(textY+2), 58, Fade(BLACK,0.7f));
+            Color tc = {180,180,180,(unsigned char)(205+50*pulse)};
+            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f), (int)textY, 58, tc);
+        }
+
+        // ── 6. BUTTON — vị trí cũ dưới bàn cờ ──
+        float btnW = 220.0f, btnH = 52.0f, btnGap = 20.0f;
+        float btnY = bfy + bfh + 14.0f;
+        Rectangle btnPlayAgain = { 960.0f - btnW - btnGap*0.5f, btnY, btnW, btnH };
+        Rectangle btnMenu      = { 960.0f + btnGap*0.5f,        btnY, btnW, btnH };
+
+        bool hovPlay = (ui.endGameSelection == 0);
+        bool hovMenu = (ui.endGameSelection == 1);
+
+        Color bgPlay = hovPlay ? Color{40,140,65,235}  : Color{12,12,12,210};
+        Color bdPlay = hovPlay ? Color{70,210,95,255}  : Fade(winTheme, 0.55f);
+        DrawRectangleRounded(btnPlayAgain, 0.28f, 8, bgPlay);
+        DrawRectangleRoundedLines(btnPlayAgain, 0.28f, 8, bdPlay);
+        const char* lblPlay = "Play Again";
+        int wpL = MeasureTextCustomX(ui.mainFont, lblPlay, 28);
+        DrawTextCustom(ui.mainFont, lblPlay,
+            (int)(btnPlayAgain.x+(btnW-wpL)*0.5f),
+            (int)(btnPlayAgain.y+(btnH-28)*0.5f), 28,
+            hovPlay ? WHITE : Fade(WHITE, 0.55f));
+
+        Color bgMenu2 = hovMenu ? Color{140,85,15,235} : Color{12,12,12,210};
+        Color bdMenu2 = hovMenu ? Color{215,145,35,255}: Fade(winTheme, 0.55f);
+        DrawRectangleRounded(btnMenu, 0.28f, 8, bgMenu2);
+        DrawRectangleRoundedLines(btnMenu, 0.28f, 8, bdMenu2);
+        const char* lblMenu = "Main Menu";
+        int wmL = MeasureTextCustomX(ui.mainFont, lblMenu, 28);
+        DrawTextCustom(ui.mainFont, lblMenu,
+            (int)(btnMenu.x+(btnW-wmL)*0.5f),
+            (int)(btnMenu.y+(btnH-28)*0.5f), 28,
+            hovMenu ? WHITE : Fade(WHITE, 0.55f));
     }
 }

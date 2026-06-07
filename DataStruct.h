@@ -46,6 +46,9 @@ struct GameState {
     float botThinkTimer;
     int lastMoveRow;  // ô vừa đánh (cả player lẫn bot)
     int lastMoveCol;
+    int winLine[5][2]; // 5 ô thắng [r][c], dùng để highlight
+    int p1HeroSelection;  // hero index (0-4) của P1, map qua HERO_MAP để lấy asset
+    int p2HeroSelection;  // hero index (0-4) của P2
 
     char saveName[30];
     char saveTime[30];

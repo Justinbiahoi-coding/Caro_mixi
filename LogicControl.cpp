@@ -136,15 +136,15 @@ bool ScanMine(GameState& game, int centerRow, int centerCol) {
 }
 
 int CheckWin(GameState& game, int lastRow, int lastCol) {
-    int player = game.board[lastRow][lastCol].c; 
-    if (player == 0) return 0; 
+    int player = game.board[lastRow][lastCol].c;
+    if (player == 0) return 0;
     int directions[4][2] = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
 
     for (int d = 0; d < 4; d++) {
         int dx = directions[d][0];
         int dy = directions[d][1];
-        int count = 1;     
-        int blocks = 0;    
+        int count = 1;
+        int blocks = 0;
 
         int r = lastRow + dx; int c = lastCol + dy;
         while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player) {
@@ -158,7 +158,19 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
         }
         if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) blocks++;
 
-        if (count >= 5 && blocks < 2) return player; 
+        if (count >= 5 && blocks < 2) {
+            // Lưu 5 ô thắng vào winLine — bắt đầu từ đầu âm của đường
+            int sr = lastRow - dx, sc = lastCol - dy;
+            while (sr >= 0 && sr < BOARD_SIZE && sc >= 0 && sc < BOARD_SIZE && game.board[sr][sc].c == player) {
+                sr -= dx; sc -= dy;
+            }
+            sr += dx; sc += dy; // bước lại 1 ô (đầu tiên của chuỗi)
+            for (int k = 0; k < 5; k++) {
+                game.winLine[k][0] = sr + dx*k;
+                game.winLine[k][1] = sc + dy*k;
+            }
+            return player;
+        }
     }
     if (game.moveCount == BOARD_SIZE * BOARD_SIZE) return 3;
     return 0;
