@@ -75,6 +75,18 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8, 0.1f); //animation-time
     ui.heroDrawSize[3] = { 1200.0f, 700.0f }; //size-char
     ui.heroDrawOffset[3] = { -400.0f, -350.0f };
+
+    // Hero 4: metal_blade
+    // ui.heroIdle[4] = LoadCharAnim("assets/Character/metal_blade/idle.png", 8, 0.20f); //animation-time
+    // ui.heroAttack[4] = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6, 0.07f); //animation-time
+    // ui.heroDrawSize[4] = { 1200.0f, 700.0f }; //size-char
+    // ui.heroDrawOffset[4] = { -400.0f, -350.0f };
+
+    // // Hero 5: water_mage
+    // ui.heroIdle[5] = LoadCharAnim("assets/Character/water_mage/idle.png", 8, 0.12f); //animation-time
+    // ui.heroAttack[5] = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7, 0.1f); //animation-time
+    // ui.heroDrawSize[5] = { 1200.0f, 700.0f }; //size-char
+    // ui.heroDrawOffset[5] = { -400.0f, -350.0f };
     
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
