@@ -150,6 +150,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     ui.p2AttackVariant = 0;
                     getAtk(p2Asset, ui.p2AttackVariant).currentFrame = 0;
                     getAtk(p2Asset, ui.p2AttackVariant).frameTimer = 0.0f;
+                    PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công bot
                     // Spawn cell effect cho ô bot vừa đánh
                     if (ui.cellEffectCount < UIState::MAX_CELL_EFFECTS) {
                         UIState::CellEffect& eff = ui.cellEffects[ui.cellEffectCount++];
@@ -238,11 +239,13 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     ui.p1AttackVariant = variant;
                     getAtk(p1Asset, variant).currentFrame = 0;
                     getAtk(p1Asset, variant).frameTimer = 0.0f;
+                    PlaySound(ui.heroAttackSound[p1Asset]); // sound effect tấn công P1
                 } else {
                     ui.isP2Attacking = true;
                     ui.p2AttackVariant = variant;
                     getAtk(p2Asset, variant).currentFrame = 0;
                     getAtk(p2Asset, variant).frameTimer = 0.0f;
+                    PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công P2
                 }
 
                 // Spawn cell effect tại ô vừa đánh
