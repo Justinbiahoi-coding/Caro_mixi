@@ -139,6 +139,9 @@ void InitGUI(UIState& ui) {
     ui.pendingWinStatus = 0;
     ui.isP1Dying = false;
     ui.isP2Dying = false;
+    ui.isP1Dead  = false;
+    ui.isP2Dead  = false;
+    ui.winScreenTimer = 0.0f;
     ui.cellSize = 50.0f; 
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 

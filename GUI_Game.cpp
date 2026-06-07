@@ -81,16 +81,15 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             deathAnim.frameTimer = 0.0f;
             deathAnim.currentFrame++;
             if (deathAnim.currentFrame >= deathAnim.frameCount) {
-                // Giữ frame cuối (không reset) — nhân vật nằm yên
                 deathAnim.currentFrame = deathAnim.frameCount - 1;
-                // Reveal win screen
                 game.matchStatus = ui.pendingWinStatus;
                 ui.pendingWin = false;
                 ui.pendingWinStatus = 0;
                 ui.isP1Dying = false;
+                ui.isP1Dead = true;
             }
         }
-    } else {
+    } else if (!ui.isP1Dead) {
         CharAnim& idleAnim = ui.heroIdle[p1Asset];
         idleAnim.frameTimer += dt;
         if (idleAnim.frameTimer >= idleAnim.frameDuration) {
@@ -124,9 +123,10 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 ui.pendingWin = false;
                 ui.pendingWinStatus = 0;
                 ui.isP2Dying = false;
+                ui.isP2Dead = true;
             }
         }
-    } else {
+    } else if (!ui.isP2Dead) {
         CharAnim& idleAnim = ui.heroIdle[p2Asset];
         idleAnim.frameTimer += dt;
         if (idleAnim.frameTimer >= idleAnim.frameDuration) {
@@ -283,6 +283,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 ResetRound(game);
                 ui.pendingWin = false; ui.pendingWinStatus = 0;
                 ui.isP1Dying = false; ui.isP2Dying = false;
+                ui.isP1Dead  = false; ui.isP2Dead  = false;
+                ui.winScreenTimer = 0.0f;
                 ui.heroDeath[p1Asset].currentFrame = 0;
                 ui.heroDeath[p2Asset].currentFrame = 0;
                 ui.cellEffectCount = 0;
@@ -290,6 +292,9 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             else ui.currentScreen = 0; 
         }
     }
+
+    // Update win screen timer
+    if (game.matchStatus != 0) ui.winScreenTimer += dt;
 
     // Update cell effects — clamp dt để tránh skip toàn bộ animation khi lag
     float effDt = (dt > 0.1f) ? 0.1f : dt;
@@ -592,7 +597,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float charScale = 1.5f;
 
     const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant)
-                           : ui.isP1Dying     ? ui.heroDeath[p1A]
+                           : (ui.isP1Dying || ui.isP1Dead) ? ui.heroDeath[p1A]
                            :                    ui.heroIdle[p1A];
     bool p1Active = true; // luôn sáng, spotlight phân biệt lượt
     float p1W = ui.heroDrawSize[p1A].x * charScale;
@@ -604,7 +609,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float p1DrawY = p1AnchorY - p1H;
 
     const CharAnim& p2Anim = ui.isP2Attacking ? getAtkC(p2A, ui.p2AttackVariant)
-                           : ui.isP2Dying     ? ui.heroDeath[p2A]
+                           : (ui.isP2Dying || ui.isP2Dead) ? ui.heroDeath[p2A]
                            :                    ui.heroIdle[p2A];
     bool p2Active = true;
     float p2W = ui.heroDrawSize[p2A].x * charScale;
@@ -776,6 +781,24 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     drawSpotlight(p1AnchorX, p1AnchorY + pedestalH - 5.0f, game.isPlayer1Turn,  p1ThemeCol);
     drawSpotlight(p2AnchorX, p2AnchorY + pedestalH - 5.0f, !game.isPlayer1Turn, p2ThemeCol);
 
+    // VẼ GLOW ELLIPSE sau lưng tướng thắng — phải vẽ TRƯỚC DrawCharAnim
+    if (game.matchStatus != 0 && game.matchStatus != 3) {
+        float _t2  = (float)GetTime();
+        float _p   = 0.5f + 0.5f * sinf(_t2 * 3.0f);
+        float _p2  = 0.5f + 0.5f * sinf(_t2 * 1.8f + 0.7f);
+        int   _win = game.matchStatus;
+        float _wx  = (_win == 1) ? 230.0f : 1690.0f;
+        Color _wc  = heroThemeColors[(_win==1) ? HERO_MAP[ui.p1HeroSelection]
+                                                : HERO_MAP[ui.p2HeroSelection]];
+        float glowA = 0.20f + 0.10f * _p2;
+        for (int r = 300; r >= 60; r -= 20) {
+            float frac = (float)(r - 60) / 240.0f;
+            float a = glowA * (1.0f - frac * frac);
+            DrawEllipse((int)_wx, 820, r, (int)(r * 0.55f), Fade(_wc, a));
+        }
+        DrawEllipse((int)_wx, 820, 90, 30, Fade(WHITE, 0.10f + 0.06f*_p));
+    }
+
     DrawCharAnim(p1Anim, p1DrawX, p1DrawY, p1W, p1H, false, p1Active);
     DrawCharAnim(p2Anim, p2DrawX, p2DrawY, p2W, p2H, true, p2Active);
 
@@ -783,75 +806,148 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     if (game.matchStatus != 0) {
         float t      = (float)GetTime();
         float pulse  = 0.5f + 0.5f * sinf(t * 3.0f);
+        float pulse2 = 0.5f + 0.5f * sinf(t * 1.8f + 0.7f);
+        float wt     = ui.winScreenTimer; // thời gian kể từ khi win screen hiện
 
         bool isDraw    = (game.matchStatus == 3);
         int  winPlayer = game.matchStatus;
-        float winnerAnchorX = (winPlayer == 1) ? 230.0f : 1690.0f;
-        float winnerBadgeX  = winnerAnchorX;           // tâm badge tên
-        float winnerBadgeY  = 374.0f;                  // y badge tên (p1Y = p2Y = 374)
+        int  loserPlayer = (winPlayer == 1) ? 2 : 1;
+        float winnerAnchorX = (winPlayer == 1) ? 230.0f  : 1690.0f;
+        float loserAnchorX  = (winPlayer == 1) ? 1690.0f : 230.0f;
+        float winnerBadgeX  = winnerAnchorX;
+        float winnerBadgeY  = 374.0f;
+
         Color winTheme = isDraw
             ? Color{180,180,180,255}
             : heroThemeColors[(winPlayer==1)
                 ? HERO_MAP[ui.p1HeroSelection]
                 : HERO_MAP[ui.p2HeroSelection]];
 
+        float bfx = ui.boardFrameRec.x;
         float bfy = ui.boardFrameRec.y;
+        float bfw = ui.boardFrameRec.width;
         float bfh = ui.boardFrameRec.height;
 
-        // ── HIGHLIGHT 5 Ô THẮNG — chỉ kẻ đường qua tâm 5 ô ──
+        // ── 1. VIGNETTE 4 GÓC — tối nhẹ viền màn, không che board ──
+        int vgStr = 160; // độ đậm vignette
+        DrawRectangleGradientH(0, 0, 320, 1080, {0,0,0,(unsigned char)vgStr}, {0,0,0,0});
+        DrawRectangleGradientH(1600, 0, 320, 1080, {0,0,0,0}, {0,0,0,(unsigned char)vgStr});
+        DrawRectangleGradientV(0, 0, 1920, 220, {0,0,0,(unsigned char)vgStr}, {0,0,0,0});
+        DrawRectangleGradientV(0, 860, 1920, 220, {0,0,0,0}, {0,0,0,(unsigned char)vgStr});
+
+        // ── 3. TƯỚNG THUA mờ đi (alpha giảm) ──
+        // Đã được xử lý qua draw hero bên trên với alpha thấp khi matchStatus != 0
+        // Ta vẽ thêm 1 lớp overlay tối mờ lên vùng tướng thua
+        if (!isDraw) {
+            float loserX = loserAnchorX;
+            // Hình ellipse tối bán trong suốt phủ lên vùng tướng thua
+            for (int r = 250; r >= 50; r -= 25) {
+                float frac = (float)(r - 50) / 200.0f;
+                float a = 0.35f * (1.0f - frac * frac);
+                DrawEllipse((int)loserX, 650, r, (int)(r * 1.4f), Fade(BLACK, a));
+            }
+        }
+
+        // ── 4. CONFETTI rơi từ trên xuống ──
+        if (!isDraw) {
+            // 80 mảnh confetti, màu xen kẽ theme + white + gold
+            Color confColors[4] = {
+                winTheme,
+                WHITE,
+                {255, 215, 0, 255},
+                {winTheme.r, (unsigned char)(winTheme.g/2+127), winTheme.b, 255}
+            };
+            for (int k = 0; k < 80; k++) {
+                float phase   = (float)k / 80.0f;
+                float speed   = 0.28f + 0.18f * sinf(phase * 7.3f);
+                float cycleT  = fmodf(wt * speed + phase, 1.0f);
+                float cx = 80.0f + phase * 1760.0f + sinf(phase*13.1f + t*1.2f) * 60.0f;
+                float cy = -20.0f + cycleT * 1120.0f;
+                float sz = 4.0f + 3.0f * sinf(phase * 9.7f);
+                float alpha = (cycleT > 0.85f) ? (1.0f - cycleT) / 0.15f : 0.85f;
+                Color cc = confColors[k % 4];
+                // Mảnh nhỏ xoay (vẽ hình chữ nhật nhỏ nghiêng)
+                float angle = t * (60.0f + phase * 120.0f) + phase * 360.0f;
+                DrawRectanglePro({cx, cy, sz*2.0f, sz*0.8f}, {sz, sz*0.4f}, angle,
+                    Fade(cc, alpha * 0.9f));
+            }
+        }
+
+        // ── 5. PARTICLE bay quanh chân hero thắng — nhiều hơn, đa dạng hơn ──
+        if (!isDraw) {
+            for (int k = 0; k < 80; k++) {
+                float phase  = (float)k / 80.0f;
+                float speed  = 0.45f + 0.20f * sinf(phase * 11.3f);
+                float cycleT = fmodf(t * speed + phase, 1.0f);
+                float spread = (k % 3 == 0) ? 130.0f : (k % 3 == 1) ? 80.0f : 50.0f;
+                float px = winnerAnchorX + sinf(phase*17.3f + cycleT*6.28f) * spread;
+                float py = 1010.0f - cycleT * (420.0f + 180.0f * sinf(phase*11.7f));
+                float alpha = (cycleT < 0.15f) ? cycleT/0.15f
+                            : (cycleT > 0.72f) ? (1.0f-cycleT)/0.28f : 1.0f;
+                alpha *= 0.85f;
+                float sz = 1.8f + 3.0f * sinf(phase * 9.1f);
+                // Xen kẽ màu theme và white
+                Color pc = (k % 4 == 0) ? WHITE : winTheme;
+                DrawCircleV({px, py}, sz,        Fade(pc, alpha));
+                DrawCircleV({px, py}, sz * 2.5f, Fade(pc, alpha * 0.15f));
+            }
+        }
+
+        // ── 6. HIGHLIGHT 5 Ô THẮNG — đường sáng nhấp nháy ──
         if (!isDraw) {
             float x0 = ui.cellStartX + game.winLine[0][1]*ui.cellSize + ui.cellSize*0.5f;
             float y0 = ui.cellStartY + game.winLine[0][0]*ui.cellSize + ui.cellSize*0.5f;
             float x4 = ui.cellStartX + game.winLine[4][1]*ui.cellSize + ui.cellSize*0.5f;
             float y4 = ui.cellStartY + game.winLine[4][0]*ui.cellSize + ui.cellSize*0.5f;
-            // Glow dày
-            DrawLineEx({x0,y0},{x4,y4}, 8.0f, Fade(winTheme, 0.30f + 0.15f*pulse));
+            // Glow ngoài rộng
+            DrawLineEx({x0,y0},{x4,y4}, 14.0f, Fade(winTheme, 0.18f + 0.10f*pulse));
+            // Glow giữa
+            DrawLineEx({x0,y0},{x4,y4}, 7.0f,  Fade(winTheme, 0.45f + 0.20f*pulse));
             // Đường chính
-            DrawLineEx({x0,y0},{x4,y4}, 3.5f, Fade(winTheme, 0.95f));
-            // Lõi trắng mỏng
-            DrawLineEx({x0,y0},{x4,y4}, 1.5f, Fade(WHITE,   0.70f + 0.30f*pulse));
+            DrawLineEx({x0,y0},{x4,y4}, 3.0f,  Fade(winTheme, 1.0f));
+            // Lõi trắng nhấp nháy
+            DrawLineEx({x0,y0},{x4,y4}, 1.5f,  Fade(WHITE, 0.60f + 0.40f*pulse));
         }
 
-        // ── 4. PARTICLE bay quanh chân hero thắng ──
-        if (!isDraw) {
-            for (int k = 0; k < 60; k++) {
-                float phase  = (float)k / 60.0f;
-                float cycleT = fmodf(t * 0.50f + phase, 1.0f);
-                float px = winnerAnchorX + sinf(phase*17.3f + cycleT*6.28f)*90.0f;
-                float py = 1010.0f - cycleT * (380.0f + 160.0f*sinf(phase*11.7f));
-                float alpha = (cycleT < 0.2f) ? cycleT/0.2f
-                            : (cycleT > 0.7f) ? (1.0f-cycleT)/0.3f : 1.0f;
-                alpha *= 0.80f;
-                float sz = 2.0f + 2.5f*sinf(phase*9.1f);
-                DrawCircleV({px,py}, sz,        Fade(winTheme, alpha));
-                DrawCircleV({px,py}, sz*2.3f,   Fade(winTheme, alpha*0.20f));
-            }
-        }
-
-        // ── 5. TEXT "WINS!" — phía trên badge tên hero thắng ──
+        // ── 7. TEXT "WINS!" với scale-in animation ──
         if (!isDraw) {
             const char* winText = "WINS!";
-            int wTw = MeasureTextCustomX(ui.mainFont, winText, 52);
+            // Scale ease-out: từ 0.3 → 1.0 trong 0.4s đầu
+            float scl = wt < 0.4f ? (0.3f + 0.7f * (wt / 0.4f)) : 1.0f;
+            // Easing cubic out
+            float t01 = wt < 0.4f ? (wt / 0.4f) : 1.0f;
+            scl = 1.0f - (1.0f - t01) * (1.0f - t01) * (1.0f - t01);
+            scl = 0.3f + scl * 0.7f;
+
+            int baseFontSize = 62;
+            int fontSize = (int)(baseFontSize * scl);
+            if (fontSize < 8) fontSize = 8;
+            int wTw = MeasureTextCustomX(ui.mainFont, winText, fontSize);
             float textX = winnerBadgeX - wTw * 0.5f;
-            float textY = winnerBadgeY - 68.0f;  // trên badge tên ~68px
+            float textY = winnerBadgeY - 78.0f;
+
             // Shadow
-            DrawTextCustom(ui.mainFont, winText, (int)(textX+2), (int)(textY+2), 52, Fade(BLACK, 0.75f));
-            // Glow halo
-            DrawTextCustom(ui.mainFont, winText, (int)(textX-1), (int)(textY-1), 52, Fade(winTheme, 0.30f*pulse));
-            // Text chính pulse
-            Color tc = {winTheme.r, winTheme.g, winTheme.b, (unsigned char)(205+50*pulse)};
-            DrawTextCustom(ui.mainFont, winText, (int)textX, (int)textY, 52, tc);
+            DrawTextCustom(ui.mainFont, winText, (int)(textX+3), (int)(textY+3), fontSize, Fade(BLACK, 0.80f));
+            // Glow lớn
+            DrawTextCustom(ui.mainFont, winText, (int)(textX-2), (int)(textY-2), fontSize, Fade(winTheme, 0.25f * pulse));
+            DrawTextCustom(ui.mainFont, winText, (int)(textX+2), (int)(textY+2), fontSize, Fade(winTheme, 0.15f * pulse));
+            // Text chính — pulse sáng
+            Color tc = {winTheme.r, winTheme.g, winTheme.b, (unsigned char)(210 + 45*pulse)};
+            DrawTextCustom(ui.mainFont, winText, (int)textX, (int)textY, fontSize, tc);
+            // Shine chạy qua text (dải trắng di chuyển)
+            float shineX = winnerBadgeX - 200.0f + fmodf(wt * 280.0f, 600.0f);
+            DrawRectanglePro({shineX, textY-5, 40, (float)fontSize+10}, {20,0}, 15.0f,
+                Fade(WHITE, 0.18f));
         } else {
-            // DRAW — ở giữa trên bàn cờ
             const char* drawText = "DRAW!";
-            int dw = MeasureTextCustomX(ui.mainFont, drawText, 58);
-            float textY = bfy - 68.0f;
-            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f+2), (int)(textY+2), 58, Fade(BLACK,0.7f));
+            int dw = MeasureTextCustomX(ui.mainFont, drawText, 62);
+            float textY = bfy - 72.0f;
+            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f+3), (int)(textY+3), 62, Fade(BLACK,0.8f));
             Color tc = {180,180,180,(unsigned char)(205+50*pulse)};
-            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f), (int)textY, 58, tc);
+            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f), (int)textY, 62, tc);
         }
 
-        // ── 6. BUTTON — vị trí cũ dưới bàn cờ ──
+        // ── 8. BUTTON ──
         float btnW = 220.0f, btnH = 52.0f, btnGap = 20.0f;
         float btnY = bfy + bfh + 14.0f;
         Rectangle btnPlayAgain = { 960.0f - btnW - btnGap*0.5f, btnY, btnW, btnH };
