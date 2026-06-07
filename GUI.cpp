@@ -108,6 +108,18 @@ void InitGUI(UIState& ui) {
     ui.musicEnabled = true;
     ui.draggingVolume = false;
 
+    ui.menuScrollY = 350.0f; // vị trí item đầu tiên
+
+    // Init embers — rải ngẫu nhiên toàn màn hình để tránh trống lúc đầu
+    for (int i = 0; i < UIState::MAX_EMBERS; i++) {
+        ui.embers[i].x     = (float)(rand() % 1920);
+        ui.embers[i].y     = (float)(rand() % 1080);
+        ui.embers[i].vx    = ((rand() % 100) - 50) * 0.01f;
+        ui.embers[i].vy    = -((rand() % 60) + 20) * 0.01f;
+        ui.embers[i].alpha = (float)(rand() % 80 + 20) / 100.0f;
+        ui.embers[i].size  = (float)(rand() % 4 + 2);
+        ui.embers[i].life  = (float)(rand() % 100) / 100.0f;
+    }
 
     PlayMusicStream(ui.bgMusic);
     SetMusicVolume(ui.bgMusic, ui.musicVolume);

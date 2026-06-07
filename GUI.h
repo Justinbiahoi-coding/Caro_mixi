@@ -78,12 +78,26 @@ struct UIState {
     CharAnim& charP2 = heroIdle[1]; 
     CharAnim& atkP1 = heroAttack[0];       
     CharAnim& atkP2 = heroAttack[1];       
-    bool isP1Attacking;   
+    bool isP1Attacking;
     bool isP2Attacking;
     Music bgMusic;
     float musicVolume = 0.8f;
     bool musicEnabled;
     bool draggingVolume = false;
+
+    // Menu particles
+    struct Ember {
+        float x, y;
+        float vx, vy;
+        float alpha;
+        float size;
+        float life; // 0.0 → 1.0
+    };
+    static const int MAX_EMBERS = 160;
+    Ember embers[MAX_EMBERS];
+
+    // Smooth menu scroll
+    float menuScrollY = 0.0f; // vị trí highlight hiện tại (pixel, nội suy)
 };
 
 void InitGUI(UIState& ui);

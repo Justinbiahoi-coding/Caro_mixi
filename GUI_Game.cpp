@@ -195,7 +195,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     snprintf(roundText, sizeof(roundText), "VONG CHOI %d", game.roundCount);
     DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 100, 261.1f, 74.6f, 39, WHITE, -5.0f);
 
-    const char* guide = "Bam [L] de luu game | Nhan [M] de ve Menu";
+    const char* guide = "Press [L] to save | Press [M] for Menu";
     float guideSize = 25;
     float guideWidth = MeasureTextEx(ui.mainFont, guide, guideSize, 0).x;
     DrawTextCustom(ui.mainFont, guide, 1920.0f / 2.0f - guideWidth / 2.0f, 1000, guideSize, WHITE);
@@ -310,9 +310,9 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         
         const char* winText = "";
         Color winColor = WHITE;
-        if (game.matchStatus == 1) { winText = TextFormat("%s (X) THANG!", game.player1.name); winColor = RED; }
-        else if (game.matchStatus == 2) { winText = TextFormat("%s (O) THANG!", game.player2.name); winColor = BLUE; }
-        else if (game.matchStatus == 3) { winText = "HOA NHAU!"; winColor = GRAY; }
+        if (game.matchStatus == 1) { winText = TextFormat("%s (X) WINS!", game.player1.name); winColor = RED; }
+        else if (game.matchStatus == 2) { winText = TextFormat("%s (O) WINS!", game.player2.name); winColor = BLUE; }
+        else if (game.matchStatus == 3) { winText = "DRAW!"; winColor = GRAY; }
         
         int winWidth = MeasureTextCustomX(ui.mainFont, winText, 50);
         DrawTextCustom(ui.mainFont, winText, 960 - winWidth / 2, 470, 50, winColor);
@@ -325,12 +325,12 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawRectangleRec(btnPlayAgain, colorPlayAgain); DrawRectangleLinesEx(btnPlayAgain, 3.0f, BLACK);
         DrawRectangleRec(btnMenu, colorMenu); DrawRectangleLinesEx(btnMenu, 3.0f, BLACK);
 
-        int wPlay = MeasureTextCustomX(ui.mainFont, "Choi Van Moi", 25);
-        int wMenu = MeasureTextCustomX(ui.mainFont, "Ve Menu", 25);
-        DrawTextCustom(ui.mainFont, "Choi Van Moi", btnPlayAgain.x + (btnPlayAgain.width - wPlay) / 2, btnPlayAgain.y + 12, 25, BLACK);
-        DrawTextCustom(ui.mainFont, "Ve Menu", btnMenu.x + (btnMenu.width - wMenu) / 2, btnMenu.y + 12, 25, BLACK);
+        int wPlay = MeasureTextCustomX(ui.mainFont, "Play Again", 25);
+        int wMenu = MeasureTextCustomX(ui.mainFont, "Main Menu", 25);
+        DrawTextCustom(ui.mainFont, "Play Again", btnPlayAgain.x + (btnPlayAgain.width - wPlay) / 2, btnPlayAgain.y + 12, 25, BLACK);
+        DrawTextCustom(ui.mainFont, "Main Menu", btnMenu.x + (btnMenu.width - wMenu) / 2, btnMenu.y + 12, 25, BLACK);
 
-        const char* guideEnd = "Dung [A]/[D] hoac Chuot de chon. [ENTER] de xac nhan.";
+        const char* guideEnd = "Use [A]/[D] or Mouse to select. [ENTER] to confirm.";
         int guideEndW = MeasureTextCustomX(ui.mainFont, guideEnd, 22);
         DrawTextCustom(ui.mainFont, guideEnd, 960 - guideEndW / 2, 620, 22, DARKGRAY);
     }
