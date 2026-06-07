@@ -1072,7 +1072,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.85f)); 
 
-        DrawTextCustom(ui.mainFont, "THONG TIN NGUOI CHOI", 750, 300, 40, WHITE);
+        DrawTextCustom(ui.mainFont, "PLAYER INFO", 750, 300, 40, WHITE);
         
         //Player 1
         DrawTextCustom(ui.mainFont, "Ten Player 1 (X) - Toi da 10 ky tu:", 750, 400, 25, LIGHTGRAY);

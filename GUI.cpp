@@ -110,23 +110,23 @@ void InitGUI(UIState& ui) {
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
 
-    ui.cellSize = 44.0f; 
-    float gridWidth = BOARD_SIZE * 1.0275 * ui.cellSize;  
-    float gridHeight = BOARD_SIZE * 1.0275 * ui.cellSize; 
-    
-    float margin_Left   = 0.073f;  
-    float margin_Right  = 0.07f;  
-    float margin_Top    = 0.13f;  
-    float margin_Bottom = 0.050f; 
+    // Frame vuông, để lại đủ chỗ cho nhân vật 2 bên và badge trên/dưới
+    // 1920 - 2*550 = 820px cho frame → nhân vật có ~550px mỗi bên
+    float frameW = 780.0f;
+    float frameH = 780.0f;
 
-    ui.boardFrameRec.width = gridWidth / (1.0f - margin_Left - margin_Right);
-    ui.boardFrameRec.height = gridHeight / (1.0f - margin_Top - margin_Bottom);
+    ui.boardFrameRec.width  = frameW;
+    ui.boardFrameRec.height = frameH;
+    ui.boardFrameRec.x = (1920.0f - frameW) / 2.0f;          // căn giữa ngang
+    ui.boardFrameRec.y = (1080.0f - frameH) / 2.0f + 30.0f;  // hơi lùi xuống nhường badge top
 
-    ui.boardFrameRec.x = 570.7f;
-    ui.boardFrameRec.y = 180.9f;    
+    // Border frame asset đều 4 phía ~5.5%
+    float margin_L = 0.055f, margin_R = 0.055f;
+    float margin_T = 0.055f, margin_B = 0.055f;
 
-    ui.cellStartX = ui.boardFrameRec.x + (ui.boardFrameRec.width * margin_Left);
-    ui.cellStartY = ui.boardFrameRec.y + (ui.boardFrameRec.height * margin_Top);
+    ui.cellSize   = frameW * (1.0f - margin_L - margin_R) / BOARD_SIZE;
+    ui.cellStartX = ui.boardFrameRec.x + frameW * margin_L;
+    ui.cellStartY = ui.boardFrameRec.y + frameH * margin_T;
 
     InitAudioDevice();
 

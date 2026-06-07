@@ -234,6 +234,39 @@ static void DrawCharAnim(const CharAnim& c, float x, float y, float drawW, float
 void DrawGUIGame(const GameState& game, const UIState& ui) {
     // NỀN & BÀN CỜ
     DrawTexturePro(ui.bgGame, { 0, 0, (float)ui.bgGame.width, (float)ui.bgGame.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
+
+    // === PANEL NỀN 2 BÊN NHÂN VẬT — full chiều cao ===
+    float boardL = ui.boardFrameRec.x;
+    float boardR = ui.boardFrameRec.x + ui.boardFrameRec.width;
+
+    // Panel trái: full màn hình, gradient tối mép → trong suốt sát board
+    DrawRectangleGradientH(0, 0, (int)(boardL + 40), 1080,
+        {5, 4, 2, 230}, {5, 4, 2, 0});
+
+    // Panel phải: full màn hình
+    DrawRectangleGradientH((int)(boardR - 40), 0, (int)(1920 - boardR + 40), 1080,
+        {5, 4, 2, 0}, {5, 4, 2, 230});
+
+    // Panel top: gradient từ top xuống (tối → trong suốt)
+    DrawRectangleGradientV(0, 0, 1920, 160,
+        {5, 4, 2, 200}, {5, 4, 2, 0});
+
+    // Panel bottom: gradient từ bottom lên
+    DrawRectangleGradientV(0, 920, 1920, 160,
+        {5, 4, 2, 0}, {5, 4, 2, 200});
+
+    // Vignette: chỉ tối ở mép ngoài màn hình, vùng nhân vật giữ sáng tự nhiên
+    // Trái: mép ngoài tối (alpha 100), fade nhanh vào → 0 ở 1/3 panel
+    DrawRectangleGradientH(0, 0, (int)(boardL * 0.5f), 1080, {0,0,0,100}, {0,0,0,0});
+    // Phải
+    DrawRectangleGradientH((int)(boardR + (1920-boardR)*0.5f), 0, (int)((1920-boardR)*0.5f), 1080, {0,0,0,0}, {0,0,0,100});
+    // Top: chỉ tối phần trên cùng badge, fade nhanh
+    DrawRectangleGradientV(0, 0, 1920, 80, {0,0,0,90}, {0,0,0,0});
+    // Bottom
+    float boardBot = ui.boardFrameRec.y + ui.boardFrameRec.height;
+    DrawRectangleGradientV(0, (int)(boardBot + 40), 1920, 60, {0,0,0,0}, {0,0,0,80});
+
+
     Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
     DrawTexturePro(ui.boardFrame, frameSrc, ui.boardFrameRec, {0, 0}, 0.0f, WHITE);
 
@@ -272,24 +305,68 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     }
 
     // THÔNG TIN VÁN ĐẤU (BADGES)
-    DrawBadgeText(ui.mainFont, ui.titleBadge, "THONG TIN VAN DAU", 15, 402.3f, 84.7f, 48, WHITE, 0.5f);
+    DrawBadgeText(ui.mainFont, ui.titleBadge, "MATCH INFO", 15, 402.3f, 84.7f, 48, WHITE, 0.5f);
     char roundText[30];
-    snprintf(roundText, sizeof(roundText), "VONG CHOI %d", game.roundCount);
+    snprintf(roundText, sizeof(roundText), "ROUND %d", game.roundCount);
     DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 100, 261.1f, 74.6f, 39, WHITE, -5.0f);
 
-    const char* guide = "Press [L] to save | Press [M] for Menu";
-    float guideSize = 25;
-    float guideWidth = MeasureTextEx(ui.mainFont, guide, guideSize, 0).x;
-    DrawTextCustom(ui.mainFont, guide, 1920.0f / 2.0f - guideWidth / 2.0f, 1000, guideSize, WHITE);
+    // === THANH NGANG DƯỚI BOARD ===
+    {
+        float bx = ui.boardFrameRec.x;
+        float bw = ui.boardFrameRec.width;
+        float by = ui.boardFrameRec.y + ui.boardFrameRec.height + 12.0f;
+        float bh = 50.0f;
+        float third = bw / 3.0f;
 
-    // VẼ TÊN PLAYER 1 & 2
-    int badgePWidth = 504, badgePHeight = 109, nameFontSize = 55; 
-    
-    float p1X = 31.2f, p1Y = 386.7f;
+        // Nền
+        DrawRectangle((int)bx, (int)by, (int)bw, (int)bh, {20, 14, 4, 220});
+        DrawRectangleLinesEx({bx, by, bw, bh}, 1.5f, {160, 120, 40, 200});
+
+        // Đường chia 3 khối
+        DrawRectangle((int)(bx + third),     (int)(by + 8), 1, (int)(bh - 16), {160, 120, 40, 150});
+        DrawRectangle((int)(bx + third*2),   (int)(by + 8), 1, (int)(bh - 16), {160, 120, 40, 150});
+
+        // Khối trái: [L] Save
+        const char* saveStr = "[L]  Save";
+        int sw = MeasureTextCustomX(ui.mainFont, saveStr, 26);
+        DrawTextCustom(ui.mainFont, saveStr, bx + (third - sw)*0.5f, by + (bh-26)*0.5f, 26, {180, 150, 80, 220});
+
+        // Khối giữa: lượt + số nước — highlight tên người đang đi
+        const char* turnName = game.isPlayer1Turn ? game.player1.name : game.player2.name;
+        char midText[60];
+        snprintf(midText, sizeof(midText), "Turn: %s  |  Move: %d", turnName, game.moveCount);
+        int mw = MeasureTextCustomX(ui.mainFont, midText, 26);
+        DrawTextCustom(ui.mainFont, midText, bx + third + (third - mw)*0.5f, by + (bh-26)*0.5f, 26, {220, 190, 100, 255});
+
+        // Khối phải: [M] Menu
+        const char* menuStr = "[M]  Menu";
+        int mnw = MeasureTextCustomX(ui.mainFont, menuStr, 26);
+        DrawTextCustom(ui.mainFont, menuStr, bx + third*2 + (third - mnw)*0.5f, by + (bh-26)*0.5f, 26, {180, 150, 80, 220});
+    }
+
+    float glowT = (float)GetTime();
+    float glowAlpha = 0.55f + 0.45f * sinf(glowT * 4.0f);
+
+    // Màu theme theo hero (asset index 1-5)
+    const Color heroThemeColors[6] = {
+        {150, 150, 150, 255},  // 0: black_knight (hidden)
+        {220,  70,  20, 255},  // 1: fire_knight
+        { 40, 170, 110, 255},  // 2: green_archer
+        { 60, 110, 220, 255},  // 3: wind_assassin
+        {180, 160,  60, 255},  // 4: metal_blade
+        { 30, 160, 220, 255},  // 5: water_mage
+    };
+    Color p1ThemeCol = heroThemeColors[HERO_MAP[ui.p1HeroSelection]];
+    Color p2ThemeCol = heroThemeColors[HERO_MAP[ui.p2HeroSelection]];
+
+    // VẼ TÊN PLAYER 1 & 2 — badge sát nhân vật
+    int badgePWidth = 460, badgePHeight = 95, nameFontSize = 44;
+
+    float p1X = 230.0f - badgePWidth * 0.5f, p1Y = 470.0f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p1X, p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     int p1NameWidth = MeasureTextCustomX(ui.mainFont, game.player1.name, nameFontSize);
     int p1NameHeight = MeasureTextCustomY(ui.mainFont, game.player1.name, nameFontSize);
-    DrawTextCustom(ui.mainFont, game.player1.name, p1X + (badgePWidth - p1NameWidth) / 2.0f, p1Y + (badgePHeight - p1NameHeight) / 2.0f - 5.0f, nameFontSize, WHITE);
+    DrawTextCustom(ui.mainFont, game.player1.name, p1X + (badgePWidth - p1NameWidth) / 2.0f, p1Y + (badgePHeight - p1NameHeight) / 2.0f - 3.0f, nameFontSize, WHITE);
    // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 1 ---
    if (game.gameMode == 1) {
         float uiScale = 0.35f; // Chỉnh độ to nhỏ của toàn bộ UI ở đây
@@ -333,11 +410,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
         }
     }
-    float p2X = 1388.4f, p2Y = 386.7f;
+    float p2X = 1690.0f - badgePWidth * 0.5f,   p2Y = 470.0f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     int p2NameWidth = MeasureTextCustomX(ui.mainFont, game.player2.name, nameFontSize);
     int p2NameHeight = MeasureTextCustomY(ui.mainFont, game.player2.name, nameFontSize);
-    DrawTextCustom(ui.mainFont, game.player2.name, p2X + (badgePWidth - p2NameWidth) / 2.0f, p2Y + (badgePHeight - p2NameHeight) / 2.0f - 5.0f, nameFontSize, WHITE);
+    DrawTextCustom(ui.mainFont, game.player2.name, p2X + (badgePWidth - p2NameWidth) / 2.0f, p2Y + (badgePHeight - p2NameHeight) / 2.0f - 3.0f, nameFontSize, WHITE);
     // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 2 ---
     if (game.gameMode == 1) {
         float uiScale = 0.35f; 
@@ -383,17 +460,124 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         return ui.heroAttack[asset];
     };
 
+    // Scale 1.5x. Sprite sheet rất lớn (1200x700) nhưng nhân vật thật chỉ chiếm
+    // phần giữa — dùng heroDrawOffset để biết nhân vật thật nằm đâu trong sprite.
+    // Công thức: anchor = vị trí muốn nhân vật thật đứng
+    //   drawX = anchorX - (spriteW/2 + offsetX)   [offsetX âm = nhân vật lệch phải trong sprite]
+    //   drawY = anchorY - spriteH - offsetY        [offsetY âm = nhân vật lệch xuống trong sprite]
+    float charScale = 1.5f;
+
     const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant) : ui.heroIdle[p1A];
-    bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
-    Vector2 p1Size = ui.heroDrawSize[p1A];
-    Vector2 p1Offset = ui.heroDrawOffset[p1A];
-    DrawCharAnim(p1Anim, 135.0f + p1Offset.x, 640.0f + p1Offset.y, p1Size.x, p1Size.y, false, p1Active);
+    bool p1Active = true; // luôn sáng, spotlight phân biệt lượt
+    float p1W = ui.heroDrawSize[p1A].x * charScale;
+    float p1H = ui.heroDrawSize[p1A].y * charScale;
+    float pedestalH = 38.0f; // chiều cao bục — nhân vật đứng trên mặt bục
+
+    float p1AnchorX = 230.0f,  p1AnchorY = 1010.0f - pedestalH;
+    float p1DrawX = p1AnchorX - p1W * 0.5f;
+    float p1DrawY = p1AnchorY - p1H;
 
     const CharAnim& p2Anim = ui.isP2Attacking ? getAtkC(p2A, ui.p2AttackVariant) : ui.heroIdle[p2A];
-    bool p2Active = (!game.isPlayer1Turn && game.matchStatus == 0) || ui.isP2Attacking;
-    Vector2 p2Size = ui.heroDrawSize[p2A];
-    Vector2 p2Offset = ui.heroDrawOffset[p2A];
-    DrawCharAnim(p2Anim, 1467.0f + p2Offset.x, 640.0f + p2Offset.y, p2Size.x, p2Size.y, true, p2Active);
+    bool p2Active = true;
+    float p2W = ui.heroDrawSize[p2A].x * charScale;
+    float p2H = ui.heroDrawSize[p2A].y * charScale;
+    float p2AnchorX = 1690.0f, p2AnchorY = 1010.0f - pedestalH;
+    float p2DrawX = p2AnchorX - p2W * 0.5f;
+    float p2DrawY = p2AnchorY - p2H;
+
+    // === SPOTLIGHT dưới chân nhân vật — sân khấu style ===
+    auto drawSpotlight = [&](float cx, float fy, bool active, Color c) {
+        float pulse = 0.75f + 0.25f * sinf(glowT * 3.5f);
+
+        // Bục hình thang — mặt trên nhỏ, đáy dưới to hơn
+        float topRx = 95.0f;   // bán kính ngang mặt trên (nhỏ)
+        float topRy = 16.0f;   // bán kính dọc mặt trên
+        float botRx = 130.0f;  // bán kính ngang đáy (to hơn)
+        float botRy = 22.0f;   // bán kính dọc đáy
+        float pH    = 38.0f;   // chiều cao bục
+        float topY  = fy - pH; // y mặt trên bục
+        // alias để không đổi code bên dưới
+        float pRx = topRx, pRy = topRy;
+
+        // Màu mặt bên bục: đậm, tinted theo màu theme
+        unsigned char sr = (unsigned char)((int)c.r * 45 / 100 + 30);
+        unsigned char sg = (unsigned char)((int)c.g * 45 / 100 + 30);
+        unsigned char sb = (unsigned char)((int)c.b * 45 / 100 + 30);
+        // Màu mặt trên: sáng hơn
+        unsigned char tr2 = (unsigned char)((int)c.r * 60 / 100 + 50);
+        unsigned char tg2 = (unsigned char)((int)c.g * 60 / 100 + 50);
+        unsigned char tb2 = (unsigned char)((int)c.b * 60 / 100 + 50);
+
+        int segs = 80;
+
+        // === MẶT BÊN bục (hình thang) ===
+        for (int i = 0; i < segs; i++) {
+            float a0 = (float)i       * 2.0f * PI / segs;
+            float a1 = (float)(i + 1) * 2.0f * PI / segs;
+
+            // Shade: phía trước (sinf > 0) sáng hơn
+            float shade0 = 0.55f + 0.45f * sinf(a0);
+            float shade1 = 0.55f + 0.45f * sinf(a1);
+            float shadeAvg = (shade0 + shade1) * 0.5f;
+
+            float bx0 = cx + cosf(a0) * botRx, by0 = fy    + sinf(a0) * botRy;
+            float bx1 = cx + cosf(a1) * botRx, by1 = fy    + sinf(a1) * botRy;
+            float tx0 = cx + cosf(a0) * topRx, ty0 = topY  + sinf(a0) * topRy;
+            float tx1 = cx + cosf(a1) * topRx, ty1 = topY  + sinf(a1) * topRy;
+
+            unsigned char fa = (unsigned char)(shadeAvg * 255);
+            unsigned char cr2 = (unsigned char)(sr * shadeAvg);
+            unsigned char cg2 = (unsigned char)(sg * shadeAvg);
+            unsigned char cb2 = (unsigned char)(sb * shadeAvg);
+
+            DrawTriangle({bx0,by0},{tx0,ty0},{bx1,by1}, {cr2,cg2,cb2,fa});
+            DrawTriangle({tx0,ty0},{tx1,ty1},{bx1,by1}, {cr2,cg2,cb2,fa});
+        }
+
+        // === MẶT TRÊN bục — ellipse đặc, màu sáng hơn mặt bên ===
+        DrawEllipse((int)cx, (int)topY, (int)topRx, (int)topRy, {tr2,tg2,tb2,255});
+        // Highlight tâm sáng hơn
+        DrawEllipse((int)cx, (int)topY, (int)(topRx*0.55f), (int)(topRy*0.55f),
+            {(unsigned char)((int)tr2+40<255?(int)tr2+40:255),
+             (unsigned char)((int)tg2+40<255?(int)tg2+40:255),
+             (unsigned char)((int)tb2+40<255?(int)tb2+40:255), 220});
+
+        // === VIỀN mặt trên — glow màu theme ===
+        for (int i = 0; i < segs; i++) {
+            float a0 = (float)i       * 2.0f * PI / segs;
+            float a1 = (float)(i + 1) * 2.0f * PI / segs;
+            float ex0 = cx + cosf(a0) * topRx, ey0 = topY + sinf(a0) * topRy;
+            float ex1 = cx + cosf(a1) * topRx, ey1 = topY + sinf(a1) * topRy;
+            DrawLineEx({ex0,ey0},{ex1,ey1}, 5.0f, {c.r,c.g,c.b,(unsigned char)(70*pulse)});
+            DrawLineEx({ex0,ey0},{ex1,ey1}, 2.0f,
+                {(unsigned char)((c.r+255)/2),(unsigned char)((c.g+255)/2),(unsigned char)((c.b+255)/2),
+                 (unsigned char)(220*pulse)});
+        }
+
+        // === VIỀN đáy bục ===
+        for (int i = 0; i < segs; i++) {
+            float a0 = (float)i       * 2.0f * PI / segs;
+            float a1 = (float)(i + 1) * 2.0f * PI / segs;
+            float ex0 = cx + cosf(a0) * botRx, ey0 = fy + sinf(a0) * botRy;
+            float ex1 = cx + cosf(a1) * botRx, ey1 = fy + sinf(a1) * botRy;
+            DrawLineEx({ex0,ey0},{ex1,ey1}, 2.0f, {sr,sg,sb,200});
+        }
+
+        // === GLOW dưới bục ===
+        DrawEllipse((int)cx,(int)fy,(int)(botRx+45),(int)(botRy+7),{c.r,c.g,c.b,(unsigned char)(18*pulse)});
+        DrawEllipse((int)cx,(int)fy,(int)(botRx+18),(int)(botRy+3),{c.r,c.g,c.b,(unsigned char)(40*pulse)});
+
+        if (!active) {
+            // Inactive: phủ overlay tối lên toàn bục
+            DrawEllipse((int)cx,(int)topY,(int)topRx,(int)topRy,{0,0,0,120});
+        }
+    };
+    // fy = mặt đất thật (anchor + pedestalH = 1010)
+    drawSpotlight(p1AnchorX, p1AnchorY + pedestalH - 5.0f, game.isPlayer1Turn,  p1ThemeCol);
+    drawSpotlight(p2AnchorX, p2AnchorY + pedestalH - 5.0f, !game.isPlayer1Turn, p2ThemeCol);
+
+    DrawCharAnim(p1Anim, p1DrawX, p1DrawY, p1W, p1H, false, p1Active);
+    DrawCharAnim(p2Anim, p2DrawX, p2DrawY, p2W, p2H, true, p2Active);
 
     // VẼ MÀN HÌNH END GAME
     if (game.matchStatus != 0) {
