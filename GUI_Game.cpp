@@ -404,12 +404,15 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 float dx = x + pad, dy = y + pad;
 
                 if (eff && !eff->done) {
-                    // Vẽ frame effect hiện tại
+                    // Vẽ frame effect hiện tại (kích thước gấp đôi, căn giữa ô)
                     const Texture2D& sheet = ui.heroEffect[eff->heroAsset];
                     int fh = sheet.height;
                     int fw = fh; // frame vuông
                     Rectangle src = { (float)(eff->currentFrame * fw), 0, (float)fw, (float)fh };
-                    Rectangle dst = { dx, dy, drawSize, drawSize };
+                    float effSize = drawSize * 2.0f;
+                    float effX = x + ui.cellSize * 0.5f - effSize * 0.5f;
+                    float effY = y + ui.cellSize * 0.5f - effSize * 0.5f;
+                    Rectangle dst = { effX, effY, effSize, effSize };
                     DrawTexturePro(sheet, src, dst, {0,0}, 0.0f, WHITE);
                 } else {
                     // Effect xong → vẽ icon tĩnh

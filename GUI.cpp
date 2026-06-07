@@ -113,7 +113,7 @@ void InitGUI(UIState& ui) {
     ui.heroEffect[1] = LoadTexture("assets/Character/fire_knight/attack_effect.png");
     ui.heroEffectFrames[1] = 7;
     ui.heroEffect[2] = LoadTexture("assets/Character/green_archer/attack_effect.png");
-    ui.heroEffectFrames[2] = 8;
+    ui.heroEffectFrames[2] = 10;
     ui.heroEffect[3] = LoadTexture("assets/Character/wind_assassin/attack_effect.png");
     ui.heroEffectFrames[3] = 12;
     ui.heroEffect[4] = LoadTexture("assets/Character/metal_blade/attack_effect.png");
