@@ -96,6 +96,21 @@ struct UIState {
     static const int MAX_EMBERS = 160;
     Ember embers[MAX_EMBERS];
 
+    // Character select particles
+    struct CharParticle {
+        float x, y;
+        float vx, vy;
+        float alpha;
+        float size;
+        float life;      // 0.0 → 1.0
+        int   heroID;    // which hero spawned it (0–3)
+        int   type;      // 0 = rising ember, 1 = rune diamond
+        float angle;     // for rune rotation
+        float angleV;    // rotation speed
+    };
+    static const int MAX_CHAR_PARTICLES = 200;
+    CharParticle charParticles[MAX_CHAR_PARTICLES];
+
     // Smooth menu scroll
     float menuScrollY = 0.0f; // vị trí highlight hiện tại (pixel, nội suy)
 };

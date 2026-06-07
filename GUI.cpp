@@ -121,6 +121,12 @@ void InitGUI(UIState& ui) {
         ui.embers[i].life  = (float)(rand() % 100) / 100.0f;
     }
 
+    // Init char select particles — bắt đầu tắt hết
+    for (int i = 0; i < UIState::MAX_CHAR_PARTICLES; i++) {
+        ui.charParticles[i].life = 0.0f;
+        ui.charParticles[i].alpha = 0.0f;
+    }
+
     PlayMusicStream(ui.bgMusic);
     SetMusicVolume(ui.bgMusic, ui.musicVolume);
 }
