@@ -1,43 +1,89 @@
 #include "GUI_Game.h"
 #include "Library.h"
 
+// Kiểm tra xem nước vừa đánh tại (row,col) có chặn đối thủ (oppPlayer) không.
+// Trả về true nếu:
+//   - Chặn 1 đầu của 3 quân liên tiếp đối thủ (đầu kia đã bị chặn bởi biên/quân ta)
+//   - Chặn cả 2 đầu của 4 quân liên tiếp đối thủ (biên tính là chặn)
+static bool CheckBlockVariant(GameState& game, int row, int col, int oppPlayer) {
+    const int dirs[4][2] = {{0,1},{1,0},{1,1},{1,-1}};
+    for (int d = 0; d < 4; d++) {
+        int dx = dirs[d][0], dy = dirs[d][1];
+        int count = 0, blocks = 0;
+        GetLineStatus(game, row, col, dx, dy, oppPlayer, count, blocks);
+        // count = số quân đối thủ liên tiếp (không tính ô vừa đánh)
+        // blocks = số đầu bị chặn (biên + quân không phải oppPlayer)
+        // Ô vừa đánh của ta nằm ở một trong hai đầu → nó đóng góp 1 block
+        // GetLineStatus tính block ở đầu trống → ta đặt vào đó thì đầu đó thành bị chặn
+        // Nhưng GetLineStatus không biết ô (row,col) vừa được đặt, nên cần xét thêm:
+        // Thực ra sau MakeMove, board[row][col] đã là quân ta, GetLineStatus sẽ thấy
+        // quân ta chặn một phía và biên/quân khác chặn phía kia.
+        // Điều kiện: 3 quân liên tiếp + 1 đầu bị chặn (blocks >= 1, count == 3)
+        //            4 quân liên tiếp + 2 đầu đều bị chặn (blocks == 2, count == 4)
+        if (count == 3) return true;  // chặn 1 đầu 3 quân, không quan tâm đầu kia
+        if (count == 4 && blocks == 2) return true;  // chặn 2 đầu 4 quân (biên tính là chặn)
+    }
+    return false;
+}
+
 void UpdateGUIGame(GameState& game, UIState& ui) {
     float dt = GetFrameTime();
     Vector2 mouse = GetMousePosition();
 
+    int p1Asset = HERO_MAP[ui.p1HeroSelection];
+    int p2Asset = HERO_MAP[ui.p2HeroSelection];
+
+    // Helper: get active attack anim by variant
+    auto getAtk = [&](int asset, int variant) -> CharAnim& {
+        if (variant == 1) return ui.heroAttack2[asset];
+        if (variant == 2) return ui.heroAttack3[asset];
+        return ui.heroAttack[asset];
+    };
+
     if (ui.isP1Attacking) {
-        CharAnim& atkAnim = ui.heroAttack[ui.p1HeroSelection];
+        CharAnim& atkAnim = getAtk(p1Asset, ui.p1AttackVariant);
         atkAnim.frameTimer += dt;
         if (atkAnim.frameTimer >= atkAnim.frameDuration) {
             atkAnim.frameTimer = 0.0f;
             atkAnim.currentFrame++;
             if (atkAnim.currentFrame >= atkAnim.frameCount) {
-                ui.isP1Attacking = false; 
+                ui.isP1Attacking = false;
                 atkAnim.currentFrame = 0;
+                // Nếu đây là attack_s3 (chiến thắng), giờ mới reveal win screen
+                if (ui.pendingWin) {
+                    game.matchStatus = ui.pendingWinStatus;
+                    ui.pendingWin = false;
+                    ui.pendingWinStatus = 0;
+                }
             }
         }
     } else {
-        CharAnim& idleAnim = ui.heroIdle[ui.p1HeroSelection];
+        CharAnim& idleAnim = ui.heroIdle[p1Asset];
         idleAnim.frameTimer += dt;
         if (idleAnim.frameTimer >= idleAnim.frameDuration) {
             idleAnim.frameTimer = 0.0f;
             idleAnim.currentFrame = (idleAnim.currentFrame + 1) % idleAnim.frameCount;
         }
     }
-    
+
     if (ui.isP2Attacking) {
-        CharAnim& atkAnim = ui.heroAttack[ui.p2HeroSelection];
+        CharAnim& atkAnim = getAtk(p2Asset, ui.p2AttackVariant);
         atkAnim.frameTimer += dt;
         if (atkAnim.frameTimer >= atkAnim.frameDuration) {
             atkAnim.frameTimer = 0.0f;
             atkAnim.currentFrame++;
             if (atkAnim.currentFrame >= atkAnim.frameCount) {
-                ui.isP2Attacking = false; 
+                ui.isP2Attacking = false;
                 atkAnim.currentFrame = 0;
+                if (ui.pendingWin) {
+                    game.matchStatus = ui.pendingWinStatus;
+                    ui.pendingWin = false;
+                    ui.pendingWinStatus = 0;
+                }
             }
         }
     } else {
-        CharAnim& idleAnim = ui.heroIdle[ui.p2HeroSelection];
+        CharAnim& idleAnim = ui.heroIdle[p2Asset];
         idleAnim.frameTimer += dt;
         if (idleAnim.frameTimer >= idleAnim.frameDuration) {
             idleAnim.frameTimer = 0.0f;
@@ -46,18 +92,31 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     }
 
     // --- 2. XỬ LÝ LOGIC ĐÁNH CỜ ---
-        if (game.matchStatus == 0) { 
+        if (game.matchStatus == 0 && !ui.pendingWin) {
             bool moveMade = false;
             bool wasP1 = game.isPlayer1Turn;
+            int moveRow = -1, moveCol = -1;
     
             if (game.isVsBot && !game.isPlayer1Turn) {
                 game.botThinkTimer += dt;
-                if (game.botThinkTimer >= 1.5f) { // Thoi gian bot suy nghi (1.5s)
+                if (game.botThinkTimer >= 1.5f) {
                     game.botThinkTimer = 0.0f;
                     BotMove(game);
+                    // Bot không có row/col riêng → dùng attack_s1 mặc định cho bot
+                    // (bot move phức tạp hơn, không xác định được ô vừa đánh dễ dàng)
                     ui.isP2Attacking = true;
-                    ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
-                    ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
+                    ui.p2AttackVariant = 0;
+                    getAtk(p2Asset, ui.p2AttackVariant).currentFrame = 0;
+                    getAtk(p2Asset, ui.p2AttackVariant).frameTimer = 0.0f;
+                    // Kiểm tra win sau BotMove
+                    if (game.matchStatus != 0) {
+                        ui.pendingWinStatus = game.matchStatus;
+                        ui.pendingWin = true;
+                        game.matchStatus = 0;
+                        ui.p2AttackVariant = 2;
+                        getAtk(p2Asset, 2).currentFrame = 0;
+                        getAtk(p2Asset, 2).frameTimer = 0.0f;
+                    }
                 }
             } else {
                 if (game.inputType == 0) { // CHẾ ĐỘ CHUỘT
@@ -72,6 +131,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                         moveMade = MakeMove(game, row, col);
+                        if (moveMade) { moveRow = row; moveCol = col; }
                     } 
                     else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
                         // Click Phải -> Gọi Logic Quét Mìn (Không vẽ)
@@ -86,8 +146,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 if (IsKeyPressed(KEY_D) && game.cursorCol < BOARD_SIZE - 1) game.cursorCol++;
                 
                 if (IsKeyPressed(KEY_ENTER)) {
-                    // Phím Enter -> Đánh cờ
                     moveMade = MakeMove(game, game.cursorRow, game.cursorCol);
+                    if (moveMade) { moveRow = game.cursorRow; moveCol = game.cursorCol; }
                 }
                 if (IsKeyPressed(KEY_SPACE)) {
                     // Phím Space -> Gọi Logic Quét Mìn (Không vẽ)
@@ -97,16 +157,38 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             } // Ket thuc khoi else (khong phai luot bot)
 
             // --- 3. KÍCH HOẠT ANIMATION CHÉM NẾU ĐÁNH THÀNH CÔNG ---
-            // (Đoạn này giữ nguyên của bạn)
             if (moveMade) {
+                int lastRow = -1, lastCol = -1;
+                // Tìm ô vừa đánh (ô có giá trị của wasP1 ? 1 : 2 vừa đặt)
+                // Thực ra ta đã biết row/col từ input — lưu lại trước MakeMove
+                // → Xem biến moveRow/moveCol được set bên dưới
+                int variant = 0; // mặc định attack_s1
+                int myPlayer = wasP1 ? 1 : 2;
+                int oppPlayer = wasP1 ? 2 : 1;
+
+                // Kiểm tra win: matchStatus != 0 nghĩa là nước này thắng
+                if (game.matchStatus != 0) {
+                    variant = 2; // attack_s3
+                    ui.pendingWinStatus = game.matchStatus;
+                    ui.pendingWin = true;
+                    game.matchStatus = 0; // giữ lại, reveal sau animation
+                } else {
+                    // Kiểm tra xem có chặn đối thủ không (dùng row/col đã đánh)
+                    if (CheckBlockVariant(game, moveRow, moveCol, oppPlayer)) {
+                        variant = 1; // attack_s2
+                    }
+                }
+
                 if (wasP1) {
                     ui.isP1Attacking = true;
-                    ui.heroAttack[ui.p1HeroSelection].currentFrame = 0; 
-                    ui.heroAttack[ui.p1HeroSelection].frameTimer = 0.0f;
+                    ui.p1AttackVariant = variant;
+                    getAtk(p1Asset, variant).currentFrame = 0;
+                    getAtk(p1Asset, variant).frameTimer = 0.0f;
                 } else {
                     ui.isP2Attacking = true;
-                    ui.heroAttack[ui.p2HeroSelection].currentFrame = 0; 
-                    ui.heroAttack[ui.p2HeroSelection].frameTimer = 0.0f;
+                    ui.p2AttackVariant = variant;
+                    getAtk(p2Asset, variant).currentFrame = 0;
+                    getAtk(p2Asset, variant).frameTimer = 0.0f;
                 }
             }
         }
@@ -127,7 +209,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         }
 
         if (confirm) {
-            if (ui.endGameSelection == 0) ResetRound(game); 
+            if (ui.endGameSelection == 0) { ResetRound(game); ui.pendingWin = false; ui.pendingWinStatus = 0; }
             else ui.currentScreen = 0; 
         }
     }
@@ -292,17 +374,26 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         }
     }
     // --- VẼ NHÂN VẬT ---
-    const CharAnim& p1Anim = ui.isP1Attacking ? ui.heroAttack[ui.p1HeroSelection] : ui.heroIdle[ui.p1HeroSelection];
-    bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
-    Vector2 p1Size = ui.heroDrawSize[ui.p1HeroSelection];
-    Vector2 p1Offset = ui.heroDrawOffset[ui.p1HeroSelection];
-    DrawCharAnim(p1Anim, 135.0f + p1Offset.x, 640.0f + p1Offset.y, p1Size.x, p1Size.y, false, p1Active); //size-char
+    int p1A = HERO_MAP[ui.p1HeroSelection];
+    int p2A = HERO_MAP[ui.p2HeroSelection];
 
-    const CharAnim& p2Anim = ui.isP2Attacking ? ui.heroAttack[ui.p2HeroSelection] : ui.heroIdle[ui.p2HeroSelection];
+    auto getAtkC = [&](int asset, int variant) -> const CharAnim& {
+        if (variant == 1) return ui.heroAttack2[asset];
+        if (variant == 2) return ui.heroAttack3[asset];
+        return ui.heroAttack[asset];
+    };
+
+    const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant) : ui.heroIdle[p1A];
+    bool p1Active = (game.isPlayer1Turn && game.matchStatus == 0) || ui.isP1Attacking;
+    Vector2 p1Size = ui.heroDrawSize[p1A];
+    Vector2 p1Offset = ui.heroDrawOffset[p1A];
+    DrawCharAnim(p1Anim, 135.0f + p1Offset.x, 640.0f + p1Offset.y, p1Size.x, p1Size.y, false, p1Active);
+
+    const CharAnim& p2Anim = ui.isP2Attacking ? getAtkC(p2A, ui.p2AttackVariant) : ui.heroIdle[p2A];
     bool p2Active = (!game.isPlayer1Turn && game.matchStatus == 0) || ui.isP2Attacking;
-    Vector2 p2Size = ui.heroDrawSize[ui.p2HeroSelection];
-    Vector2 p2Offset = ui.heroDrawOffset[ui.p2HeroSelection];
-    DrawCharAnim(p2Anim, 1467.0f + p2Offset.x, 640.0f + p2Offset.y, p2Size.x, p2Size.y, true, p2Active); //size-char
+    Vector2 p2Size = ui.heroDrawSize[p2A];
+    Vector2 p2Offset = ui.heroDrawOffset[p2A];
+    DrawCharAnim(p2Anim, 1467.0f + p2Offset.x, 640.0f + p2Offset.y, p2Size.x, p2Size.y, true, p2Active);
 
     // VẼ MÀN HÌNH END GAME
     if (game.matchStatus != 0) {
