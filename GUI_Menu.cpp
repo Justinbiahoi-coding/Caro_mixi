@@ -332,14 +332,29 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
             if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 0;
             else if (IsKeyPressed(KEY_ENTER)) {
+                // Hero names (same order as heroMap: asset 1-5)
+                const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
                 if (game.isVsBot) {
+                    // Random bot hero: pick from 0-4 excluding p1HeroSelection
+                    int botIdx = rand() % 4; // 4 remaining choices
+                    if (botIdx >= ui.p1HeroSelection) botIdx++; // skip p1's slot
+                    ui.p2HeroSelection = botIdx;
+
                     int savedInput = game.inputType;
                     InitGame(game, 0);
                     game.inputType = savedInput;
-                    if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
-                    else strcpy(game.player1.name, "Player 1");
-                    strcpy(game.player2.name, "BOT");
-                    ui.p2HeroSelection = 2; // wind_assassin (map index 2 → asset 3) default for bot
+
+                    // P1 name: typed or "P1 - HeroName"
+                    if (ui.p1LetterCount > 0)
+                        strcpy(game.player1.name, ui.p1NameInput);
+                    else {
+                        snprintf(game.player1.name, sizeof(game.player1.name),
+                            "P1 - %s", heroNamesUpd[ui.p1HeroSelection]);
+                    }
+                    // BOT name: "BOT - HeroName"
+                    snprintf(game.player2.name, sizeof(game.player2.name),
+                        "BOT - %s", heroNamesUpd[ui.p2HeroSelection]);
+
                     ui.currentScreen = 1;
                 } else {
                     ui.selectionPhase = 2;
@@ -370,13 +385,22 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
             if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 2;
             else if (IsKeyPressed(KEY_ENTER)) {
+                const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
                 int savedInput = game.inputType;
                 InitGame(game, 0);
                 game.inputType = savedInput;
-                if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
-                else strcpy(game.player1.name, "Player 1");
-                if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
-                else strcpy(game.player2.name, "Player 2");
+                // P1 name: typed or "P1 - HeroName"
+                if (ui.p1LetterCount > 0)
+                    strcpy(game.player1.name, ui.p1NameInput);
+                else
+                    snprintf(game.player1.name, sizeof(game.player1.name),
+                        "P1 - %s", heroNamesUpd[ui.p1HeroSelection]);
+                // P2 name: typed or "P2 - HeroName"
+                if (ui.p2LetterCount > 0)
+                    strcpy(game.player2.name, ui.p2NameInput);
+                else
+                    snprintf(game.player2.name, sizeof(game.player2.name),
+                        "P2 - %s", heroNamesUpd[ui.p2HeroSelection]);
                 ui.currentScreen = 1;
             }
         }
