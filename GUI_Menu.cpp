@@ -1027,74 +1027,119 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, guide, 1920/2 - gW2/2, 1040, 26, Fade(silverColor, 0.60f));
     }
     else if (ui.currentScreen == 6) {
-        // draw background 
+        // Background
         DrawTexturePro(ui.bgSaveLoad, { 0, 0, (float)ui.bgSaveLoad.width, (float)ui.bgSaveLoad.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
-        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.5f));
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.62f));
 
-        // set color palette 
-        Color valhallaTeal = { 40, 200, 200, 255 };  // Cyan
-        Color textColor = { 230, 230, 230, 255 };    // light gray
-        Color mutedText = { 150, 150, 150, 255 };    // muted gray
+        // Color palette — gold/cream theme
+        Color goldColor    = { 215, 175, 80,  255 };
+        Color goldDim      = { 160, 125, 50,  255 };
+        Color creamColor   = { 235, 225, 200, 255 };
+        Color mutedColor   = { 170, 158, 130, 255 };
+        Color panelBg      = { 18,  14,  8,   210 };
+        Color panelBorder  = { 215, 175, 80,  180 };
+        Color selectedBg   = { 45,  35,  10,  220 };
+        Color selectedAcct = { 215, 175, 80,  255 };
 
-        // left panel with title and separator
-        DrawTextCustom(ui.mainFont, "SAVE GAME", 250, 120, 60, WHITE);
-        DrawLineEx({250, 190}, {1670, 190}, 2.0f, Fade(WHITE, 0.2f)); 
+        float pulse = 0.5f + 0.5f * sinf((float)GetTime() * 2.5f);
 
-        // cell for name input 
-        DrawTextCustom(ui.mainFont, "Enter save name:", 250, 230, 30, valhallaTeal);
-        Rectangle inputBox = { 550, 220, 1120, 50 };
-        DrawLineEx({inputBox.x, inputBox.y + inputBox.height}, {inputBox.x + inputBox.width, inputBox.y + inputBox.height}, 1.0f, Fade(WHITE, 0.3f));
-        DrawTextCustom(ui.mainFont, ui.nameInput, inputBox.x + 10, inputBox.y + 10, 35, WHITE);
-        
+        // ── Main panel ──
+        float panelX = 200.0f, panelY = 80.0f;
+        float panelW = 1520.0f, panelH = 900.0f;
+        DrawRectangleRounded({panelX, panelY, panelW, panelH}, 0.03f, 8, panelBg);
+        DrawRectangleRoundedLines({panelX, panelY, panelW, panelH}, 0.03f, 8, Fade(panelBorder, 0.7f));
+        // Corner accents
+        float ca = 30.0f;
+        DrawLineEx({panelX, panelY}, {panelX+ca, panelY}, 2.5f, goldColor);
+        DrawLineEx({panelX, panelY}, {panelX, panelY+ca}, 2.5f, goldColor);
+        DrawLineEx({panelX+panelW, panelY}, {panelX+panelW-ca, panelY}, 2.5f, goldColor);
+        DrawLineEx({panelX+panelW, panelY}, {panelX+panelW, panelY+ca}, 2.5f, goldColor);
+        DrawLineEx({panelX, panelY+panelH}, {panelX+ca, panelY+panelH}, 2.5f, goldColor);
+        DrawLineEx({panelX, panelY+panelH}, {panelX, panelY+panelH-ca}, 2.5f, goldColor);
+        DrawLineEx({panelX+panelW, panelY+panelH}, {panelX+panelW-ca, panelY+panelH}, 2.5f, goldColor);
+        DrawLineEx({panelX+panelW, panelY+panelH}, {panelX+panelW, panelY+panelH-ca}, 2.5f, goldColor);
+
+        // ── Title ──
+        const char* titleTxt = "SAVE GAME";
+        int titleW = MeasureTextCustomX(ui.mainFont, titleTxt, 58);
+        DrawTextCustom(ui.mainFont, titleTxt, (int)(panelX + panelW*0.5f - titleW*0.5f + 2), 112, 58, Fade(BLACK, 0.6f));
+        DrawTextCustom(ui.mainFont, titleTxt, (int)(panelX + panelW*0.5f - titleW*0.5f), 110, 58, goldColor);
+        // Title underline
+        DrawLineEx({panelX+60, 180}, {panelX+panelW-60, 180}, 1.5f, Fade(goldDim, 0.5f));
+
+        // ── Input box ──
+        float inpY = 200.0f;
+        DrawTextCustom(ui.mainFont, "Save Name:", (int)(panelX+60), (int)inpY+8, 28, mutedColor);
+        Rectangle inputBox = { panelX+230, inpY, panelW-290, 48 };
+        // Box background + border
+        DrawRectangleRec(inputBox, {10, 8, 4, 200});
+        DrawRectangleRoundedLines({inputBox.x-1, inputBox.y-1, inputBox.width+2, inputBox.height+2}, 0.1f, 4,
+            Fade(goldColor, 0.55f + 0.25f*pulse));
+        DrawTextCustom(ui.mainFont, ui.nameInput, (int)(inputBox.x+14), (int)(inputBox.y+10), 32, creamColor);
         if (ui.letterCount < 29 && ((int)(GetTime() * 2) % 2) == 0) {
-            int textW = MeasureTextCustomX(ui.mainFont, ui.nameInput, 35);
-            DrawTextCustom(ui.mainFont, "_", inputBox.x + 10 + textW, inputBox.y + 10, 35, valhallaTeal);
+            int textW = MeasureTextCustomX(ui.mainFont, ui.nameInput, 32);
+            DrawTextCustom(ui.mainFont, "|", (int)(inputBox.x+14+textW), (int)(inputBox.y+8), 32,
+                Fade(goldColor, 0.8f + 0.2f*pulse));
         }
 
-        // slot list
-        int startX = 250;
-        int startY = 320;
-        int slotWidth = 1420;
-        int slotHeight = 100;
-        int gap = 15;
+        // ── Slot list ──
+        float startX = panelX + 40;
+        float startY = 280.0f;
+        float slotW  = panelW - 80;
+        float slotH  = 120.0f;
+        float gap    = 18.0f;
 
         for (int i = 0; i < 4; i++) {
-            int currentY = startY + i * (slotHeight + gap);
-            Rectangle slotRec = { (float)startX, (float)currentY, (float)slotWidth, (float)slotHeight };
+            float sy = startY + i * (slotH + gap);
+            Rectangle slotRec = { startX, sy, slotW, slotH };
             GameState tempGame;
             bool hasData = PeekGameSlot(i, tempGame);
+            bool isSel   = (i == ui.saveSelection);
 
-            DrawLineEx({(float)startX, (float)currentY}, {(float)(startX + slotWidth), (float)currentY}, 1.0f, Fade(WHITE, 0.15f));
-
-            if (i == ui.saveSelection) {
-                DrawRectangleRec(slotRec, Fade(WHITE, 0.08f)); 
-                DrawRectangle(startX, currentY, 5, slotHeight, valhallaTeal); 
+            // Slot background
+            DrawRectangleRounded(slotRec, 0.08f, 6, isSel ? selectedBg : Color{25, 20, 10, 160});
+            // Border
+            Color bdCol = isSel ? Fade(selectedAcct, 0.8f + 0.2f*pulse) : Fade(goldDim, 0.25f);
+            DrawRectangleRoundedLines(slotRec, 0.08f, 6, bdCol);
+            // Left accent bar khi selected
+            if (isSel) {
+                DrawRectangleRounded({startX, sy+8, 5, slotH-16}, 0.5f, 4,
+                    Fade(goldColor, 0.8f + 0.2f*pulse));
             }
 
-            // Text
+            // Slot number badge
+            const char* numTxt = TextFormat("%d", i+1);
+            DrawTextCustom(ui.mainFont, numTxt, (int)(startX+22), (int)(sy+slotH*0.5f-18), 30,
+                isSel ? Fade(goldColor, 0.9f) : Fade(mutedColor, 0.5f));
+
+            // Content
             if (hasData) {
-                Color nameColor = (i == ui.saveSelection) ? WHITE : textColor;
-                DrawTextCustom(ui.mainFont, tempGame.saveName, startX + 40, currentY + 15, 40, nameColor);
+                Color nameCol   = isSel ? creamColor : Fade(creamColor, 0.75f);
+                Color detailCol = isSel ? Fade(mutedColor, 0.9f) : Fade(mutedColor, 0.6f);
+                Color timeCol   = isSel ? Fade(goldColor, 0.85f) : Fade(goldDim, 0.6f);
 
-                const char* modeText = (tempGame.gameMode == 0) ? "Co Dien" : "Booming";
-                const char* detailText = TextFormat("Che Do: %s   |   Vong: %d", modeText, tempGame.roundCount);
-                DrawTextCustom(ui.mainFont, detailText, startX + 40, currentY + 65, 25, mutedText);
-
-                //time
-                int dateW = MeasureTextCustomX(ui.mainFont, tempGame.saveTime, 25);
-                DrawTextCustom(ui.mainFont, tempGame.saveTime, startX + slotWidth - dateW - 20, currentY + 35, 25, (i == ui.saveSelection) ? valhallaTeal : mutedText);
+                DrawTextCustom(ui.mainFont, tempGame.saveName, (int)(startX+55), (int)(sy+16), 38, nameCol);
+                const char* modeStr = (tempGame.gameMode == 0) ? "Classic" : "Booming";
+                const char* detail  = TextFormat("Mode: %s   |   Round: %d", modeStr, tempGame.roundCount);
+                DrawTextCustom(ui.mainFont, detail, (int)(startX+55), (int)(sy+66), 24, detailCol);
+                int timeW = MeasureTextCustomX(ui.mainFont, tempGame.saveTime, 24);
+                DrawTextCustom(ui.mainFont, tempGame.saveTime, (int)(startX+slotW-timeW-30), (int)(sy+slotH*0.5f-12), 24, timeCol);
             } else {
-                Color emptyColor = (i == ui.saveSelection) ? valhallaTeal : Fade(mutedText, 0.5f);
-                DrawTextCustom(ui.mainFont, "Slot Trong", startX + 40, currentY + 30, 40, emptyColor);
+                Color emptyCol = isSel ? Fade(mutedColor, 0.85f) : Fade(mutedColor, 0.38f);
+                DrawTextCustom(ui.mainFont, "— Empty Slot —", (int)(startX+55), (int)(sy+slotH*0.5f-16), 32, emptyCol);
             }
         }
-        
-        DrawLineEx({(float)startX, (float)(startY + 4 * (slotHeight + gap))}, {(float)(startX + slotWidth), (float)(startY + 4 * (slotHeight + gap))}, 1.0f, Fade(WHITE, 0.15f));
 
-        //guide 
-        const char* footerBtn = "[ENTER] to Save      [ESC] to Cancel";
-        int footerW = MeasureTextCustomX(ui.mainFont, footerBtn, 25);
-        DrawTextCustom(ui.mainFont, footerBtn, 1920 / 2 - footerW / 2, 950, 25, mutedText);
+        // ── Footer guide ──
+        const char* footer = "[ENTER]  Save       [ESC]  Cancel";
+        int footerW = MeasureTextCustomX(ui.mainFont, footer, 26);
+        // Footer background pill
+        float fy = panelY + panelH - 52.0f;
+        DrawRectangleRounded({960.0f - footerW*0.5f - 24, fy, (float)footerW+48, 38}, 0.5f, 8,
+            {10, 8, 4, 180});
+        DrawRectangleRoundedLines({960.0f - footerW*0.5f - 24, fy, (float)footerW+48, 38}, 0.5f, 8,
+            Fade(goldDim, 0.4f));
+        DrawTextCustom(ui.mainFont, footer, (int)(960 - footerW*0.5f), (int)(fy+7), 26, mutedColor);
     }
     else if (ui.currentScreen == 7) {
         DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);

@@ -90,6 +90,9 @@ struct UIState {
     int  pendingWinStatus;  // matchStatus thật sự (1 or 2)
     bool isP1Dying;         // đang chạy death animation P1
     bool isP2Dying;         // đang chạy death animation P2
+    bool isP1Dead;          // đã chết xong, giữ frame cuối
+    bool isP2Dead;          // đã chết xong, giữ frame cuối
+    float winScreenTimer;   // thời gian kể từ khi win screen hiện (cho scale-in)
 
     // Attack effect trên ô cờ
     Texture2D heroEffect[6];   // attack_effect sprite sheet
