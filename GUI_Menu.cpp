@@ -285,21 +285,21 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
     }
     else if (ui.currentScreen == 8) {
-        // Animate hero selection sprites
-        ui.charP1.frameTimer += GetFrameTime();
-        if (ui.charP1.frameTimer >= ui.charP1.frameDuration) {
-            ui.charP1.currentFrame = (ui.charP1.currentFrame + 1) % ui.charP1.frameCount;
-            ui.charP1.frameTimer = 0.0f;
-        }
-        ui.charP2.frameTimer += GetFrameTime();
-        if (ui.charP2.frameTimer >= ui.charP2.frameDuration) {
-            ui.charP2.currentFrame = (ui.charP2.currentFrame + 1) % ui.charP2.frameCount;
-            ui.charP2.frameTimer = 0.0f;
+        // Animate all hero idle sprites (indices 0-5)
+        float dt8 = GetFrameTime();
+        for (int i = 0; i < 6; i++) {
+            CharAnim& anim = ui.heroIdle[i];
+            if (anim.frameCount <= 0) continue;
+            anim.frameTimer += dt8;
+            if (anim.frameTimer >= anim.frameDuration) {
+                anim.currentFrame = (anim.currentFrame + 1) % anim.frameCount;
+                anim.frameTimer = 0.0f;
+            }
         }
 
-        const int MAX_HEROES = 3; // black_knight hidden (index 0 reserved)
-        // Maps selection index (0,1,2) → asset index (1,2,3) skipping black_knight
-        const int heroMap[3] = {1, 2, 3};
+        const int MAX_HEROES = 5; // black_knight hidden (index 0 reserved)
+        // Maps selection index (0,1,2,3,4) → asset index (1,2,3,4,5) skipping black_knight
+        const int heroMap[5] = {1, 2, 3, 4, 5};
 
         if (ui.selectionPhase == -1) {
             // Chon che do choi: VS Player hoac VS Bot
@@ -339,7 +339,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
                     else strcpy(game.player1.name, "Player 1");
                     strcpy(game.player2.name, "BOT");
-                    ui.p2HeroSelection = 2; // wind_assassin (map index 2 → asset 3)
+                    ui.p2HeroSelection = 2; // wind_assassin (map index 2 → asset 3) default for bot
                     ui.currentScreen = 1;
                 } else {
                     ui.selectionPhase = 2;
@@ -383,10 +383,10 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         // ── Update char select particles ──
         {
-            const float cardW   = 400.0f;
-            const float cardH   = 538.0f;
-            const float cardGap = 40.0f;
-            const float totalCW = 3*cardW + 2*cardGap;
+            const float cardW   = 320.0f;
+            const float cardH   = 510.0f;
+            const float cardGap = 24.0f;
+            const float totalCW = 5*cardW + 4*cardGap;
             const float cardStartX = (1920.0f - totalCW) / 2.0f;
             const float cardY      = 310.0f;
             int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
@@ -1097,9 +1097,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         Color p2Color     = {100, 160, 255, 255};
 
         // ── Hero names (3 active heroes, black_knight hidden) ──
-        const char* heroNames[3] = {"Fire Knight", "Wind Archer", "Wind Assassin"};
-        // Maps selection index (0,1,2) → asset index (1,2,3)
-        const int heroMap[3] = {1, 2, 3};
+        const char* heroNames[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
+        // Maps selection index (0,1,2,3,4) → asset index (1,2,3,4,5)
+        const int heroMap[5] = {1, 2, 3, 4, 5};
 
         // ── Ornate helpers ──
         auto DD8 = [](float cx, float cy, float w, float h, Color col) {
@@ -1130,11 +1130,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2+3, 106, 68, Fade(BLACK,0.9f));
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2,   102, 68, gothicGold);
 
-        // ── 3 Hero card slots — chia đều ngang ──
-        const float cardW   = 400.0f;
-        const float cardH   = 538.0f;
-        const float cardGap = 40.0f;
-        const float totalCW = 3*cardW + 2*cardGap;
+        // ── 5 Hero card slots — chia đều ngang ──
+        const float cardW   = 320.0f;
+        const float cardH   = 510.0f;
+        const float cardGap = 24.0f;
+        const float totalCW = 5*cardW + 4*cardGap;
         const float cardStartX = (1920.0f - totalCW) / 2.0f;
         const float cardY   = 310.0f;
 
@@ -1142,19 +1142,21 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
         bool isP1turn = (ui.selectionPhase == 0 || ui.selectionPhase == 1);
 
-        // Per-hero color theme (index 0=fire, 1=archer, 2=assassin)
-        Color heroTheme[3] = {
+        // Per-hero color theme (index 0=fire, 1=archer, 2=assassin, 3=metal_blade, 4=water_mage)
+        Color heroTheme[5] = {
             {220,  70,  20, 255},  // fire_knight   — red-orange
             { 40, 170, 110, 255},  // wind_archer   — teal-green
             { 60, 110, 220, 255},  // wind_assassin — royal blue
+            {180, 160,  60, 255},  // metal_blade   — gold/steel
+            { 30, 160, 220, 255},  // water_mage    — sky blue
         };
 
-        // Hero bottom-pixel anchors — all 3 remaining heroes use 126px
-        struct HeroBot { float bottomPx; } bots[3] = {
-            {126.0f}, {126.0f}, {126.0f},
+        // Hero bottom-pixel anchors — all 5 heroes use 126px
+        struct HeroBot { float bottomPx; } bots[5] = {
+            {126.0f}, {126.0f}, {126.0f}, {126.0f}, {126.0f},
         };
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             int assetID = heroMap[i]; // translate to asset index
             float cx = cardStartX + i*(cardW+cardGap);
             bool isSelected = (curSel == i);
@@ -1292,10 +1294,12 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         // ── Draw char select particles ──
         {
-            Color heroThemeParts[3] = {
+            Color heroThemeParts[5] = {
                 {255, 120,  30, 255},  // fire_knight   — orange-red
                 { 60, 220, 130, 255},  // wind_archer   — bright teal
                 { 80, 150, 255, 255},  // wind_assassin — sky blue
+                {220, 200,  60, 255},  // metal_blade   — gold shimmer
+                { 40, 200, 255, 255},  // water_mage    — aqua
             };
             for (int k = 0; k < UIState::MAX_CHAR_PARTICLES; k++) {
                 const UIState::CharParticle& p = ui.charParticles[k];

@@ -69,12 +69,12 @@ struct UIState {
 
     Font mainFont;
 
-    CharAnim heroIdle[4];        // Idle animations for 4 heroes
-    CharAnim heroAttack[4];      // attack_s1
-    CharAnim heroAttack2[4];     // attack_s2
-    CharAnim heroAttack3[4];     // attack_s3
-    Vector2 heroDrawSize[4];
-    Vector2 heroDrawOffset[4];
+    CharAnim heroIdle[6];        // Idle animations for 6 heroes (0=black_knight hidden, 1-5 active)
+    CharAnim heroAttack[6];      // attack_s1
+    CharAnim heroAttack2[6];     // attack_s2
+    CharAnim heroAttack3[6];     // attack_s3
+    Vector2 heroDrawSize[6];
+    Vector2 heroDrawOffset[6];
     // Legacy support
     CharAnim& charP1 = heroIdle[0];
     CharAnim& charP2 = heroIdle[1];
@@ -121,8 +121,8 @@ struct UIState {
     float menuScrollY = 0.0f; // vị trí highlight hiện tại (pixel, nội suy)
 };
 
-// Maps selection index (0,1,2) → asset index (1,2,3), black_knight hidden
-static const int HERO_MAP[3] = {1, 2, 3};
+// Maps selection index (0-4) → asset index (1-5), black_knight hidden at index 0
+static const int HERO_MAP[5] = {1, 2, 3, 4, 5};
 
 void InitGUI(UIState& ui);
 void UnloadGUI(UIState& ui);

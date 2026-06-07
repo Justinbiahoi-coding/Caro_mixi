@@ -61,7 +61,7 @@ void InitGUI(UIState& ui) {
     ui.heroDrawOffset[0] = { -300.0f, -250.0f };
 
     // Hero 1: fire_knight
-    ui.heroIdle[1]    = LoadCharAnim("assets/Character/fire_knight/idle.png", 8, 0.12f);
+    ui.heroIdle[1]    = LoadCharAnim("assets/Character/fire_knight/idle.png", 8, 0.1f);
     ui.heroAttack[1]  = LoadCharAnim("assets/Character/fire_knight/attack_s1.png", 11, 0.08f);
     ui.heroAttack2[1] = LoadCharAnim("assets/Character/fire_knight/attack_s2.png",  9, 0.08f);
     ui.heroAttack3[1] = LoadCharAnim("assets/Character/fire_knight/attack_s3.png", 18, 0.07f);
@@ -69,7 +69,7 @@ void InitGUI(UIState& ui) {
     ui.heroDrawOffset[1] = { -400.0f, -250.0f };
 
     // Hero 2: green_archer
-    ui.heroIdle[2]    = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.20f);
+    ui.heroIdle[2]    = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.08f);
     ui.heroAttack[2]  = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.07f);
     ui.heroAttack2[2] = LoadCharAnim("assets/Character/green_archer/attack_s2.png", 12, 0.07f);
     ui.heroAttack3[2] = LoadCharAnim("assets/Character/green_archer/attack_s3.png", 17, 0.06f);
@@ -85,16 +85,20 @@ void InitGUI(UIState& ui) {
     ui.heroDrawOffset[3] = { -400.0f, -350.0f };
 
     // Hero 4: metal_blade
-    // ui.heroIdle[4] = LoadCharAnim("assets/Character/metal_blade/idle.png", 8, 0.20f); //animation-time
-    // ui.heroAttack[4] = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6, 0.07f); //animation-time
-    // ui.heroDrawSize[4] = { 1200.0f, 700.0f }; //size-char
-    // ui.heroDrawOffset[4] = { -400.0f, -350.0f };
+    ui.heroIdle[4] = LoadCharAnim("assets/Character/metal_blade/idle.png", 8, 0.12f); //animation-time
+    ui.heroAttack[4] = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6, 0.07f); //animation-time
+    ui.heroAttack2[4] = LoadCharAnim("assets/Character/metal_blade/attack_s2.png", 8, 0.12f); //animation-time
+    ui.heroAttack3[4] = LoadCharAnim("assets/Character/metal_blade/attack_s3.png", 11, 0.12f); //animation-time
+    ui.heroDrawSize[4] = { 1200.0f, 700.0f }; //size-char
+    ui.heroDrawOffset[4] = { -400.0f, -350.0f };
 
-    // // Hero 5: water_mage
-    // ui.heroIdle[5] = LoadCharAnim("assets/Character/water_mage/idle.png", 8, 0.12f); //animation-time
-    // ui.heroAttack[5] = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7, 0.1f); //animation-time
-    // ui.heroDrawSize[5] = { 1200.0f, 700.0f }; //size-char
-    // ui.heroDrawOffset[5] = { -400.0f, -350.0f };
+    // Hero 5: water_mage
+    ui.heroIdle[5] = LoadCharAnim("assets/Character/water_mage/idle.png", 8, 0.14f); //animation-time
+    ui.heroAttack[5] = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7, 0.1f); //animation-time
+    ui.heroAttack2[5] = LoadCharAnim("assets/Character/water_mage/attack_s2.png", 21, 0.08f); //animation-time
+    ui.heroAttack3[5] = LoadCharAnim("assets/Character/water_mage/attack_s3.png", 32, 0.06f); //animation-time
+    ui.heroDrawSize[5] = { 1200.0f, 700.0f }; //size-char
+    ui.heroDrawOffset[5] = { -400.0f, -350.0f };
     
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
@@ -183,7 +187,7 @@ void UnloadGUI(UIState& ui) {
     UnloadFont(ui.mainFont);
     
     // Unload all hero animations
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 6; i++) {
         UnloadCharAnim(ui.heroIdle[i]);
         UnloadCharAnim(ui.heroAttack[i]);
         UnloadCharAnim(ui.heroAttack2[i]);
