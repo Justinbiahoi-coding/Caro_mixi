@@ -42,6 +42,7 @@ struct GameState {
     int inputType;  //0: Play with Mouse, 1: Play with Keyboard
 
     bool isVsBot;
+    bool isBotVsBot;
     int botPlayer;
     float botThinkTimer;
     int lastMoveRow;  // ô vừa đánh (cả player lẫn bot)

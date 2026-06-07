@@ -306,9 +306,12 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         const int heroMap[5] = {1, 2, 3, 4, 5};
 
         if (ui.selectionPhase == -1) {
-            // Chon che do choi: VS Player hoac VS Bot
-            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) game.isVsBot = false;
-            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) game.isVsBot = true;
+            // Chon che do choi: VS Player hoac VS Bot hoac Bot vs Bot
+            int currentMode = game.isBotVsBot ? 2 : (game.isVsBot ? 1 : 0);
+            if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) currentMode = (currentMode - 1 + 3) % 3;
+            if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) currentMode = (currentMode + 1) % 3;
+            game.isBotVsBot = (currentMode == 2);
+            game.isVsBot = (currentMode == 1);
             if (IsKeyPressed(KEY_ENTER)) ui.selectionPhase = 0;
             if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
         }
@@ -338,7 +341,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             else if (IsKeyPressed(KEY_ENTER)) {
                 // Hero names (same order as heroMap: asset 1-5)
                 const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
-                if (game.isVsBot) {
+                if (game.isVsBot || game.isBotVsBot) {
                     // Random bot hero: pick from 0-4 excluding p1HeroSelection
                     int botIdx = rand() % 4; // 4 remaining choices
                     if (botIdx >= ui.p1HeroSelection) botIdx++; // skip p1's slot
@@ -348,16 +351,22 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     InitGame(game, 0);
                     game.inputType = savedInput;
 
-                    // P1 name: typed or "P1 - HeroName"
-                    if (ui.p1LetterCount > 0)
-                        strcpy(game.player1.name, ui.p1NameInput);
-                    else {
+                    // P1 name: typed or "P1 - HeroName" (or BOT 1)
+                    if (game.isBotVsBot) {
                         snprintf(game.player1.name, sizeof(game.player1.name),
-                            "P1 - %s", heroNamesUpd[ui.p1HeroSelection]);
+                            "BOT 1 - %s", heroNamesUpd[ui.p1HeroSelection]);
+                    } else {
+                        if (ui.p1LetterCount > 0)
+                            strcpy(game.player1.name, ui.p1NameInput);
+                        else {
+                            snprintf(game.player1.name, sizeof(game.player1.name),
+                                "P1 - %s", heroNamesUpd[ui.p1HeroSelection]);
+                        }
                     }
-                    // BOT name: "BOT - HeroName"
+                    // BOT name: "BOT 2 - HeroName" or "BOT - HeroName"
+                    const char* botPrefix = game.isBotVsBot ? "BOT 2" : "BOT";
                     snprintf(game.player2.name, sizeof(game.player2.name),
-                        "BOT - %s", heroNamesUpd[ui.p2HeroSelection]);
+                        "%s - %s", botPrefix, heroNamesUpd[ui.p2HeroSelection]);
 
                     game.p1HeroSelection = ui.p1HeroSelection;
                     game.p2HeroSelection = ui.p2HeroSelection;
@@ -1479,8 +1488,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         if (ui.selectionPhase == -1) {
             DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.65f));
 
-            const char* modeTxt = game.isVsBot ? "VS  BOT" : "VS  PLAYER";
-            Color modeCol = game.isVsBot ? redAccent : p2Color;
+            const char* modeTxt = game.isBotVsBot ? "BOT VS BOT" : (game.isVsBot ? "VS  BOT" : "VS  PLAYER");
+            Color p2Color = { 40, 170, 110, 255 }; // from previous use
+            Color modeCol = game.isBotVsBot ? PURPLE : (game.isVsBot ? redAccent : p2Color);
 
             int boxW=920, boxH=270;
             Rectangle box={(float)(1920/2-boxW/2),(float)(1080/2-boxH/2),(float)boxW,(float)boxH};

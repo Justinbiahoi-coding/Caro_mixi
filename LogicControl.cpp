@@ -212,8 +212,9 @@ void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player
     }
 }
 
-int EvaluatePosition(GameState& game, int row, int col)
+int EvaluatePosition(GameState& game, int row, int col, int botPlayer)
 {
+    int oppPlayer = (botPlayer == 1) ? 2 : 1;
     // Điểm được tính theo: Score[blocks][count]
     // blocks: 0 (mở 2 đầu), 1 (chặn 1 đầu), 2 (chặn 2 đầu)
     // count: số lượng quân liên tiếp (0 đến 5)
@@ -247,7 +248,7 @@ int EvaluatePosition(GameState& game, int row, int col)
         // ===== ATTACK =====
         int attackCount = 0;
         int attackBlocks = 0;
-        GetLineStatus(game, row, col, dx, dy, 2, attackCount, attackBlocks);
+        GetLineStatus(game, row, col, dx, dy, botPlayer, attackCount, attackBlocks);
         
         if (attackCount > 5) attackCount = 5; // Giới hạn chống tràn mảng
         totalScore += AttackScore[attackBlocks][attackCount];
@@ -255,7 +256,7 @@ int EvaluatePosition(GameState& game, int row, int col)
         // ===== DEFENSE =====
         int defenseCount = 0;
         int defenseBlocks = 0;
-        GetLineStatus(game, row, col, dx, dy, 1, defenseCount, defenseBlocks);
+        GetLineStatus(game, row, col, dx, dy, oppPlayer, defenseCount, defenseBlocks);
         
         if (defenseCount > 5) defenseCount = 5; // Giới hạn chống tràn mảng
         totalScore += DefenseScore[defenseBlocks][defenseCount];
@@ -264,7 +265,7 @@ int EvaluatePosition(GameState& game, int row, int col)
     return totalScore;
 }
 
-void BotMove(GameState& game)
+void BotMove(GameState& game, int botPlayer)
 {
     int bestScore = -1;
     
@@ -279,7 +280,7 @@ void BotMove(GameState& game)
         {
             if (game.board[i][j].c == 0)
             {
-                int score = EvaluatePosition(game, i, j);
+                int score = EvaluatePosition(game, i, j, botPlayer);
 
                 if (score > bestScore)
                 {

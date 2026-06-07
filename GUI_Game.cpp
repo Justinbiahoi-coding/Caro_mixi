@@ -40,21 +40,32 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         return ui.heroAttack[asset];
     };
 
-    // Helper: kích hoạt death cho kẻ thua sau attack_s3
     auto triggerDeath = [&]() {
-        // pendingWinStatus: 1 = P1 thắng (P2 thua), 2 = P2 thắng (P1 thua)
+        if (!ui.pendingWin) return;
+        // pendingWinStatus: 1 = P1 thắng (P2 thua), 2 = P2 thắng (P1 thua), 3 = Hòa
         if (ui.pendingWinStatus == 1) {
-            // P2 thua → P2 chạy death
-            ui.isP2Dying = true;
-            ui.heroDeath[p2Asset].currentFrame = 0;
-            ui.heroDeath[p2Asset].frameTimer = 0.0f;
+            if (!ui.isP2Dying) {
+                ui.isP2Dying = true;
+                ui.heroDeath[p2Asset].currentFrame = 0;
+                ui.heroDeath[p2Asset].frameTimer = 0.0f;
+            }
         } else if (ui.pendingWinStatus == 2) {
-            // P1 thua → P1 chạy death
-            ui.isP1Dying = true;
-            ui.heroDeath[p1Asset].currentFrame = 0;
-            ui.heroDeath[p1Asset].frameTimer = 0.0f;
+            if (!ui.isP1Dying) {
+                ui.isP1Dying = true;
+                ui.heroDeath[p1Asset].currentFrame = 0;
+                ui.heroDeath[p1Asset].frameTimer = 0.0f;
+            }
+        } else if (ui.pendingWinStatus == 3) {
+            if (!ui.isP1Dying && !ui.isP2Dying) {
+                ui.isP1Dying = true;
+                ui.heroDeath[p1Asset].currentFrame = 0;
+                ui.heroDeath[p1Asset].frameTimer = 0.0f;
+                
+                ui.isP2Dying = true;
+                ui.heroDeath[p2Asset].currentFrame = 0;
+                ui.heroDeath[p2Asset].frameTimer = 0.0f;
+            }
         } else {
-            // Draw — reveal ngay
             game.matchStatus = ui.pendingWinStatus;
             ui.pendingWin = false;
             ui.pendingWinStatus = 0;
@@ -141,37 +152,15 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             bool wasP1 = game.isPlayer1Turn;
             int moveRow = -1, moveCol = -1;
     
-            if (game.isVsBot && !game.isPlayer1Turn) {
+            if ((game.isVsBot && !game.isPlayer1Turn) || game.isBotVsBot) {
                 game.botThinkTimer += dt;
                 if (game.botThinkTimer >= 1.5f) {
                     game.botThinkTimer = 0.0f;
-                    BotMove(game);
-                    ui.isP2Attacking = true;
-                    ui.p2AttackVariant = 0;
-                    getAtk(p2Asset, ui.p2AttackVariant).currentFrame = 0;
-                    getAtk(p2Asset, ui.p2AttackVariant).frameTimer = 0.0f;
-                    PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công bot
-                    // Spawn cell effect cho ô bot vừa đánh
-                    if (ui.cellEffectCount < UIState::MAX_CELL_EFFECTS) {
-                        UIState::CellEffect& eff = ui.cellEffects[ui.cellEffectCount++];
-                        eff.row = game.lastMoveRow;
-                        eff.col = game.lastMoveCol;
-                        eff.player = 2;
-                        eff.heroAsset = p2Asset;
-                        eff.timer = 0.0f;
-                        eff.frameDur = 0.07f;
-                        eff.currentFrame = 0;
-                        eff.done = false;
-                    }
-                    // Kiểm tra win sau BotMove
-                    if (game.matchStatus != 0) {
-                        ui.pendingWinStatus = game.matchStatus;
-                        ui.pendingWin = true;
-                        game.matchStatus = 0;
-                        ui.p2AttackVariant = 2;
-                        getAtk(p2Asset, 2).currentFrame = 0;
-                        getAtk(p2Asset, 2).frameTimer = 0.0f;
-                    }
+                    int currentBotPlayer = game.isPlayer1Turn ? 1 : 2;
+                    BotMove(game, currentBotPlayer);
+                    moveMade = true;
+                    moveRow = game.lastMoveRow;
+                    moveCol = game.lastMoveCol;
                 }
             } else {
                 if (game.inputType == 0) { // CHẾ ĐỘ CHUỘT
@@ -227,6 +216,22 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     ui.pendingWinStatus = game.matchStatus;
                     ui.pendingWin = true;
                     game.matchStatus = 0; // giữ lại, reveal sau animation
+
+                    if (ui.pendingWinStatus == 3) {
+                        // Hòa -> Cả hai cùng attack_s3
+                        ui.isP1Attacking = true;
+                        ui.p1AttackVariant = 2;
+                        getAtk(p1Asset, 2).currentFrame = 0;
+                        getAtk(p1Asset, 2).frameTimer = 0.0f;
+
+                        ui.isP2Attacking = true;
+                        ui.p2AttackVariant = 2;
+                        getAtk(p2Asset, 2).currentFrame = 0;
+                        getAtk(p2Asset, 2).frameTimer = 0.0f;
+                        
+                        PlaySound(ui.heroAttackSound[p1Asset]);
+                        PlaySound(ui.heroAttackSound[p2Asset]);
+                    }
                 } else {
                     // Kiểm tra xem có chặn đối thủ không (dùng row/col đã đánh)
                     if (CheckBlockVariant(game, moveRow, moveCol, oppPlayer)) {
@@ -234,18 +239,20 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     }
                 }
 
-                if (wasP1) {
-                    ui.isP1Attacking = true;
-                    ui.p1AttackVariant = variant;
-                    getAtk(p1Asset, variant).currentFrame = 0;
-                    getAtk(p1Asset, variant).frameTimer = 0.0f;
-                    PlaySound(ui.heroAttackSound[p1Asset]); // sound effect tấn công P1
-                } else {
-                    ui.isP2Attacking = true;
-                    ui.p2AttackVariant = variant;
-                    getAtk(p2Asset, variant).currentFrame = 0;
-                    getAtk(p2Asset, variant).frameTimer = 0.0f;
-                    PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công P2
+                if (ui.pendingWinStatus != 3) {
+                    if (wasP1) {
+                        ui.isP1Attacking = true;
+                        ui.p1AttackVariant = variant;
+                        getAtk(p1Asset, variant).currentFrame = 0;
+                        getAtk(p1Asset, variant).frameTimer = 0.0f;
+                        PlaySound(ui.heroAttackSound[p1Asset]); // sound effect tấn công P1
+                    } else {
+                        ui.isP2Attacking = true;
+                        ui.p2AttackVariant = variant;
+                        getAtk(p2Asset, variant).currentFrame = 0;
+                        getAtk(p2Asset, variant).frameTimer = 0.0f;
+                        PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công P2
+                    }
                 }
 
                 // Spawn cell effect tại ô vừa đánh
@@ -946,11 +953,27 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 Fade(WHITE, 0.18f));
         } else {
             const char* drawText = "DRAW!";
-            int dw = MeasureTextCustomX(ui.mainFont, drawText, 62);
-            float textY = bfy - 72.0f;
-            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f+3), (int)(textY+3), 62, Fade(BLACK,0.8f));
-            Color tc = {180,180,180,(unsigned char)(205+50*pulse)};
-            DrawTextCustom(ui.mainFont, drawText, (int)(960-dw*0.5f), (int)textY, 62, tc);
+            float scl = wt < 0.4f ? (0.3f + 0.7f * (wt / 0.4f)) : 1.0f;
+            float t01 = wt < 0.4f ? (wt / 0.4f) : 1.0f;
+            scl = 1.0f - (1.0f - t01) * (1.0f - t01) * (1.0f - t01);
+            scl = 0.3f + scl * 0.7f;
+
+            int baseFontSize = 100;
+            int fontSize = (int)(baseFontSize * scl);
+            if (fontSize < 8) fontSize = 8;
+
+            int dw = MeasureTextCustomX(ui.mainFont, drawText, fontSize);
+            int dh = MeasureTextCustomY(ui.mainFont, drawText, fontSize);
+            
+            float textX = bfx + bfw * 0.5f - dw * 0.5f;
+            float textY = bfy + bfh * 0.5f - dh * 0.5f;
+            
+            // Tối mờ bàn cờ 1 chút để nổi chữ
+            DrawRectangle((int)bfx, (int)bfy, (int)bfw, (int)bfh, Fade(BLACK, 0.45f * t01));
+
+            DrawTextCustom(ui.mainFont, drawText, (int)(textX+4), (int)(textY+4), fontSize, Fade(BLACK, 0.8f));
+            Color tc = {180, 180, 180, (unsigned char)(205 + 50 * pulse)};
+            DrawTextCustom(ui.mainFont, drawText, (int)textX, (int)textY, fontSize, tc);
         }
 
         // ── 8. BUTTON ──
