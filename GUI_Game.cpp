@@ -362,7 +362,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     // VẼ TÊN PLAYER 1 & 2 — badge sát nhân vật
     int badgePWidth = 460, badgePHeight = 95, nameFontSize = 44;
 
-    float p1X = 230.0f - badgePWidth * 0.5f, p1Y = 470.0f;
+    float p1X = 230.0f - badgePWidth * 0.5f, p1Y = 374.0f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p1X, p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     int p1NameWidth = MeasureTextCustomX(ui.mainFont, game.player1.name, nameFontSize);
     int p1NameHeight = MeasureTextCustomY(ui.mainFont, game.player1.name, nameFontSize);
@@ -410,7 +410,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
         }
     }
-    float p2X = 1690.0f - badgePWidth * 0.5f,   p2Y = 470.0f;
+    float p2X = 1690.0f - badgePWidth * 0.5f,   p2Y = 374.0f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     int p2NameWidth = MeasureTextCustomX(ui.mainFont, game.player2.name, nameFontSize);
     int p2NameHeight = MeasureTextCustomY(ui.mainFont, game.player2.name, nameFontSize);
@@ -471,7 +471,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     bool p1Active = true; // luôn sáng, spotlight phân biệt lượt
     float p1W = ui.heroDrawSize[p1A].x * charScale;
     float p1H = ui.heroDrawSize[p1A].y * charScale;
-    float pedestalH = 38.0f; // chiều cao bục — nhân vật đứng trên mặt bục
+    float pedestalH = 44.0f; // chiều cao bục — nhân vật đứng trên mặt bục
 
     float p1AnchorX = 230.0f,  p1AnchorY = 1010.0f - pedestalH;
     float p1DrawX = p1AnchorX - p1W * 0.5f;
@@ -489,24 +489,23 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     auto drawSpotlight = [&](float cx, float fy, bool active, Color c) {
         float pulse = 0.75f + 0.25f * sinf(glowT * 3.5f);
 
-        // Bục hình thang — mặt trên nhỏ, đáy dưới to hơn
-        float topRx = 95.0f;   // bán kính ngang mặt trên (nhỏ)
-        float topRy = 16.0f;   // bán kính dọc mặt trên
-        float botRx = 130.0f;  // bán kính ngang đáy (to hơn)
-        float botRy = 22.0f;   // bán kính dọc đáy
-        float pH    = 38.0f;   // chiều cao bục
-        float topY  = fy - pH; // y mặt trên bục
-        // alias để không đổi code bên dưới
+        // Bục hình thang +30% kích thước
+        float topRx = 124.0f;  // 95 * 1.3
+        float topRy = 21.0f;   // 16 * 1.3
+        float botRx = 169.0f;  // 130 * 1.3
+        float botRy = 29.0f;   // 22 * 1.3
+        float pH    = 44.0f;   // cao hơn xíu cho cân đối
+        float topY  = fy - pH;
         float pRx = topRx, pRy = topRy;
 
-        // Màu mặt bên bục: đậm, tinted theo màu theme
-        unsigned char sr = (unsigned char)((int)c.r * 45 / 100 + 30);
-        unsigned char sg = (unsigned char)((int)c.g * 45 / 100 + 30);
-        unsigned char sb = (unsigned char)((int)c.b * 45 / 100 + 30);
-        // Màu mặt trên: sáng hơn
-        unsigned char tr2 = (unsigned char)((int)c.r * 60 / 100 + 50);
-        unsigned char tg2 = (unsigned char)((int)c.g * 60 / 100 + 50);
-        unsigned char tb2 = (unsigned char)((int)c.b * 60 / 100 + 50);
+        // Màu mặt bên bục: đục như đá, tint nhẹ màu theme
+        unsigned char sr = (unsigned char)((int)c.r * 30 / 100 + 55);
+        unsigned char sg = (unsigned char)((int)c.g * 30 / 100 + 55);
+        unsigned char sb = (unsigned char)((int)c.b * 30 / 100 + 55);
+        // Màu mặt trên: sáng hơn mặt bên, vẫn đục
+        unsigned char tr2 = (unsigned char)((int)c.r * 35 / 100 + 80);
+        unsigned char tg2 = (unsigned char)((int)c.g * 35 / 100 + 80);
+        unsigned char tb2 = (unsigned char)((int)c.b * 35 / 100 + 80);
 
         int segs = 80;
 
@@ -525,22 +524,21 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             float tx0 = cx + cosf(a0) * topRx, ty0 = topY  + sinf(a0) * topRy;
             float tx1 = cx + cosf(a1) * topRx, ty1 = topY  + sinf(a1) * topRy;
 
-            unsigned char fa = (unsigned char)(shadeAvg * 255);
-            unsigned char cr2 = (unsigned char)(sr * shadeAvg);
-            unsigned char cg2 = (unsigned char)(sg * shadeAvg);
-            unsigned char cb2 = (unsigned char)(sb * shadeAvg);
+            unsigned char cr2 = (unsigned char)(sr * (0.6f + 0.4f * shadeAvg));
+            unsigned char cg2 = (unsigned char)(sg * (0.6f + 0.4f * shadeAvg));
+            unsigned char cb2 = (unsigned char)(sb * (0.6f + 0.4f * shadeAvg));
 
-            DrawTriangle({bx0,by0},{tx0,ty0},{bx1,by1}, {cr2,cg2,cb2,fa});
-            DrawTriangle({tx0,ty0},{tx1,ty1},{bx1,by1}, {cr2,cg2,cb2,fa});
+            DrawTriangle({bx0,by0},{tx0,ty0},{bx1,by1}, {cr2,cg2,cb2,255});
+            DrawTriangle({tx0,ty0},{tx1,ty1},{bx1,by1}, {cr2,cg2,cb2,255});
         }
 
-        // === MẶT TRÊN bục — ellipse đặc, màu sáng hơn mặt bên ===
+        // === MẶT TRÊN bục — solid đặc ===
         DrawEllipse((int)cx, (int)topY, (int)topRx, (int)topRy, {tr2,tg2,tb2,255});
-        // Highlight tâm sáng hơn
+        // Highlight tâm — vùng sáng nhẹ, vẫn đục
         DrawEllipse((int)cx, (int)topY, (int)(topRx*0.55f), (int)(topRy*0.55f),
-            {(unsigned char)((int)tr2+40<255?(int)tr2+40:255),
-             (unsigned char)((int)tg2+40<255?(int)tg2+40:255),
-             (unsigned char)((int)tb2+40<255?(int)tb2+40:255), 220});
+            {(unsigned char)((int)tr2+25<255?(int)tr2+25:255),
+             (unsigned char)((int)tg2+25<255?(int)tg2+25:255),
+             (unsigned char)((int)tb2+25<255?(int)tb2+25:255), 255});
 
         // === VIỀN mặt trên — glow màu theme ===
         for (int i = 0; i < segs; i++) {
@@ -563,13 +561,87 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawLineEx({ex0,ey0},{ex1,ey1}, 2.0f, {sr,sg,sb,200});
         }
 
+        // === RÃNH TRANG TRÍ ngang giữa mặt bên ===
+        float midH = 0.45f;
+        float rRx  = topRx + (botRx - topRx) * midH;
+        float rRy  = topRy + (botRy - topRy) * midH;
+        float rY   = topY  + pH * midH;
+        for (int i = 0; i < segs; i++) {
+            float a0 = (float)i       * 2.0f * PI / segs;
+            float a1 = (float)(i + 1) * 2.0f * PI / segs;
+            float lx0 = cx + cosf(a0) * rRx, ly0 = rY + sinf(a0) * rRy;
+            float lx1 = cx + cosf(a1) * rRx, ly1 = rY + sinf(a1) * rRy;
+            DrawLineEx({lx0,ly0},{lx1,ly1}, 3.0f, {15,15,15,200});
+            DrawLineEx({lx0,ly0},{lx1,ly1}, 1.0f,
+                {(unsigned char)((c.r+180)/2),(unsigned char)((c.g+180)/2),(unsigned char)((c.b+180)/2),
+                 (unsigned char)(90*pulse)});
+        }
+
+        // === LỬA BAY LÊN — chỉ khi active, mô phỏng particle như menu ===
+        if (active) {
+            // 40 hạt ảo, mỗi hạt có seed pha riêng
+            // Tổng 90 hạt: 40 từ mặt trên, 50 từ viền bên bục
+            int pCount = 90;
+            float speed = 0.45f;
+            for (int k = 0; k < pCount; k++) {
+                float phaseOffset = (float)k / pCount;
+                float t = fmodf(glowT * speed + phaseOffset, 1.0f);
+
+                float spawnX, spawnY;
+                if (k < 40) {
+                    // Nhóm 1: spawn trên mặt trên bục (như cũ)
+                    float spawnAngle = phaseOffset * 2.0f * PI * 3.7f;
+                    float spawnR = topRx * (0.25f + 0.70f * (0.5f + 0.5f * sinf(spawnAngle * 2.1f)));
+                    spawnX = cx + cosf(spawnAngle) * spawnR;
+                    spawnY = topY + sinf(spawnAngle) * topRy * (spawnR / topRx);
+                } else {
+                    // Nhóm 2: spawn trên viền bên bục — phân tán quanh botRx/midRx
+                    float spawnAngle = phaseOffset * 2.0f * PI * 5.3f;
+                    // Chọn ngẫu nhiên-ish giữa mặt bên (giữa top và bot)
+                    float sideT = 0.3f + 0.7f * (0.5f + 0.5f * sinf(phaseOffset * 19.1f));
+                    float sRx = topRx + (botRx - topRx) * sideT;
+                    float sRy = topRy + (botRy - topRy) * sideT;
+                    float sY  = topY  + pH * sideT;
+                    spawnX = cx + cosf(spawnAngle) * sRx;
+                    spawnY = sY + sinf(spawnAngle) * sRy;
+                }
+
+                // Bay lên cao bằng tướng
+                float riseMax = 420.0f + 80.0f * sinf(phaseOffset * 13.7f);
+                float sway = sinf(glowT * 1.8f + phaseOffset * 17.3f) * 10.0f * (1.0f - t * 0.7f);
+                float px = spawnX + sway;
+                float py = spawnY - t * riseMax;
+
+                // Alpha
+                float life = (t < 0.1f) ? (t / 0.1f) : (1.0f - (t - 0.1f) / 0.9f);
+                life = life * life;
+                unsigned char fa2 = (unsigned char)(life * 210);
+                if (fa2 < 5) continue;
+
+                float sz = (1.0f - t * 0.9f) * (4.0f + 2.5f * sinf(phaseOffset * 11.1f));
+
+                // Màu: outer = cam/đỏ mix theme, mid = màu theme, core = trắng sáng
+                // outer glow
+                DrawCircle((int)px, (int)py, sz * 2.4f,
+                    {c.r, (unsigned char)(c.g/3), (unsigned char)(c.b/4), (unsigned char)(fa2 * 0.35f)});
+                // mid: màu theme thuần
+                DrawCircle((int)px, (int)py, sz * 1.5f,
+                    {c.r, c.g, c.b, fa2});
+                // core: trắng pha theme
+                DrawCircle((int)px, (int)py, sz * 0.7f,
+                    {(unsigned char)((c.r + 255) / 2),
+                     (unsigned char)((c.g + 255) / 2),
+                     (unsigned char)((c.b + 255) / 2),
+                     (unsigned char)(fa2 < 255 ? fa2 : 255)});
+            }
+        }
+
         // === GLOW dưới bục ===
-        DrawEllipse((int)cx,(int)fy,(int)(botRx+45),(int)(botRy+7),{c.r,c.g,c.b,(unsigned char)(18*pulse)});
-        DrawEllipse((int)cx,(int)fy,(int)(botRx+18),(int)(botRy+3),{c.r,c.g,c.b,(unsigned char)(40*pulse)});
+        DrawEllipse((int)cx,(int)fy,(int)(botRx+55),(int)(botRy+9),{c.r,c.g,c.b,(unsigned char)(15*pulse)});
+        DrawEllipse((int)cx,(int)fy,(int)(botRx+22),(int)(botRy+4),{c.r,c.g,c.b,(unsigned char)(38*pulse)});
 
         if (!active) {
-            // Inactive: phủ overlay tối lên toàn bục
-            DrawEllipse((int)cx,(int)topY,(int)topRx,(int)topRy,{0,0,0,120});
+            DrawEllipse((int)cx,(int)topY,(int)topRx,(int)topRy,{0,0,0,130});
         }
     };
     // fy = mặt đất thật (anchor + pedestalH = 1010)
