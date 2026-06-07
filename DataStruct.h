@@ -44,6 +44,8 @@ struct GameState {
     bool isVsBot;
     int botPlayer;
     float botThinkTimer;
+    int lastMoveRow;  // ô vừa đánh (cả player lẫn bot)
+    int lastMoveCol;
 
     char saveName[30];
     char saveTime[30];

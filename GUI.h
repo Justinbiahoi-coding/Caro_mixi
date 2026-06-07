@@ -73,6 +73,8 @@ struct UIState {
     CharAnim heroAttack[6];      // attack_s1
     CharAnim heroAttack2[6];     // attack_s2
     CharAnim heroAttack3[6];     // attack_s3
+    CharAnim heroDeath[6];       // death animation
+    Texture2D heroIcon[6];       // attack_icon — dùng làm quân cờ
     Vector2 heroDrawSize[6];
     Vector2 heroDrawOffset[6];
     // Legacy support
@@ -84,8 +86,28 @@ struct UIState {
     bool isP2Attacking;
     int p1AttackVariant; // 0/1/2 = s1/s2/s3
     int p2AttackVariant;
-    bool pendingWin;     // true khi đang chờ attack_s3 kết thúc để hiện win screen
-    int  pendingWinStatus; // matchStatus thật sự (1 or 2) đang bị giữ lại
+    bool pendingWin;        // true khi đang chờ attack_s3 kết thúc
+    int  pendingWinStatus;  // matchStatus thật sự (1 or 2)
+    bool isP1Dying;         // đang chạy death animation P1
+    bool isP2Dying;         // đang chạy death animation P2
+
+    // Attack effect trên ô cờ
+    Texture2D heroEffect[6];   // attack_effect sprite sheet
+    int heroEffectFrames[6];   // số frame của từng hero
+
+    struct CellEffect {
+        int row, col;
+        int player;        // 1 hoặc 2
+        int heroAsset;     // index vào heroEffect[]
+        float timer;       // tổng thời gian đã chạy
+        float frameDur;    // giây/frame
+        int currentFrame;
+        bool done;         // effect xong, chỉ vẽ icon
+    };
+    static const int MAX_CELL_EFFECTS = 225; // 15x15
+    CellEffect cellEffects[MAX_CELL_EFFECTS];
+    int cellEffectCount;
+
     Music bgMusic;
     float musicVolume = 0.8f;
     bool musicEnabled;

@@ -40,6 +40,28 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         return ui.heroAttack[asset];
     };
 
+    // Helper: kích hoạt death cho kẻ thua sau attack_s3
+    auto triggerDeath = [&]() {
+        // pendingWinStatus: 1 = P1 thắng (P2 thua), 2 = P2 thắng (P1 thua)
+        if (ui.pendingWinStatus == 1) {
+            // P2 thua → P2 chạy death
+            ui.isP2Dying = true;
+            ui.heroDeath[p2Asset].currentFrame = 0;
+            ui.heroDeath[p2Asset].frameTimer = 0.0f;
+        } else if (ui.pendingWinStatus == 2) {
+            // P1 thua → P1 chạy death
+            ui.isP1Dying = true;
+            ui.heroDeath[p1Asset].currentFrame = 0;
+            ui.heroDeath[p1Asset].frameTimer = 0.0f;
+        } else {
+            // Draw — reveal ngay
+            game.matchStatus = ui.pendingWinStatus;
+            ui.pendingWin = false;
+            ui.pendingWinStatus = 0;
+        }
+    };
+
+    // Update P1 attack
     if (ui.isP1Attacking) {
         CharAnim& atkAnim = getAtk(p1Asset, ui.p1AttackVariant);
         atkAnim.frameTimer += dt;
@@ -49,12 +71,23 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             if (atkAnim.currentFrame >= atkAnim.frameCount) {
                 ui.isP1Attacking = false;
                 atkAnim.currentFrame = 0;
-                // Nếu đây là attack_s3 (chiến thắng), giờ mới reveal win screen
-                if (ui.pendingWin) {
-                    game.matchStatus = ui.pendingWinStatus;
-                    ui.pendingWin = false;
-                    ui.pendingWinStatus = 0;
-                }
+                if (ui.pendingWin) triggerDeath();
+            }
+        }
+    } else if (ui.isP1Dying) {
+        CharAnim& deathAnim = ui.heroDeath[p1Asset];
+        deathAnim.frameTimer += dt;
+        if (deathAnim.frameTimer >= deathAnim.frameDuration) {
+            deathAnim.frameTimer = 0.0f;
+            deathAnim.currentFrame++;
+            if (deathAnim.currentFrame >= deathAnim.frameCount) {
+                // Giữ frame cuối (không reset) — nhân vật nằm yên
+                deathAnim.currentFrame = deathAnim.frameCount - 1;
+                // Reveal win screen
+                game.matchStatus = ui.pendingWinStatus;
+                ui.pendingWin = false;
+                ui.pendingWinStatus = 0;
+                ui.isP1Dying = false;
             }
         }
     } else {
@@ -66,6 +99,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         }
     }
 
+    // Update P2 attack
     if (ui.isP2Attacking) {
         CharAnim& atkAnim = getAtk(p2Asset, ui.p2AttackVariant);
         atkAnim.frameTimer += dt;
@@ -75,11 +109,21 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
             if (atkAnim.currentFrame >= atkAnim.frameCount) {
                 ui.isP2Attacking = false;
                 atkAnim.currentFrame = 0;
-                if (ui.pendingWin) {
-                    game.matchStatus = ui.pendingWinStatus;
-                    ui.pendingWin = false;
-                    ui.pendingWinStatus = 0;
-                }
+                if (ui.pendingWin) triggerDeath();
+            }
+        }
+    } else if (ui.isP2Dying) {
+        CharAnim& deathAnim = ui.heroDeath[p2Asset];
+        deathAnim.frameTimer += dt;
+        if (deathAnim.frameTimer >= deathAnim.frameDuration) {
+            deathAnim.frameTimer = 0.0f;
+            deathAnim.currentFrame++;
+            if (deathAnim.currentFrame >= deathAnim.frameCount) {
+                deathAnim.currentFrame = deathAnim.frameCount - 1;
+                game.matchStatus = ui.pendingWinStatus;
+                ui.pendingWin = false;
+                ui.pendingWinStatus = 0;
+                ui.isP2Dying = false;
             }
         }
     } else {
@@ -92,7 +136,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     }
 
     // --- 2. XỬ LÝ LOGIC ĐÁNH CỜ ---
-        if (game.matchStatus == 0 && !ui.pendingWin) {
+        if (game.matchStatus == 0 && !ui.pendingWin && !ui.isP1Dying && !ui.isP2Dying) {
             bool moveMade = false;
             bool wasP1 = game.isPlayer1Turn;
             int moveRow = -1, moveCol = -1;
@@ -102,12 +146,22 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 if (game.botThinkTimer >= 1.5f) {
                     game.botThinkTimer = 0.0f;
                     BotMove(game);
-                    // Bot không có row/col riêng → dùng attack_s1 mặc định cho bot
-                    // (bot move phức tạp hơn, không xác định được ô vừa đánh dễ dàng)
                     ui.isP2Attacking = true;
                     ui.p2AttackVariant = 0;
                     getAtk(p2Asset, ui.p2AttackVariant).currentFrame = 0;
                     getAtk(p2Asset, ui.p2AttackVariant).frameTimer = 0.0f;
+                    // Spawn cell effect cho ô bot vừa đánh
+                    if (ui.cellEffectCount < UIState::MAX_CELL_EFFECTS) {
+                        UIState::CellEffect& eff = ui.cellEffects[ui.cellEffectCount++];
+                        eff.row = game.lastMoveRow;
+                        eff.col = game.lastMoveCol;
+                        eff.player = 2;
+                        eff.heroAsset = p2Asset;
+                        eff.timer = 0.0f;
+                        eff.frameDur = 0.07f;
+                        eff.currentFrame = 0;
+                        eff.done = false;
+                    }
                     // Kiểm tra win sau BotMove
                     if (game.matchStatus != 0) {
                         ui.pendingWinStatus = game.matchStatus;
@@ -190,6 +244,20 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     getAtk(p2Asset, variant).currentFrame = 0;
                     getAtk(p2Asset, variant).frameTimer = 0.0f;
                 }
+
+                // Spawn cell effect tại ô vừa đánh
+                if (ui.cellEffectCount < UIState::MAX_CELL_EFFECTS) {
+                    int asset = wasP1 ? p1Asset : p2Asset;
+                    UIState::CellEffect& eff = ui.cellEffects[ui.cellEffectCount++];
+                    eff.row = moveRow;
+                    eff.col = moveCol;
+                    eff.player = wasP1 ? 1 : 2;
+                    eff.heroAsset = asset;
+                    eff.timer = 0.0f;
+                    eff.frameDur = 0.07f;
+                    eff.currentFrame = 0;
+                    eff.done = false;
+                }
             }
         }
     else { // TRẠNG THÁI END GAME (Thắng/Thua/Hòa)
@@ -209,13 +277,37 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         }
 
         if (confirm) {
-            if (ui.endGameSelection == 0) { ResetRound(game); ui.pendingWin = false; ui.pendingWinStatus = 0; }
+            if (ui.endGameSelection == 0) {
+                ResetRound(game);
+                ui.pendingWin = false; ui.pendingWinStatus = 0;
+                ui.isP1Dying = false; ui.isP2Dying = false;
+                ui.heroDeath[p1Asset].currentFrame = 0;
+                ui.heroDeath[p2Asset].currentFrame = 0;
+                ui.cellEffectCount = 0;
+            }
             else ui.currentScreen = 0; 
         }
     }
 
+    // Update cell effects — clamp dt để tránh skip toàn bộ animation khi lag
+    float effDt = (dt > 0.1f) ? 0.1f : dt;
+    for (int k = 0; k < ui.cellEffectCount; k++) {
+        UIState::CellEffect& eff = ui.cellEffects[k];
+        if (eff.done) continue;
+        eff.timer += effDt;
+        int totalFrames = ui.heroEffectFrames[eff.heroAsset];
+        int frame = (int)(eff.timer / eff.frameDur);
+        if (frame >= totalFrames) {
+            eff.currentFrame = totalFrames - 1;
+            eff.done = true;
+        } else {
+            eff.currentFrame = frame;
+        }
+    }
+
+    // Reset cell effects khi bắt đầu ván mới (ResetRound đã gọi ở confirm)
     // PHÍM TẮT
-    if (IsKeyPressed(KEY_M)) ui.currentScreen = 0; 
+    if (IsKeyPressed(KEY_M)) ui.currentScreen = 0;
     if (IsKeyPressed(KEY_L)) {
         ui.currentScreen = 6; 
         ui.nameInput[0] = '\0'; 
@@ -232,6 +324,9 @@ static void DrawCharAnim(const CharAnim& c, float x, float y, float drawW, float
 }
 
 void DrawGUIGame(const GameState& game, const UIState& ui) {
+    const int p1Asset = HERO_MAP[ui.p1HeroSelection];
+    const int p2Asset = HERO_MAP[ui.p2HeroSelection];
+
     // NỀN & BÀN CỜ
     DrawTexturePro(ui.bgGame, { 0, 0, (float)ui.bgGame.width, (float)ui.bgGame.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
@@ -289,11 +384,38 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             Rectangle sourceCell = { 0, 0, (float)ui.cell.width, (float)ui.cell.height };
             DrawTexturePro(ui.cell, sourceCell, cellRect, {0, 0}, 0.0f, cellTint);
 
-            if (game.board[i][j].c == 1) {
-                DrawTexturePro(ui.pieceX, { 0, 0, (float)ui.pieceX.width, (float)ui.pieceX.height }, cellRect, {0, 0}, 0.0f, WHITE);
-            } 
-            else if (game.board[i][j].c == 2) {
-                DrawTexturePro(ui.pieceO, { 0, 0, (float)ui.pieceO.width, (float)ui.pieceO.height }, cellRect, {0, 0}, 0.0f, WHITE);
+            if (game.board[i][j].c == 1 || game.board[i][j].c == 2) {
+                int owner = game.board[i][j].c;
+                int asset = (owner == 1) ? p1Asset : p2Asset;
+
+                // Tìm cell effect cho ô này
+                const UIState::CellEffect* eff = nullptr;
+                for (int k = 0; k < ui.cellEffectCount; k++) {
+                    if (ui.cellEffects[k].row == i && ui.cellEffects[k].col == j) {
+                        eff = &ui.cellEffects[k];
+                        break;
+                    }
+                }
+
+                float pad = ui.cellSize * 0.10f;
+                float drawSize = ui.cellSize - pad * 2.0f;
+                float dx = x + pad, dy = y + pad;
+
+                if (eff && !eff->done) {
+                    // Vẽ frame effect hiện tại
+                    const Texture2D& sheet = ui.heroEffect[eff->heroAsset];
+                    int fh = sheet.height;
+                    int fw = fh; // frame vuông
+                    Rectangle src = { (float)(eff->currentFrame * fw), 0, (float)fw, (float)fh };
+                    Rectangle dst = { dx, dy, drawSize, drawSize };
+                    DrawTexturePro(sheet, src, dst, {0,0}, 0.0f, WHITE);
+                } else {
+                    // Effect xong → vẽ icon tĩnh
+                    const Texture2D& icon = ui.heroIcon[asset];
+                    Rectangle src = { 0, 0, (float)icon.width, (float)icon.height };
+                    Rectangle dst = { dx, dy, drawSize, drawSize };
+                    DrawTexturePro(icon, src, dst, {0,0}, 0.0f, WHITE);
+                }
             }
         }
     }
@@ -467,7 +589,9 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     //   drawY = anchorY - spriteH - offsetY        [offsetY âm = nhân vật lệch xuống trong sprite]
     float charScale = 1.5f;
 
-    const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant) : ui.heroIdle[p1A];
+    const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant)
+                           : ui.isP1Dying     ? ui.heroDeath[p1A]
+                           :                    ui.heroIdle[p1A];
     bool p1Active = true; // luôn sáng, spotlight phân biệt lượt
     float p1W = ui.heroDrawSize[p1A].x * charScale;
     float p1H = ui.heroDrawSize[p1A].y * charScale;
@@ -477,7 +601,9 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float p1DrawX = p1AnchorX - p1W * 0.5f;
     float p1DrawY = p1AnchorY - p1H;
 
-    const CharAnim& p2Anim = ui.isP2Attacking ? getAtkC(p2A, ui.p2AttackVariant) : ui.heroIdle[p2A];
+    const CharAnim& p2Anim = ui.isP2Attacking ? getAtkC(p2A, ui.p2AttackVariant)
+                           : ui.isP2Dying     ? ui.heroDeath[p2A]
+                           :                    ui.heroIdle[p2A];
     bool p2Active = true;
     float p2W = ui.heroDrawSize[p2A].x * charScale;
     float p2H = ui.heroDrawSize[p2A].y * charScale;

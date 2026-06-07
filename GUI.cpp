@@ -52,60 +52,93 @@ void InitGUI(UIState& ui) {
 // 0 co gi --------- 
     // config: frame_count, frame_duration
     // Load hero animations for all 4 heroes
-    // Hero 0: black_knight (hidden, kept for future use)
+    // Hero 0: black_knight (hidden)
     ui.heroIdle[0]    = LoadCharAnim("assets/Character/black_knight/idle.png", 8, 0.2f);
     ui.heroAttack[0]  = LoadCharAnim("assets/Character/black_knight/attack_s1.png", 8, 0.12f);
     ui.heroAttack2[0] = LoadCharAnim("assets/Character/black_knight/attack_s2.png", 8, 0.12f);
-    ui.heroAttack3[0] = LoadCharAnim("assets/Character/black_knight/attack_s2.png", 8, 0.12f); // no s3
+    ui.heroAttack3[0] = LoadCharAnim("assets/Character/black_knight/attack_s2.png", 8, 0.12f);
+    ui.heroDeath[0]   = LoadCharAnim("assets/Character/black_knight/idle.png", 8, 0.12f);
     ui.heroDrawSize[0]   = { 900.0f, 900.0f };
     ui.heroDrawOffset[0] = { -300.0f, -250.0f };
 
     // Hero 1: fire_knight
-    ui.heroIdle[1]    = LoadCharAnim("assets/Character/fire_knight/idle.png", 8, 0.1f);
+    ui.heroIdle[1]    = LoadCharAnim("assets/Character/fire_knight/idle.png",      8,  0.1f);
     ui.heroAttack[1]  = LoadCharAnim("assets/Character/fire_knight/attack_s1.png", 11, 0.08f);
-    ui.heroAttack2[1] = LoadCharAnim("assets/Character/fire_knight/attack_s2.png",  9, 0.08f);
+    ui.heroAttack2[1] = LoadCharAnim("assets/Character/fire_knight/attack_s2.png", 9,  0.08f);
     ui.heroAttack3[1] = LoadCharAnim("assets/Character/fire_knight/attack_s3.png", 18, 0.07f);
+    ui.heroDeath[1]   = LoadCharAnim("assets/Character/fire_knight/death.png",     29, 0.07f);
     ui.heroDrawSize[1]   = { 1200.0f, 600.0f };
     ui.heroDrawOffset[1] = { -400.0f, -250.0f };
 
     // Hero 2: green_archer
-    ui.heroIdle[2]    = LoadCharAnim("assets/Character/green_archer/idle.png", 12, 0.08f);
+    ui.heroIdle[2]    = LoadCharAnim("assets/Character/green_archer/idle.png",      12, 0.08f);
     ui.heroAttack[2]  = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.07f);
     ui.heroAttack2[2] = LoadCharAnim("assets/Character/green_archer/attack_s2.png", 12, 0.07f);
     ui.heroAttack3[2] = LoadCharAnim("assets/Character/green_archer/attack_s3.png", 17, 0.06f);
+    ui.heroDeath[2]   = LoadCharAnim("assets/Character/green_archer/death.png",     42, 0.07f);
     ui.heroDrawSize[2]   = { 1200.0f, 700.0f };
     ui.heroDrawOffset[2] = { -400.0f, -350.0f };
 
     // Hero 3: wind_assassin
-    ui.heroIdle[3]    = LoadCharAnim("assets/Character/wind_assassin/idle.png", 8, 0.12f);
-    ui.heroAttack[3]  = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png",  8, 0.10f);
+    ui.heroIdle[3]    = LoadCharAnim("assets/Character/wind_assassin/idle.png",      8,  0.12f);
+    ui.heroAttack[3]  = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8,  0.10f);
     ui.heroAttack2[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s2.png", 15, 0.08f);
     ui.heroAttack3[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s3.png", 30, 0.06f);
+    ui.heroDeath[3]   = LoadCharAnim("assets/Character/wind_assassin/death.png",     42, 0.07f);
     ui.heroDrawSize[3]   = { 1200.0f, 700.0f };
     ui.heroDrawOffset[3] = { -400.0f, -350.0f };
 
     // Hero 4: metal_blade
-    ui.heroIdle[4] = LoadCharAnim("assets/Character/metal_blade/idle.png", 8, 0.12f); //animation-time
-    ui.heroAttack[4] = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6, 0.07f); //animation-time
-    ui.heroAttack2[4] = LoadCharAnim("assets/Character/metal_blade/attack_s2.png", 8, 0.12f); //animation-time
-    ui.heroAttack3[4] = LoadCharAnim("assets/Character/metal_blade/attack_s3.png", 11, 0.12f); //animation-time
-    ui.heroDrawSize[4] = { 1200.0f, 700.0f }; //size-char
+    ui.heroIdle[4]    = LoadCharAnim("assets/Character/metal_blade/idle.png",      8,  0.12f);
+    ui.heroAttack[4]  = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6,  0.07f);
+    ui.heroAttack2[4] = LoadCharAnim("assets/Character/metal_blade/attack_s2.png", 8,  0.12f);
+    ui.heroAttack3[4] = LoadCharAnim("assets/Character/metal_blade/attack_s3.png", 11, 0.12f);
+    ui.heroDeath[4]   = LoadCharAnim("assets/Character/metal_blade/death.png",     27, 0.07f);
+    ui.heroDrawSize[4] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[4] = { -400.0f, -350.0f };
 
     // Hero 5: water_mage
-    ui.heroIdle[5] = LoadCharAnim("assets/Character/water_mage/idle.png", 8, 0.14f); //animation-time
-    ui.heroAttack[5] = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7, 0.1f); //animation-time
-    ui.heroAttack2[5] = LoadCharAnim("assets/Character/water_mage/attack_s2.png", 21, 0.08f); //animation-time
-    ui.heroAttack3[5] = LoadCharAnim("assets/Character/water_mage/attack_s3.png", 32, 0.06f); //animation-time
-    ui.heroDrawSize[5] = { 1200.0f, 700.0f }; //size-char
+    ui.heroIdle[5]    = LoadCharAnim("assets/Character/water_mage/idle.png",      8,  0.14f);
+    ui.heroAttack[5]  = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7,  0.1f);
+    ui.heroAttack2[5] = LoadCharAnim("assets/Character/water_mage/attack_s2.png", 21, 0.08f);
+    ui.heroAttack3[5] = LoadCharAnim("assets/Character/water_mage/attack_s3.png", 32, 0.06f);
+    ui.heroDeath[5]   = LoadCharAnim("assets/Character/water_mage/death.png",     36, 0.07f);
+    ui.heroDrawSize[5] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[5] = { -400.0f, -350.0f };
-    
+
+    // Load attack effects (sprite sheet — animation khi đặt quân)
+    // black_knight: không có effect → dùng icon thay thế
+    ui.heroEffect[0] = LoadTexture("assets/Character/black_knight/attack_icon.png");
+    ui.heroEffectFrames[0] = 1;
+    ui.heroEffect[1] = LoadTexture("assets/Character/fire_knight/attack_effect.png");
+    ui.heroEffectFrames[1] = 7;
+    ui.heroEffect[2] = LoadTexture("assets/Character/green_archer/attack_effect.png");
+    ui.heroEffectFrames[2] = 8;
+    ui.heroEffect[3] = LoadTexture("assets/Character/wind_assassin/attack_effect.png");
+    ui.heroEffectFrames[3] = 12;
+    ui.heroEffect[4] = LoadTexture("assets/Character/metal_blade/attack_effect.png");
+    ui.heroEffectFrames[4] = 11;
+    ui.heroEffect[5] = LoadTexture("assets/Character/water_mage/attack_effect.png");
+    ui.heroEffectFrames[5] = 10;
+
+    ui.cellEffectCount = 0;
+
+    // Load attack icons (dùng làm quân cờ trên bàn)
+    ui.heroIcon[0] = LoadTexture("assets/Character/black_knight/attack_icon.png");
+    ui.heroIcon[1] = LoadTexture("assets/Character/fire_knight/attack_icon.png");
+    ui.heroIcon[2] = LoadTexture("assets/Character/green_archer/attack_icon.png");
+    ui.heroIcon[3] = LoadTexture("assets/Character/wind_assassin/attack_icon.png");
+    ui.heroIcon[4] = LoadTexture("assets/Character/metal_blade/attack_icon.png");
+    ui.heroIcon[5] = LoadTexture("assets/Character/water_mage/attack_icon.png");
+
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
     ui.p1AttackVariant = 0;
     ui.p2AttackVariant = 0;
     ui.pendingWin = false;
     ui.pendingWinStatus = 0;
+    ui.isP1Dying = false;
+    ui.isP2Dying = false;
     ui.cellSize = 50.0f; 
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
@@ -186,12 +219,15 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.bgGame);
     UnloadFont(ui.mainFont);
     
-    // Unload all hero animations
+    // Unload all hero animations + icons + effects
     for (int i = 0; i < 6; i++) {
         UnloadCharAnim(ui.heroIdle[i]);
         UnloadCharAnim(ui.heroAttack[i]);
         UnloadCharAnim(ui.heroAttack2[i]);
         UnloadCharAnim(ui.heroAttack3[i]);
+        UnloadCharAnim(ui.heroDeath[i]);
+        UnloadTexture(ui.heroIcon[i]);
+        UnloadTexture(ui.heroEffect[i]);
     }
     
     UnloadMusicStream(ui.bgMusic);

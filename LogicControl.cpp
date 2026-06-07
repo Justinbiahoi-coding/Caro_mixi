@@ -96,6 +96,8 @@ bool MakeMove(GameState& game, int row, int col) {
             }
 
             game.board[row][col].c = game.isPlayer1Turn ? 1 : 2;
+            game.lastMoveRow = row;
+            game.lastMoveCol = col;
             game.moveCount++;
             if (game.isPlayer1Turn) game.player1.stepCount++;
             else game.player2.stepCount++;
