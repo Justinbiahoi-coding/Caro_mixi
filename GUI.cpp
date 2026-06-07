@@ -66,7 +66,7 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[1]  = LoadCharAnim("assets/Character/fire_knight/attack_s1.png", 11, 0.08f);
     ui.heroAttack2[1] = LoadCharAnim("assets/Character/fire_knight/attack_s2.png", 9,  0.08f);
     ui.heroAttack3[1] = LoadCharAnim("assets/Character/fire_knight/attack_s3.png", 18, 0.07f);
-    ui.heroDeath[1]   = LoadCharAnim("assets/Character/fire_knight/death.png",     29, 0.07f);
+    ui.heroDeath[1]   = LoadCharAnim("assets/Character/fire_knight/death.png",     13, 0.12f);
     ui.heroDrawSize[1]   = { 1200.0f, 600.0f };
     ui.heroDrawOffset[1] = { -400.0f, -250.0f };
 
@@ -75,7 +75,7 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[2]  = LoadCharAnim("assets/Character/green_archer/attack_s1.png", 15, 0.07f);
     ui.heroAttack2[2] = LoadCharAnim("assets/Character/green_archer/attack_s2.png", 12, 0.07f);
     ui.heroAttack3[2] = LoadCharAnim("assets/Character/green_archer/attack_s3.png", 17, 0.06f);
-    ui.heroDeath[2]   = LoadCharAnim("assets/Character/green_archer/death.png",     42, 0.07f);
+    ui.heroDeath[2]   = LoadCharAnim("assets/Character/green_archer/death.png",     19, 0.15f);
     ui.heroDrawSize[2]   = { 1200.0f, 700.0f };
     ui.heroDrawOffset[2] = { -400.0f, -350.0f };
 
@@ -84,7 +84,7 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[3]  = LoadCharAnim("assets/Character/wind_assassin/attack_s1.png", 8,  0.10f);
     ui.heroAttack2[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s2.png", 15, 0.08f);
     ui.heroAttack3[3] = LoadCharAnim("assets/Character/wind_assassin/attack_s3.png", 30, 0.06f);
-    ui.heroDeath[3]   = LoadCharAnim("assets/Character/wind_assassin/death.png",     42, 0.07f);
+    ui.heroDeath[3]   = LoadCharAnim("assets/Character/wind_assassin/death.png",     19, 0.15f);
     ui.heroDrawSize[3]   = { 1200.0f, 700.0f };
     ui.heroDrawOffset[3] = { -400.0f, -350.0f };
 
@@ -93,7 +93,7 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[4]  = LoadCharAnim("assets/Character/metal_blade/attack_s1.png", 6,  0.07f);
     ui.heroAttack2[4] = LoadCharAnim("assets/Character/metal_blade/attack_s2.png", 8,  0.12f);
     ui.heroAttack3[4] = LoadCharAnim("assets/Character/metal_blade/attack_s3.png", 11, 0.12f);
-    ui.heroDeath[4]   = LoadCharAnim("assets/Character/metal_blade/death.png",     27, 0.07f);
+    ui.heroDeath[4]   = LoadCharAnim("assets/Character/metal_blade/death.png",     12, 0.12f);
     ui.heroDrawSize[4] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[4] = { -400.0f, -350.0f };
 
@@ -102,7 +102,7 @@ void InitGUI(UIState& ui) {
     ui.heroAttack[5]  = LoadCharAnim("assets/Character/water_mage/attack_s1.png", 7,  0.1f);
     ui.heroAttack2[5] = LoadCharAnim("assets/Character/water_mage/attack_s2.png", 21, 0.08f);
     ui.heroAttack3[5] = LoadCharAnim("assets/Character/water_mage/attack_s3.png", 32, 0.06f);
-    ui.heroDeath[5]   = LoadCharAnim("assets/Character/water_mage/death.png",     36, 0.07f);
+    ui.heroDeath[5]   = LoadCharAnim("assets/Character/water_mage/death.png",     16, 0.15f);
     ui.heroDrawSize[5] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[5] = { -400.0f, -350.0f };
 
