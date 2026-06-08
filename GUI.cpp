@@ -166,7 +166,7 @@ void InitGUI(UIState& ui) {
 
     InitAudioDevice();
 
-    ui.bgMusic = LoadMusicStream("assets/music/bgm.ogg");
+    ui.bgMusic = LoadMusicStream("assets/music/music.ogg");
 
     ui.musicVolume = 0.8f;
     ui.musicEnabled = true;
