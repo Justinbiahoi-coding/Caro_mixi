@@ -166,7 +166,26 @@ void InitGUI(UIState& ui) {
 
     InitAudioDevice();
 
-    ui.bgMusic = LoadMusicStream("assets/music/music.ogg");
+    ui.bgMusic = LoadMusicStream("assets/music/bgm.mp3");
+
+    // Load attack sound effects per hero — PHẢI sau InitAudioDevice()
+    // LoadSoundFromWave cần audio device đã khởi tạo để tạo buffer
+    ui.heroAttackSound[0] = Sound{}; // black_knight: không có file
+    {
+        const char* soundPaths[5] = {
+            "assets/Character/fire_knight/attack_sound.wav",
+            "assets/Character/green_archer/attack_sound.wav",
+            "assets/Character/wind_assassin/attack_sound.wav",
+            "assets/Character/metal_blade/attack_sound.wav",
+            "assets/Character/water_mage/attack_sound.wav"
+        };
+        for (int i = 0; i < 5; i++) {
+            Wave w = LoadWave(soundPaths[i]);
+            WaveFormat(&w, 44100, 32, 2); // chuẩn hóa sang 32-bit float stereo
+            ui.heroAttackSound[i + 1] = LoadSoundFromWave(w);
+            UnloadWave(w);
+        }
+    }
 
     ui.musicVolume = 0.8f;
     ui.musicEnabled = true;
@@ -231,6 +250,7 @@ void UnloadGUI(UIState& ui) {
         UnloadCharAnim(ui.heroDeath[i]);
         UnloadTexture(ui.heroIcon[i]);
         UnloadTexture(ui.heroEffect[i]);
+        if (i != 0) UnloadSound(ui.heroAttackSound[i]); // index 0 không load
     }
     
     UnloadMusicStream(ui.bgMusic);

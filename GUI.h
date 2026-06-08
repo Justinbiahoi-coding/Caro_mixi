@@ -97,6 +97,7 @@ struct UIState {
     // Attack effect trên ô cờ
     Texture2D heroEffect[6];   // attack_effect sprite sheet
     int heroEffectFrames[6];   // số frame của từng hero
+    Sound heroAttackSound[6];  // attack sound effect mỗi hero
 
     struct CellEffect {
         int row, col;
