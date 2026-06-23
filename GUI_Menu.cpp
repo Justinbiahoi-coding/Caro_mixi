@@ -200,6 +200,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (LoadGameSlot(game, ui.loadSelection)) {
                 ui.p1HeroSelection = game.p1HeroSelection;
                 ui.p2HeroSelection = game.p2HeroSelection;
+                ResetHeroAnimState(ui);
                 ui.currentScreen = 1;
             }
         }
@@ -283,6 +284,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 if (ui.p2LetterCount > 0) strcpy(game.player2.name, ui.p2NameInput);
                 else strcpy(game.player2.name, "Player 2");
 
+                ResetHeroAnimState(ui);
                 ui.currentScreen = 1; 
             }
         }
@@ -370,6 +372,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
                     game.p1HeroSelection = ui.p1HeroSelection;
                     game.p2HeroSelection = ui.p2HeroSelection;
+                    ResetHeroAnimState(ui);
                     ui.currentScreen = 1;
                 } else {
                     // Đảm bảo P2 bắt đầu ở hero khác P1
@@ -427,6 +430,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                         "P2 - %s", heroNamesUpd[ui.p2HeroSelection]);
                 game.p1HeroSelection = ui.p1HeroSelection;
                 game.p2HeroSelection = ui.p2HeroSelection;
+                ResetHeroAnimState(ui);
                 ui.currentScreen = 1;
             }
         }

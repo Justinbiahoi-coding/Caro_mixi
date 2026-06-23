@@ -206,4 +206,31 @@ inline void UnloadCharAnim(CharAnim& c) {
     UnloadTexture(c.spriteSheet);
 }
 
+// Reset toàn bộ animation state (frame + timer) của cả 2 hero khi bắt đầu game mới.
+// Gọi tại MỌI điểm chuyển sang currentScreen = 1 để tránh lỗi "kẹt" frame death/attack.
+inline void ResetHeroAnimState(UIState& ui) {
+    ui.pendingWin       = false;
+    ui.pendingWinStatus = 0;
+    ui.isP1Attacking    = false;
+    ui.isP2Attacking    = false;
+    ui.p1AttackVariant  = 0;
+    ui.p2AttackVariant  = 0;
+    ui.isP1Dying        = false;
+    ui.isP2Dying        = false;
+    ui.isP1Dead         = false;
+    ui.isP2Dead         = false;
+    ui.winScreenTimer   = 0.0f;
+    ui.cellEffectCount  = 0;
+
+    int assets[2] = { HERO_MAP[ui.p1HeroSelection], HERO_MAP[ui.p2HeroSelection] };
+    for (int i = 0; i < 2; i++) {
+        int a = assets[i];
+        ui.heroIdle[a].currentFrame    = 0;  ui.heroIdle[a].frameTimer    = 0.0f;
+        ui.heroDeath[a].currentFrame   = 0;  ui.heroDeath[a].frameTimer   = 0.0f;
+        ui.heroAttack[a].currentFrame  = 0;  ui.heroAttack[a].frameTimer  = 0.0f;
+        ui.heroAttack2[a].currentFrame = 0;  ui.heroAttack2[a].frameTimer = 0.0f;
+        ui.heroAttack3[a].currentFrame = 0;  ui.heroAttack3[a].frameTimer = 0.0f;
+    }
+}
+
 #endif // GUI_H

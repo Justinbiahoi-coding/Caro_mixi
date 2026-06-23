@@ -295,15 +295,9 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         if (confirm) {
             if (ui.endGameSelection == 0) {
                 ResetRound(game);
-                ui.pendingWin = false; ui.pendingWinStatus = 0;
-                ui.isP1Dying = false; ui.isP2Dying = false;
-                ui.isP1Dead  = false; ui.isP2Dead  = false;
-                ui.winScreenTimer = 0.0f;
-                ui.heroDeath[p1Asset].currentFrame = 0;
-                ui.heroDeath[p2Asset].currentFrame = 0;
-                ui.cellEffectCount = 0;
+                ResetHeroAnimState(ui);
             }
-            else ui.currentScreen = 0; 
+            else ui.currentScreen = 0;
         }
     }
 
