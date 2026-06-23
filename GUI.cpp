@@ -48,7 +48,7 @@ void InitGUI(UIState& ui) {
     ui.uiHp    = LoadTexture("assets/board/ui_hp.png");
     ui.uiRadar = LoadTexture("assets/board/ui_radar.png");
 
-    ui.mainFont = LoadFontEx("assets/font/Aurusenthial Gothic.ttf", 64, 0, 250);
+    ui.mainFont = LoadFontEx("assets/font/PixelSerif_16px_v02.ttf", 64, 0, 250);
 // 0 co gi --------- 
     // config: frame_count, frame_duration
     // Load hero animations for all 4 heroes
@@ -154,7 +154,7 @@ void InitGUI(UIState& ui) {
     ui.boardFrameRec.width  = frameW;
     ui.boardFrameRec.height = frameH;
     ui.boardFrameRec.x = (1920.0f - frameW) / 2.0f;          // căn giữa ngang
-    ui.boardFrameRec.y = (1080.0f - frameH) / 2.0f + 30.0f;  // hơi lùi xuống nhường badge top
+    ui.boardFrameRec.y = (1080.0f - frameH) / 2.0f - 20.0f;  // dịch lên nhường chỗ badge dưới to hơn
 
     // Border frame asset đều 4 phía ~5.5%
     float margin_L = 0.055f, margin_R = 0.055f;

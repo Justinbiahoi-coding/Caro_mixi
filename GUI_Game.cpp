@@ -322,7 +322,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
 
     // Reset cell effects khi bắt đầu ván mới (ResetRound đã gọi ở confirm)
     // PHÍM TẮT
-    if (IsKeyPressed(KEY_M)) ui.currentScreen = 0;
+    if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
     if (IsKeyPressed(KEY_L)) {
         ui.currentScreen = 6; 
         ui.nameInput[0] = '\0'; 
@@ -444,44 +444,139 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
     }
 
-    // THÔNG TIN VÁN ĐẤU (BADGES)
-    DrawBadgeText(ui.mainFont, ui.titleBadge, "MATCH INFO", 15, 402.3f, 84.7f, 48, WHITE, 0.5f);
+    // THÔNG TIN VÁN ĐẤU (BADGES) — bỏ MATCH INFO, chỉ giữ ROUND badge
     char roundText[30];
     snprintf(roundText, sizeof(roundText), "ROUND %d", game.roundCount);
-    DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 100, 261.1f, 74.6f, 39, WHITE, -5.0f);
+    DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 15, 261.1f, 74.6f, 39, WHITE, 0.0f);
 
     // === THANH NGANG DƯỚI BOARD ===
     {
         float bx = ui.boardFrameRec.x;
         float bw = ui.boardFrameRec.width;
-        float by = ui.boardFrameRec.y + ui.boardFrameRec.height + 12.0f;
-        float bh = 50.0f;
-        float third = bw / 3.0f;
+        float by = ui.boardFrameRec.y + ui.boardFrameRec.height + 10.0f;
+        float bh = 88.0f;
 
-        // Nền
-        DrawRectangle((int)bx, (int)by, (int)bw, (int)bh, {20, 14, 4, 220});
-        DrawRectangleLinesEx({bx, by, bw, bh}, 1.5f, {160, 120, 40, 200});
+        float hudT = (float)GetTime();
+        float hudPulse = 0.5f + 0.5f * sinf(hudT * 2.5f);
 
-        // Đường chia 3 khối
-        DrawRectangle((int)(bx + third),     (int)(by + 8), 1, (int)(bh - 16), {160, 120, 40, 150});
-        DrawRectangle((int)(bx + third*2),   (int)(by + 8), 1, (int)(bh - 16), {160, 120, 40, 150});
+        // Nền HUD gradient từ cạnh vào giữa
+        DrawRectangleGradientH((int)bx, (int)by, (int)(bw*0.5f), (int)bh,
+            {8, 6, 2, 245}, {20, 16, 5, 220});
+        DrawRectangleGradientH((int)(bx + bw*0.5f), (int)by, (int)(bw*0.5f), (int)bh,
+            {20, 16, 5, 220}, {8, 6, 2, 245});
+        unsigned char borderA = (unsigned char)(170 + (int)(70 * hudPulse));
+        DrawRectangleLinesEx({bx, by, bw, bh}, 2.0f, {160, 120, 40, borderA});
+        DrawRectangleLinesEx({bx+3, by+3, bw-6, bh-6}, 1.0f, {100, 75, 25, 60});
 
-        // Khối trái: [L] Save
-        const char* saveStr = "[L]  Save";
-        int sw = MeasureTextCustomX(ui.mainFont, saveStr, 26);
-        DrawTextCustom(ui.mainFont, saveStr, bx + (third - sw)*0.5f, by + (bh-26)*0.5f, 26, {180, 150, 80, 220});
+        // Layout 3 zone
+        float zL = bw * 0.22f;
+        float zR = bw * 0.22f;
+        float zM = bw - zL - zR;
+        float zLx = bx;
+        float zMx = bx + zL;
+        float zRx = bx + zL + zM;
 
-        // Khối giữa: lượt + số nước — highlight tên người đang đi
-        const char* turnName = game.isPlayer1Turn ? game.player1.name : game.player2.name;
-        char midText[60];
-        snprintf(midText, sizeof(midText), "Turn: %s  |  Move: %d", turnName, game.moveCount);
-        int mw = MeasureTextCustomX(ui.mainFont, midText, 26);
-        DrawTextCustom(ui.mainFont, midText, bx + third + (third - mw)*0.5f, by + (bh-26)*0.5f, 26, {220, 190, 100, 255});
+        // Dividers
+        DrawLineEx({zMx, by+8}, {zMx, by+bh-8}, 1.5f, {160, 120, 40, 90});
+        DrawLineEx({zRx, by+8}, {zRx, by+bh-8}, 1.5f, {160, 120, 40, 90});
 
-        // Khối phải: [M] Menu
-        const char* menuStr = "[M]  Menu";
-        int mnw = MeasureTextCustomX(ui.mainFont, menuStr, 26);
-        DrawTextCustom(ui.mainFont, menuStr, bx + third*2 + (third - mnw)*0.5f, by + (bh-26)*0.5f, 26, {180, 150, 80, 220});
+        // Zone TRÁI: [L] Save — căn giữa dọc trong bh=88
+        {
+            Color keyCol   = {220, 185, 80, 240};
+            Color labelCol = {185, 150, 65, 210};
+            // Khối badge+label cao 34px → căn giữa: by + (bh-34)/2
+            float badY = by + (bh - 34.0f) * 0.5f;
+            float badX = zLx + 18.0f;
+            DrawRectangleRounded({badX, badY, 34, 34}, 0.25f, 4, {50, 38, 10, 200});
+            DrawRectangleRoundedLines({badX, badY, 34, 34}, 0.25f, 4, Fade(keyCol, 0.80f));
+            int lW = MeasureTextCustomX(ui.mainFont, "L", 24);
+            int lH = MeasureTextCustomY(ui.mainFont, "L", 24);
+            DrawTextCustom(ui.mainFont, "L",    (int)(badX + 17 - lW * 0.5f), (int)(badY + (34 - lH) * 0.5f), 24, keyCol);
+            int svW = MeasureTextCustomX(ui.mainFont, "Save", 26);
+            int svH = MeasureTextCustomY(ui.mainFont, "Save", 26);
+            DrawTextCustom(ui.mainFont, "Save", (int)(badX + 42), (int)(badY + (34 - svH) * 0.5f), 26, labelCol);
+        }
+
+        // Zone PHẢI: [ESC] Menu — căn giữa dọc trong bh=88
+        {
+            Color keyCol   = {210, 130, 60, 240};
+            Color labelCol = {170, 110, 55, 210};
+            float badY = by + (bh - 34.0f) * 0.5f;
+            float badX = zRx + 18.0f;
+            DrawRectangleRounded({badX, badY, 56, 34}, 0.25f, 4, {45, 22, 8, 200});
+            DrawRectangleRoundedLines({badX, badY, 56, 34}, 0.25f, 4, Fade(keyCol, 0.75f));
+            int escW = MeasureTextCustomX(ui.mainFont, "ESC", 22);
+            int escH = MeasureTextCustomY(ui.mainFont, "ESC", 22);
+            DrawTextCustom(ui.mainFont, "ESC",  (int)(badX + 28 - escW * 0.5f), (int)(badY + (34 - escH) * 0.5f), 22, keyCol);
+            int mnW = MeasureTextCustomX(ui.mainFont, "Menu", 26);
+            int mnH = MeasureTextCustomY(ui.mainFont, "Menu", 26);
+            DrawTextCustom(ui.mainFont, "Menu", (int)(badX + 64), (int)(badY + (34 - mnH) * 0.5f), 26, labelCol);
+        }
+
+        // Zone GIỮA: TURN INFO
+        {
+            const char* turnName = game.isPlayer1Turn ? game.player1.name : game.player2.name;
+            float glowA = 0.14f + 0.10f * hudPulse;
+            unsigned char ga = (unsigned char)(glowA * 255);
+            Color glowC = game.isPlayer1Turn
+                ? Color{255, 165, 40, ga}
+                : Color{90,  155, 255, ga};
+            DrawRectangleGradientH((int)zMx, (int)by, (int)(zM*0.5f), (int)bh,
+                Fade(glowC, 0.0f), glowC);
+            DrawRectangleGradientH((int)(zMx+zM*0.5f), (int)by, (int)(zM*0.5f), (int)bh,
+                glowC, Fade(glowC, 0.0f));
+
+            // --- Layout dọc cố định cho bh=88 ---
+            // Dòng 1: label "TURN"    → y = by + 8
+            // Dòng 2: tên player to  → y = by + 26
+            // Dòng 3: move count nhỏ → y = by + 62
+            float midX = zMx + zM * 0.5f;
+
+            // Label "TURN" nhỏ — căn giữa ngang, top
+            const char* lbl = "TURN";
+            int lblW = MeasureTextCustomX(ui.mainFont, lbl, 16);
+            int lblH = MeasureTextCustomY(ui.mainFont, lbl, 16);
+            DrawTextCustom(ui.mainFont, lbl,
+                (int)(midX - lblW * 0.5f), (int)(by + 8), 16, {160, 130, 65, 155});
+
+            // Tên player to — marquee nếu quá rộng zone giữa
+            Color nameCol = game.isPlayer1Turn
+                ? Color{255, 210, 80, 255}
+                : Color{130, 195, 255, 255};
+            int tnFontSz  = 32;
+            int tnH       = MeasureTextCustomY(ui.mainFont, turnName, tnFontSz);
+            float nameY   = by + 28.0f;  // căn theo layout dọc cố định
+            int tnW       = MeasureTextCustomX(ui.mainFont, turnName, tnFontSz);
+            float nameClipPad = 12.0f;
+            float nameClipW   = zM - nameClipPad * 2.0f;
+            float nameClipX   = zMx + nameClipPad;
+            if (tnW <= (int)nameClipW) {
+                float nx = midX - tnW * 0.5f;
+                DrawTextCustom(ui.mainFont, turnName, (int)(nx+2), (int)(nameY+2), tnFontSz, Fade(BLACK, 0.65f));
+                DrawTextCustom(ui.mainFont, turnName, (int)(nx-1), (int)(nameY-1), tnFontSz, Fade(nameCol, 0.28f * hudPulse));
+                DrawTextCustom(ui.mainFont, turnName, (int)nx,     (int)nameY,     tnFontSz, nameCol);
+            } else {
+                float sp2   = 70.0f;
+                float prd2  = (tnW + sp2) / 50.0f;
+                float t2    = fmodf((float)GetTime(), prd2);
+                float pauseT2 = 1.0f;
+                float off2 = (t2 < pauseT2) ? 0.0f : (t2 - pauseT2) * 50.0f;
+                if (off2 > tnW + sp2) off2 = fmodf(off2, tnW + sp2);
+                BeginScissorMode((int)nameClipX, (int)by, (int)nameClipW, (int)bh);
+                DrawTextCustom(ui.mainFont, turnName, (int)(nameClipX - off2 + 2), (int)(nameY+2), tnFontSz, Fade(BLACK, 0.65f));
+                DrawTextCustom(ui.mainFont, turnName, (int)(nameClipX - off2),     (int)nameY,     tnFontSz, nameCol);
+                DrawTextCustom(ui.mainFont, turnName, (int)(nameClipX - off2 + tnW + (int)sp2 + 2), (int)(nameY+2), tnFontSz, Fade(BLACK, 0.65f));
+                DrawTextCustom(ui.mainFont, turnName, (int)(nameClipX - off2 + tnW + (int)sp2),     (int)nameY,     tnFontSz, nameCol);
+                EndScissorMode();
+            }
+
+            // Move count — căn giữa ngang, dưới cùng
+            char moveStr[16];
+            snprintf(moveStr, sizeof(moveStr), "Move %d", game.moveCount);
+            int mvW = MeasureTextCustomX(ui.mainFont, moveStr, 18);
+            DrawTextCustom(ui.mainFont, moveStr,
+                (int)(midX - mvW * 0.5f), (int)(by + 64), 18, {155, 125, 55, 160});
+        }
     }
 
     float glowT = (float)GetTime();
@@ -500,13 +595,48 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     Color p2ThemeCol = heroThemeColors[HERO_MAP[ui.p2HeroSelection]];
 
     // VẼ TÊN PLAYER 1 & 2 — badge sát nhân vật
-    int badgePWidth = 460, badgePHeight = 95, nameFontSize = 44;
+    int badgePWidth = 460, badgePHeight = 95, nameFontSize = 40;
 
-    float p1X = 230.0f - badgePWidth * 0.5f, p1Y = 374.0f;
-    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p1X, p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
-    int p1NameWidth = MeasureTextCustomX(ui.mainFont, game.player1.name, nameFontSize);
-    int p1NameHeight = MeasureTextCustomY(ui.mainFont, game.player1.name, nameFontSize);
-    DrawTextCustom(ui.mainFont, game.player1.name, p1X + (badgePWidth - p1NameWidth) / 2.0f, p1Y + (badgePHeight - p1NameHeight) / 2.0f - 3.0f, nameFontSize, WHITE);
+    // Helper: vẽ tên trong badge với marquee scrolling nếu quá rộng
+    // clipPadH = padding ngang (px mỗi bên), tốc độ scroll = 55px/s
+    auto DrawBadgeName = [&](const char* name, float bx, float by, float bw, float bh2, int fSize, Color col) {
+        int tW = MeasureTextCustomX(ui.mainFont, name, fSize);
+        int tH = MeasureTextCustomY(ui.mainFont, name, fSize);
+        float clipPad = 18.0f;
+        float clipW   = bw - clipPad * 2.0f;   // vùng hiển thị text
+        float clipX   = bx + clipPad;
+        // Dùng fSize * 0.65f thay vì tH (MeasureTextCustomY trả về line-height lớn hơn visual)
+        float textY   = by + (bh2 - fSize * 0.65f) * 0.5f;  // căn giữa dọc chính xác
+        if (tW <= (int)clipW) {
+            // Tên vừa → căn giữa ngang bình thường
+            float textX = bx + (bw - tW) * 0.5f;
+            DrawTextCustom(ui.mainFont, name, (int)textX, (int)textY, fSize, col);
+        } else {
+            // Tên quá dài → marquee scroll
+            float scrollSpeed = 55.0f;           // px/giây
+            float gap         = 40.0f;           // khoảng cách giữa 2 bản copy
+            float period      = (tW + gap) / scrollSpeed;
+            float t           = fmodf((float)GetTime(), period);
+            float offset      = t * scrollSpeed; // 0 → (tW+gap) trong 1 chu kỳ
+            // Pause 1.2s ở đầu trước khi bắt đầu cuộn
+            float pauseT = 1.2f;
+            if (t < pauseT) offset = 0.0f;
+            else            offset = (t - pauseT) * scrollSpeed;
+            if (offset > tW + gap) offset = fmodf(offset, tW + gap);
+
+            BeginScissorMode((int)clipX, (int)by, (int)clipW, (int)bh2);
+            // Bản copy 1
+            DrawTextCustom(ui.mainFont, name, (int)(clipX - offset), (int)textY, fSize, col);
+            // Bản copy 2 (hiện khi copy 1 gần kết thúc)
+            DrawTextCustom(ui.mainFont, name, (int)(clipX - offset + tW + gap), (int)textY, fSize, col);
+            EndScissorMode();
+        }
+    };
+
+    float p1X = 230.0f - badgePWidth * 0.5f, p1Y = 324.0f;
+    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
+        {p1X, p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
+    DrawBadgeName(game.player1.name, p1X, p1Y, (float)badgePWidth, (float)badgePHeight, nameFontSize, WHITE);
    // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 1 ---
    if (game.gameMode == 1) {
         float uiScale = 0.35f; // Chỉnh độ to nhỏ của toàn bộ UI ở đây
@@ -550,11 +680,10 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
         }
     }
-    float p2X = 1690.0f - badgePWidth * 0.5f,   p2Y = 374.0f;
-    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height}, {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
-    int p2NameWidth = MeasureTextCustomX(ui.mainFont, game.player2.name, nameFontSize);
-    int p2NameHeight = MeasureTextCustomY(ui.mainFont, game.player2.name, nameFontSize);
-    DrawTextCustom(ui.mainFont, game.player2.name, p2X + (badgePWidth - p2NameWidth) / 2.0f, p2Y + (badgePHeight - p2NameHeight) / 2.0f - 3.0f, nameFontSize, WHITE);
+    float p2X = 1690.0f - badgePWidth * 0.5f, p2Y = 324.0f;
+    DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
+        {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
+    DrawBadgeName(game.player2.name, p2X, p2Y, (float)badgePWidth, (float)badgePHeight, nameFontSize, WHITE);
     // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 2 ---
     if (game.gameMode == 1) {
         float uiScale = 0.35f; 
@@ -975,7 +1104,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         }
 
         // ── 8. BUTTON ──
-        float btnW = 220.0f, btnH = 52.0f, btnGap = 20.0f;
+        float btnW = 240.0f, btnH = 58.0f, btnGap = 24.0f;
         float btnY = bfy + bfh + 14.0f;
         Rectangle btnPlayAgain = { 960.0f - btnW - btnGap*0.5f, btnY, btnW, btnH };
         Rectangle btnMenu      = { 960.0f + btnGap*0.5f,        btnY, btnW, btnH };
@@ -983,26 +1112,81 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         bool hovPlay = (ui.endGameSelection == 0);
         bool hovMenu = (ui.endGameSelection == 1);
 
-        Color bgPlay = hovPlay ? Color{40,140,65,235}  : Color{12,12,12,210};
-        Color bdPlay = hovPlay ? Color{70,210,95,255}  : Fade(winTheme, 0.55f);
-        DrawRectangleRounded(btnPlayAgain, 0.28f, 8, bgPlay);
-        DrawRectangleRoundedLines(btnPlayAgain, 0.28f, 8, bdPlay);
-        const char* lblPlay = "Play Again";
-        int wpL = MeasureTextCustomX(ui.mainFont, lblPlay, 28);
-        DrawTextCustom(ui.mainFont, lblPlay,
-            (int)(btnPlayAgain.x+(btnW-wpL)*0.5f),
-            (int)(btnPlayAgain.y+(btnH-28)*0.5f), 28,
-            hovPlay ? WHITE : Fade(WHITE, 0.55f));
+        // ── Play Again button ──
+        {
+            Color bgPlay = hovPlay ? Color{30,110,50,240}  : Color{10,10,10,200};
+            Color bdPlay = hovPlay ? Color{60,200,85,255}  : Fade(winTheme, 0.45f);
+            // Outer glow khi hover
+            if (hovPlay) {
+                DrawRectangleRoundedLines({btnPlayAgain.x-3, btnPlayAgain.y-3, btnPlayAgain.width+6, btnPlayAgain.height+6},
+                    0.30f, 8, Fade({60,200,85,255}, 0.25f * pulse));
+            }
+            DrawRectangleRounded(btnPlayAgain, 0.28f, 8, bgPlay);
+            // Top shine
+            DrawRectangleGradientV((int)btnPlayAgain.x+4, (int)btnPlayAgain.y+2,
+                (int)btnPlayAgain.width-8, (int)(btnPlayAgain.height*0.45f),
+                Fade(WHITE, hovPlay ? 0.09f : 0.04f), Fade(WHITE, 0.0f));
+            DrawRectangleRoundedLines(btnPlayAgain, 0.28f, 8, bdPlay);
 
-        Color bgMenu2 = hovMenu ? Color{140,85,15,235} : Color{12,12,12,210};
-        Color bdMenu2 = hovMenu ? Color{215,145,35,255}: Fade(winTheme, 0.55f);
-        DrawRectangleRounded(btnMenu, 0.28f, 8, bgMenu2);
-        DrawRectangleRoundedLines(btnMenu, 0.28f, 8, bdMenu2);
-        const char* lblMenu = "Main Menu";
-        int wmL = MeasureTextCustomX(ui.mainFont, lblMenu, 28);
-        DrawTextCustom(ui.mainFont, lblMenu,
-            (int)(btnMenu.x+(btnW-wmL)*0.5f),
-            (int)(btnMenu.y+(btnH-28)*0.5f), 28,
-            hovMenu ? WHITE : Fade(WHITE, 0.55f));
+            // Key hint badge
+            DrawRectangleRounded({btnPlayAgain.x+8, btnPlayAgain.y+8, 28, 22}, 0.35f, 4,
+                Fade(BLACK, 0.50f));
+            DrawRectangleRoundedLines({btnPlayAgain.x+8, btnPlayAgain.y+8, 28, 22}, 0.35f, 4,
+                Fade({80,200,100,255}, 0.60f));
+            DrawTextCustom(ui.mainFont, "A", (int)(btnPlayAgain.x+16), (int)(btnPlayAgain.y+11), 16,
+                Fade({130,230,140,255}, 0.85f));
+
+            const char* lblPlay = "Play Again";
+            int wpL = MeasureTextCustomX(ui.mainFont, lblPlay, 28);
+            DrawTextCustom(ui.mainFont, lblPlay,
+                (int)(btnPlayAgain.x + (btnW-wpL)*0.5f + 6),
+                (int)(btnPlayAgain.y + (btnH-28)*0.5f), 28,
+                hovPlay ? WHITE : Fade(WHITE, 0.55f));
+        }
+
+        // ── Main Menu button ──
+        {
+            Color bgMenu2 = hovMenu ? Color{120,70,10,240} : Color{10,10,10,200};
+            Color bdMenu2 = hovMenu ? Color{210,140,30,255}: Fade(winTheme, 0.45f);
+            if (hovMenu) {
+                DrawRectangleRoundedLines({btnMenu.x-3, btnMenu.y-3, btnMenu.width+6, btnMenu.height+6},
+                    0.30f, 8, Fade({210,140,30,255}, 0.25f * pulse));
+            }
+            DrawRectangleRounded(btnMenu, 0.28f, 8, bgMenu2);
+            DrawRectangleGradientV((int)btnMenu.x+4, (int)btnMenu.y+2,
+                (int)btnMenu.width-8, (int)(btnMenu.height*0.45f),
+                Fade(WHITE, hovMenu ? 0.09f : 0.04f), Fade(WHITE, 0.0f));
+            DrawRectangleRoundedLines(btnMenu, 0.28f, 8, bdMenu2);
+
+            // Key hint badge
+            DrawRectangleRounded({btnMenu.x+8, btnMenu.y+8, 28, 22}, 0.35f, 4,
+                Fade(BLACK, 0.50f));
+            DrawRectangleRoundedLines({btnMenu.x+8, btnMenu.y+8, 28, 22}, 0.35f, 4,
+                Fade({210,160,50,255}, 0.60f));
+            DrawTextCustom(ui.mainFont, "D", (int)(btnMenu.x+16), (int)(btnMenu.y+11), 16,
+                Fade({230,190,90,255}, 0.85f));
+
+            const char* lblMenu = "Main Menu";
+            int wmL = MeasureTextCustomX(ui.mainFont, lblMenu, 28);
+            DrawTextCustom(ui.mainFont, lblMenu,
+                (int)(btnMenu.x + (btnW-wmL)*0.5f + 6),
+                (int)(btnMenu.y + (btnH-28)*0.5f), 28,
+                hovMenu ? WHITE : Fade(WHITE, 0.55f));
+        }
+
+        // ── Footer: keyboard navigation hint ──
+        {
+            float footY = btnY + btnH + 8.0f;
+            const char* footHint = "[A] Play Again     [D] Main Menu     [ENTER] Confirm";
+            int fhW = MeasureTextCustomX(ui.mainFont, footHint, 20);
+            // Subtle pill background
+            DrawRectangleRounded({960.0f - fhW*0.5f - 16, footY, (float)fhW+32, 28}, 0.5f, 6,
+                {8, 6, 2, 140});
+            DrawRectangleRoundedLines({960.0f - fhW*0.5f - 16, footY, (float)fhW+32, 28}, 0.5f, 6,
+                Fade(winTheme, 0.20f));
+            DrawTextCustom(ui.mainFont, footHint,
+                (int)(960.0f - fhW*0.5f), (int)(footY + 4), 20,
+                Fade({180, 155, 80, 255}, 0.50f));
+        }
     }
 }

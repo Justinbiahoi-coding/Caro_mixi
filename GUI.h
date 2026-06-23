@@ -173,19 +173,21 @@ inline int MeasureTextCustomY(Font font, const char *text, int fontSize) {
 }
 
 inline void DrawBadgeText(Font font, Texture2D badge, const char *text, int y, float badgeWidth, float badgeHeight, int textFontSize, Color textColor, float offsetY = 0.0f) {
-    // 1. Tính toán vị trí Badge để căn giữa ngang
-    float badgeX = (1920.0f - badgeWidth) / 2.0f; 
+    // 1. Vị trí Badge căn giữa ngang
+    float badgeX = (1920.0f - badgeWidth) / 2.0f;
 
-    // 2. Tính toán độ rộng/cao của text
-    float textWidth = (float)MeasureTextCustomX(font, text, textFontSize);
-    float textHeight = (float)MeasureTextCustomY(font, text, textFontSize);
+    // 2. Độ rộng text (ngang) và chiều cao visual thực tế
+    //    MeasureTextCustomY trả về line-height (bao gồm ascender/descender) nên rất lớn.
+    //    Dùng fontSize * 0.65f để ước lượng chiều cao glyph thực, cho kết quả căn giữa dọc đếp hơn.
+    float textWidth   = (float)MeasureTextCustomX(font, text, textFontSize);
+    float visualTextH = textFontSize * 0.65f;   // chiều cao visual thực tế
 
-    // 3. Tính toán vị trí Text để căn giữa (Đã bỏ công thức cũ, thay bằng offsetY an toàn hơn)
-    float textX = badgeX + (badgeWidth - textWidth) / 2.0f;
-    float textY = y + (badgeHeight - textHeight) / 2.0f + offsetY; 
+    // 3. Vị trí text: căn giữa ngang + căn giữa dọc theo badgeHeight
+    float textX = badgeX + (badgeWidth  - textWidth)  * 0.5f;
+    float textY = y      + (badgeHeight - visualTextH) * 0.5f + offsetY;
 
-    // 4. Vẽ Badge 
-    DrawTexturePro(badge, {0, 0, (float)badge.width, (float)badge.height}, 
+    // 4. Vẽ Badge
+    DrawTexturePro(badge, {0, 0, (float)badge.width, (float)badge.height},
                    {badgeX, (float)y, badgeWidth, badgeHeight}, {0, 0}, 0.0f, WHITE);
 
     // 5. Vẽ Text lên trên
