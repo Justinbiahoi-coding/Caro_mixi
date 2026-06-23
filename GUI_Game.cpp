@@ -1,27 +1,27 @@
 #include "GUI_Game.h"
 #include "Library.h"
 
-// Kiểm tra xem nước vừa đánh tại (row,col) có chặn đối thủ (oppPlayer) không.
-// Trả về true nếu:
-//   - Chặn 1 đầu của 3 quân liên tiếp đối thủ (đầu kia đã bị chặn bởi biên/quân ta)
-//   - Chặn cả 2 đầu của 4 quân liên tiếp đối thủ (biên tính là chặn)
+// Check whether the move at (row,col) blocks the opponent (oppPlayer).
+// Returns true if:
+//   - It blocks one end of 3 opponent marks in a row (the other end already blocked by edge/our mark)
+//   - It blocks both ends of 4 opponent marks in a row (board edge counts as a block)
 static bool CheckBlockVariant(GameState& game, int row, int col, int oppPlayer) {
     const int dirs[4][2] = {{0,1},{1,0},{1,1},{1,-1}};
     for (int d = 0; d < 4; d++) {
         int dx = dirs[d][0], dy = dirs[d][1];
         int count = 0, blocks = 0;
         GetLineStatus(game, row, col, dx, dy, oppPlayer, count, blocks);
-        // count = số quân đối thủ liên tiếp (không tính ô vừa đánh)
-        // blocks = số đầu bị chặn (biên + quân không phải oppPlayer)
-        // Ô vừa đánh của ta nằm ở một trong hai đầu → nó đóng góp 1 block
-        // GetLineStatus tính block ở đầu trống → ta đặt vào đó thì đầu đó thành bị chặn
-        // Nhưng GetLineStatus không biết ô (row,col) vừa được đặt, nên cần xét thêm:
-        // Thực ra sau MakeMove, board[row][col] đã là quân ta, GetLineStatus sẽ thấy
-        // quân ta chặn một phía và biên/quân khác chặn phía kia.
-        // Điều kiện: 3 quân liên tiếp + 1 đầu bị chặn (blocks >= 1, count == 3)
-        //            4 quân liên tiếp + 2 đầu đều bị chặn (blocks == 2, count == 4)
-        if (count == 3) return true;  // chặn 1 đầu 3 quân, không quan tâm đầu kia
-        if (count == 4 && blocks == 2) return true;  // chặn 2 đầu 4 quân (biên tính là chặn)
+        // count = number of consecutive opponent marks (excluding the move just made)
+        // blocks = number of blocked ends (edge + non-opponent marks)
+        // Our new mark sits at one end, so it contributes one block
+        // GetLineStatus counts a block at an empty end; placing there turns that end into a block
+        // GetLineStatus does not know about the new (row,col), so we account for it here:
+        // After MakeMove, board[row][col] is already our mark, so GetLineStatus sees
+        // our mark blocking one side and the edge/other mark blocking the other.
+        // Conditions: 3 in a row + 1 blocked end (blocks >= 1, count == 3)
+        //             4 in a row + both ends blocked (blocks == 2, count == 4)
+        if (count == 3) return true;  // block one end of 3, regardless of the other end
+        if (count == 4 && blocks == 2) return true;  // block both ends of 4 (edge counts as block)
     }
     return false;
 }
@@ -42,7 +42,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
 
     auto triggerDeath = [&]() {
         if (!ui.pendingWin) return;
-        // pendingWinStatus: 1 = P1 thắng (P2 thua), 2 = P2 thắng (P1 thua), 3 = Hòa
+        // pendingWinStatus: 1 = P1 wins (P2 loses), 2 = P2 wins (P1 loses), 3 = Draw
         if (ui.pendingWinStatus == 1) {
             if (!ui.isP2Dying) {
                 ui.isP2Dying = true;
@@ -150,7 +150,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         }
     }
 
-    // --- 2. XỬ LÝ LOGIC ĐÁNH CỜ ---
+    // --- 2. HANDLE MOVE INPUT ---
         if (game.matchStatus == 0 && !ui.pendingWin && !ui.isP1Dying && !ui.isP2Dying) {
             bool moveMade = false;
             bool wasP1 = game.isPlayer1Turn;
@@ -167,7 +167,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     moveCol = game.lastMoveCol;
                 }
             } else {
-                if (game.inputType == 0) { // CHẾ ĐỘ CHUỘT
+                if (game.inputType == 0) { // MOUSE MODE
                 float gridWidth = BOARD_SIZE * ui.cellSize;
                 float gridHeight = BOARD_SIZE * ui.cellSize;
     
@@ -180,49 +180,41 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                         moveMade = MakeMove(game, row, col);
                         if (moveMade) { moveRow = row; moveCol = col; }
-                    } 
-                    else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
-                        // Click Phải -> Gọi Logic Quét Mìn (Không vẽ)
-                        ScanMine(game, row, col); 
                     }
                 }
-            } 
-            else if (game.inputType == 1) { // CHẾ ĐỘ BÀN PHÍM
+            }
+            else if (game.inputType == 1) { // KEYBOARD MODE
                 if (IsKeyPressed(KEY_W) && game.cursorRow > 0) game.cursorRow--;
                 if (IsKeyPressed(KEY_S) && game.cursorRow < BOARD_SIZE - 1) game.cursorRow++;
                 if (IsKeyPressed(KEY_A) && game.cursorCol > 0) game.cursorCol--;
                 if (IsKeyPressed(KEY_D) && game.cursorCol < BOARD_SIZE - 1) game.cursorCol++;
-                
+
                 if (IsKeyPressed(KEY_ENTER)) {
                     moveMade = MakeMove(game, game.cursorRow, game.cursorCol);
                     if (moveMade) { moveRow = game.cursorRow; moveCol = game.cursorCol; }
                 }
-                if (IsKeyPressed(KEY_SPACE)) {
-                    // Phím Space -> Gọi Logic Quét Mìn (Không vẽ)
-                    ScanMine(game, game.cursorRow, game.cursorCol); 
-                }
             }
             } // Ket thuc khoi else (khong phai luot bot)
 
-            // --- 3. KÍCH HOẠT ANIMATION CHÉM NẾU ĐÁNH THÀNH CÔNG ---
+            // --- 3. TRIGGER ATTACK ANIMATION ON A SUCCESSFUL MOVE ---
             if (moveMade) {
                 int lastRow = -1, lastCol = -1;
-                // Tìm ô vừa đánh (ô có giá trị của wasP1 ? 1 : 2 vừa đặt)
-                // Thực ra ta đã biết row/col từ input — lưu lại trước MakeMove
-                // → Xem biến moveRow/moveCol được set bên dưới
-                int variant = 0; // mặc định attack_s1
+                // Find the cell just placed (value wasP1 ? 1 : 2)
+                // We already know row/col from input, saved before MakeMove
+                // see moveRow/moveCol set above
+                int variant = 0; // default attack_s1
                 int myPlayer = wasP1 ? 1 : 2;
                 int oppPlayer = wasP1 ? 2 : 1;
 
-                // Kiểm tra win: matchStatus != 0 nghĩa là nước này thắng
+                // Check win: matchStatus != 0 means this move won
                 if (game.matchStatus != 0) {
                     variant = 2; // attack_s3
                     ui.pendingWinStatus = game.matchStatus;
                     ui.pendingWin = true;
-                    game.matchStatus = 0; // giữ lại, reveal sau animation
+                    game.matchStatus = 0; // keep it, reveal after the animation
 
                     if (ui.pendingWinStatus == 3) {
-                        // Hòa -> Cả hai cùng attack_s3
+                        // Draw -> both play attack_s3
                         ui.isP1Attacking = true;
                         ui.p1AttackVariant = 2;
                         getAtk(p1Asset, 2).currentFrame = 0;
@@ -237,7 +229,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                         PlaySound(ui.heroAttackSound[p2Asset]);
                     }
                 } else {
-                    // Kiểm tra xem có chặn đối thủ không (dùng row/col đã đánh)
+                    // Check whether this move blocks the opponent (using the placed row/col)
                     if (CheckBlockVariant(game, moveRow, moveCol, oppPlayer)) {
                         variant = 1; // attack_s2
                     }
@@ -249,17 +241,17 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                         ui.p1AttackVariant = variant;
                         getAtk(p1Asset, variant).currentFrame = 0;
                         getAtk(p1Asset, variant).frameTimer = 0.0f;
-                        PlaySound(ui.heroAttackSound[p1Asset]); // sound effect tấn công P1
+                        PlaySound(ui.heroAttackSound[p1Asset]); // P1 attack sound effect
                     } else {
                         ui.isP2Attacking = true;
                         ui.p2AttackVariant = variant;
                         getAtk(p2Asset, variant).currentFrame = 0;
                         getAtk(p2Asset, variant).frameTimer = 0.0f;
-                        PlaySound(ui.heroAttackSound[p2Asset]); // sound effect tấn công P2
+                        PlaySound(ui.heroAttackSound[p2Asset]); // P2 attack sound effect
                     }
                 }
 
-                // Spawn cell effect tại ô vừa đánh
+                // Spawn a cell effect at the placed cell
                 if (ui.cellEffectCount < UIState::MAX_CELL_EFFECTS) {
                     int asset = wasP1 ? p1Asset : p2Asset;
                     UIState::CellEffect& eff = ui.cellEffects[ui.cellEffectCount++];
@@ -274,7 +266,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                 }
             }
         }
-    else { // TRẠNG THÁI END GAME (Thắng/Thua/Hòa)
+    else { // END GAME STATE (Win/Lose/Draw)
         if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) ui.endGameSelection = 0;
         if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.endGameSelection = 1;
 
@@ -304,7 +296,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     // Update win screen timer
     if (game.matchStatus != 0) ui.winScreenTimer += dt;
 
-    // Update cell effects — clamp dt để tránh skip toàn bộ animation khi lag
+    // Update cell effects, clamp dt so a lag spike doesn't skip the whole animation
     float effDt = (dt > 0.1f) ? 0.1f : dt;
     for (int k = 0; k < ui.cellEffectCount; k++) {
         UIState::CellEffect& eff = ui.cellEffects[k];
@@ -320,8 +312,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
         }
     }
 
-    // Reset cell effects khi bắt đầu ván mới (ResetRound đã gọi ở confirm)
-    // PHÍM TẮT
+    // Cell effects are reset on a new round (ResetRound is called on confirm)
+    // SHORTCUTS
     if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
     if (IsKeyPressed(KEY_L)) {
         ui.currentScreen = 6; 
@@ -342,35 +334,35 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     const int p1Asset = HERO_MAP[ui.p1HeroSelection];
     const int p2Asset = HERO_MAP[ui.p2HeroSelection];
 
-    // NỀN & BÀN CỜ
+    // BACKGROUND & BOARD
     DrawTexturePro(ui.bgGame, { 0, 0, (float)ui.bgGame.width, (float)ui.bgGame.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
-    // === PANEL NỀN 2 BÊN NHÂN VẬT — full chiều cao ===
+    // === SIDE BACKGROUND PANELS behind heroes, full height ===
     float boardL = ui.boardFrameRec.x;
     float boardR = ui.boardFrameRec.x + ui.boardFrameRec.width;
 
-    // Panel trái: full màn hình, gradient tối mép → trong suốt sát board
+    // Left panel: dark edge fading to transparent near the board
     DrawRectangleGradientH(0, 0, (int)(boardL + 40), 1080,
         {5, 4, 2, 230}, {5, 4, 2, 0});
 
-    // Panel phải: full màn hình
+    // Right panel: full screen
     DrawRectangleGradientH((int)(boardR - 40), 0, (int)(1920 - boardR + 40), 1080,
         {5, 4, 2, 0}, {5, 4, 2, 230});
 
-    // Panel top: gradient từ top xuống (tối → trong suốt)
+    // Top panel: dark at top fading down to transparent
     DrawRectangleGradientV(0, 0, 1920, 160,
         {5, 4, 2, 200}, {5, 4, 2, 0});
 
-    // Panel bottom: gradient từ bottom lên
+    // Bottom panel: dark at bottom fading up
     DrawRectangleGradientV(0, 920, 1920, 160,
         {5, 4, 2, 0}, {5, 4, 2, 200});
 
-    // Vignette: chỉ tối ở mép ngoài màn hình, vùng nhân vật giữ sáng tự nhiên
-    // Trái: mép ngoài tối (alpha 100), fade nhanh vào → 0 ở 1/3 panel
+    // Vignette: only darken the outer screen edges, keep heroes naturally lit
+    // Left: dark outer edge (alpha 100), fades to 0 by 1/3 of the panel
     DrawRectangleGradientH(0, 0, (int)(boardL * 0.5f), 1080, {0,0,0,100}, {0,0,0,0});
-    // Phải
+    // Right
     DrawRectangleGradientH((int)(boardR + (1920-boardR)*0.5f), 0, (int)((1920-boardR)*0.5f), 1080, {0,0,0,0}, {0,0,0,100});
-    // Top: chỉ tối phần trên cùng badge, fade nhanh
+    // Top: only darken the very top, fade quickly
     DrawRectangleGradientV(0, 0, 1920, 80, {0,0,0,90}, {0,0,0,0});
     // Bottom
     float boardBot = ui.boardFrameRec.y + ui.boardFrameRec.height;
@@ -382,7 +374,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
     Vector2 mousePos = GetMousePosition();
     
-    // VẼ CÁC Ô CỜ VÀ QUÂN CỜ
+    // DRAW BOARD CELLS AND PIECES
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             float x = ui.cellStartX + j * ui.cellSize;
@@ -403,7 +395,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 int owner = game.board[i][j].c;
                 int asset = (owner == 1) ? p1Asset : p2Asset;
 
-                // Tìm cell effect cho ô này
+                // Find the cell effect for this cell
                 const UIState::CellEffect* eff = nullptr;
                 for (int k = 0; k < ui.cellEffectCount; k++) {
                     if (ui.cellEffects[k].row == i && ui.cellEffects[k].col == j) {
@@ -417,10 +409,10 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 float dx = x + pad, dy = y + pad;
 
                 if (eff && !eff->done) {
-                    // Vẽ frame effect hiện tại (kích thước gấp đôi, căn giữa ô)
+                    // Draw the current effect frame (double size, centered on the cell)
                     const Texture2D& sheet = ui.heroEffect[eff->heroAsset];
                     int fh = sheet.height;
-                    int fw = fh; // frame vuông
+                    int fw = fh; // square frame
                     Rectangle src = { (float)(eff->currentFrame * fw), 0, (float)fw, (float)fh };
                     float effSize = drawSize * 2.0f;
                     float effX = x + ui.cellSize * 0.5f - effSize * 0.5f;
@@ -428,7 +420,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                     Rectangle dst = { effX, effY, effSize, effSize };
                     DrawTexturePro(sheet, src, dst, {0,0}, 0.0f, WHITE);
                 } else {
-                    // Effect xong → vẽ icon tĩnh
+                    // Effect finished -> draw the static icon
                     const Texture2D& icon = ui.heroIcon[asset];
                     Rectangle src = { 0, 0, (float)icon.width, (float)icon.height };
                     Rectangle dst = { dx, dy, drawSize, drawSize };
@@ -444,12 +436,12 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawRectangleLinesEx({cx, cy, ui.cellSize, ui.cellSize}, 3.0f, DARKGREEN);
     }
 
-    // THÔNG TIN VÁN ĐẤU (BADGES) — bỏ MATCH INFO, chỉ giữ ROUND badge
+    // MATCH INFO BADGES, only the ROUND badge is kept
     char roundText[30];
     snprintf(roundText, sizeof(roundText), "ROUND %d", game.roundCount);
     DrawBadgeText(ui.mainFont, ui.roundBadge, roundText, 15, 261.1f, 74.6f, 39, WHITE, 0.0f);
 
-    // === THANH NGANG DƯỚI BOARD ===
+    // === HORIZONTAL BAR BELOW THE BOARD ===
     {
         float bx = ui.boardFrameRec.x;
         float bw = ui.boardFrameRec.width;
@@ -459,7 +451,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float hudT = (float)GetTime();
         float hudPulse = 0.5f + 0.5f * sinf(hudT * 2.5f);
 
-        // Nền HUD gradient từ cạnh vào giữa
+        // HUD background gradient from edges to center
         DrawRectangleGradientH((int)bx, (int)by, (int)(bw*0.5f), (int)bh,
             {8, 6, 2, 245}, {20, 16, 5, 220});
         DrawRectangleGradientH((int)(bx + bw*0.5f), (int)by, (int)(bw*0.5f), (int)bh,
@@ -480,11 +472,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         DrawLineEx({zMx, by+8}, {zMx, by+bh-8}, 1.5f, {160, 120, 40, 90});
         DrawLineEx({zRx, by+8}, {zRx, by+bh-8}, 1.5f, {160, 120, 40, 90});
 
-        // Zone TRÁI: [L] Save — căn giữa dọc trong bh=88
+        // LEFT zone: [L] Save, vertically centered in bh=88
         {
             Color keyCol   = {220, 185, 80, 240};
             Color labelCol = {185, 150, 65, 210};
-            // Khối badge+label cao 34px → căn giữa: by + (bh-34)/2
+            // badge+label block is 34px tall, center: by + (bh-34)/2
             float badY = by + (bh - 34.0f) * 0.5f;
             float badX = zLx + 18.0f;
             DrawRectangleRounded({badX, badY, 34, 34}, 0.25f, 4, {50, 38, 10, 200});
@@ -497,7 +489,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawTextCustom(ui.mainFont, "Save", (int)(badX + 42), (int)(badY + (34 - svH) * 0.5f), 26, labelCol);
         }
 
-        // Zone PHẢI: [ESC] Menu — căn giữa dọc trong bh=88
+        // RIGHT zone: [ESC] Menu, vertically centered in bh=88
         {
             Color keyCol   = {210, 130, 60, 240};
             Color labelCol = {170, 110, 55, 210};
@@ -526,26 +518,26 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawRectangleGradientH((int)(zMx+zM*0.5f), (int)by, (int)(zM*0.5f), (int)bh,
                 glowC, Fade(glowC, 0.0f));
 
-            // --- Layout dọc cố định cho bh=88 ---
-            // Dòng 1: label "TURN"    → y = by + 8
-            // Dòng 2: tên player to  → y = by + 26
-            // Dòng 3: move count nhỏ → y = by + 62
+            // --- Fixed vertical layout for bh=88 ---
+            // Line 1: "TURN" label    -> y = by + 8
+            // Line 2: big player name -> y = by + 26
+            // Line 3: small move count -> y = by + 62
             float midX = zMx + zM * 0.5f;
 
-            // Label "TURN" nhỏ — căn giữa ngang, top
+            // Small "TURN" label, centered horizontally, on top
             const char* lbl = "TURN";
             int lblW = MeasureTextCustomX(ui.mainFont, lbl, 16);
             int lblH = MeasureTextCustomY(ui.mainFont, lbl, 16);
             DrawTextCustom(ui.mainFont, lbl,
                 (int)(midX - lblW * 0.5f), (int)(by + 8), 16, {160, 130, 65, 155});
 
-            // Tên player to — marquee nếu quá rộng zone giữa
+            // Big player name, marquee if it overflows the middle zone
             Color nameCol = game.isPlayer1Turn
                 ? Color{255, 210, 80, 255}
                 : Color{130, 195, 255, 255};
             int tnFontSz  = 32;
             int tnH       = MeasureTextCustomY(ui.mainFont, turnName, tnFontSz);
-            float nameY   = by + 28.0f;  // căn theo layout dọc cố định
+            float nameY   = by + 28.0f;  // per the fixed vertical layout
             int tnW       = MeasureTextCustomX(ui.mainFont, turnName, tnFontSz);
             float nameClipPad = 12.0f;
             float nameClipW   = zM - nameClipPad * 2.0f;
@@ -570,7 +562,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 EndScissorMode();
             }
 
-            // Move count — căn giữa ngang, dưới cùng
+            // Move count, centered horizontally, at the bottom
             char moveStr[16];
             snprintf(moveStr, sizeof(moveStr), "Move %d", game.moveCount);
             int mvW = MeasureTextCustomX(ui.mainFont, moveStr, 18);
@@ -582,52 +574,52 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float glowT = (float)GetTime();
     float glowAlpha = 0.55f + 0.45f * sinf(glowT * 4.0f);
 
-    // Màu theme theo hero (asset index 1-5)
+    // Theme color per hero (asset index 1-5)
     const Color heroThemeColors[6] = {
         {150, 150, 150, 255},  // 0: black_knight (hidden)
         {220,  70,  20, 255},  // 1: fire_knight
         { 40, 170, 110, 255},  // 2: green_archer
-        {180, 160,  60, 255},  // 3: earth_assassin — gold (từ metal_blade cũ)
-        {180, 185, 195, 255},  // 4: metal_blade    — bạc/xám thép
+        {180, 160,  60, 255},  // 3: earth_assassin - gold (former metal_blade)
+        {180, 185, 195, 255},  // 4: metal_blade    - steel silver/grey
         { 30, 160, 220, 255},  // 5: water_mage
     };
     Color p1ThemeCol = heroThemeColors[HERO_MAP[ui.p1HeroSelection]];
     Color p2ThemeCol = heroThemeColors[HERO_MAP[ui.p2HeroSelection]];
 
-    // VẼ TÊN PLAYER 1 & 2 — badge sát nhân vật
+    // DRAW PLAYER 1 & 2 NAMES, badge next to each hero
     int badgePWidth = 460, badgePHeight = 95, nameFontSize = 40;
 
-    // Helper: vẽ tên trong badge với marquee scrolling nếu quá rộng
-    // clipPadH = padding ngang (px mỗi bên), tốc độ scroll = 55px/s
+    // Helper: draw a name in a badge, with marquee scrolling if too wide
+    // clipPadH = horizontal padding (px each side), scroll speed = 55px/s
     auto DrawBadgeName = [&](const char* name, float bx, float by, float bw, float bh2, int fSize, Color col) {
         int tW = MeasureTextCustomX(ui.mainFont, name, fSize);
         int tH = MeasureTextCustomY(ui.mainFont, name, fSize);
         float clipPad = 18.0f;
-        float clipW   = bw - clipPad * 2.0f;   // vùng hiển thị text
+        float clipW   = bw - clipPad * 2.0f;   // visible text area
         float clipX   = bx + clipPad;
-        // Dùng fSize * 0.65f thay vì tH (MeasureTextCustomY trả về line-height lớn hơn visual)
-        float textY   = by + (bh2 - fSize * 0.65f) * 0.5f;  // căn giữa dọc chính xác
+        // Use fSize * 0.65f instead of tH (MeasureTextCustomY returns line-height larger than visual)
+        float textY   = by + (bh2 - fSize * 0.65f) * 0.5f;  // precise vertical centering
         if (tW <= (int)clipW) {
-            // Tên vừa → căn giữa ngang bình thường
+            // Name fits -> just center horizontally
             float textX = bx + (bw - tW) * 0.5f;
             DrawTextCustom(ui.mainFont, name, (int)textX, (int)textY, fSize, col);
         } else {
-            // Tên quá dài → marquee scroll
-            float scrollSpeed = 55.0f;           // px/giây
-            float gap         = 40.0f;           // khoảng cách giữa 2 bản copy
+            // Name too long -> marquee scroll
+            float scrollSpeed = 55.0f;           // px/second
+            float gap         = 40.0f;           // gap between the two copies
             float period      = (tW + gap) / scrollSpeed;
             float t           = fmodf((float)GetTime(), period);
-            float offset      = t * scrollSpeed; // 0 → (tW+gap) trong 1 chu kỳ
-            // Pause 1.2s ở đầu trước khi bắt đầu cuộn
+            float offset      = t * scrollSpeed; // 0 -> (tW+gap) per cycle
+            // Pause 1.2s before scrolling starts
             float pauseT = 1.2f;
             if (t < pauseT) offset = 0.0f;
             else            offset = (t - pauseT) * scrollSpeed;
             if (offset > tW + gap) offset = fmodf(offset, tW + gap);
 
             BeginScissorMode((int)clipX, (int)by, (int)clipW, (int)bh2);
-            // Bản copy 1
+            // Copy 1
             DrawTextCustom(ui.mainFont, name, (int)(clipX - offset), (int)textY, fSize, col);
-            // Bản copy 2 (hiện khi copy 1 gần kết thúc)
+            // Copy 2 (appears as copy 1 nears the end)
             DrawTextCustom(ui.mainFont, name, (int)(clipX - offset + tW + gap), (int)textY, fSize, col);
             EndScissorMode();
         }
@@ -637,89 +629,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
         {p1X, p1Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     DrawBadgeName(game.player1.name, p1X, p1Y, (float)badgePWidth, (float)badgePHeight, nameFontSize, WHITE);
-   // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 1 ---
-   if (game.gameMode == 1) {
-        float uiScale = 0.35f; // Chỉnh độ to nhỏ của toàn bộ UI ở đây
-        float uiX_P1 = p1X - 10.0f; 
-        float uiY_P1 = p1Y + 110.0f;
-
-        // 1. Vẽ Khung sắt Base
-        DrawTextureEx(ui.uiBase, { uiX_P1, uiY_P1 }, 0.0f, uiScale, WHITE);
-
-        // ==========================================
-        // 🛠️ TỌA ĐỘ VÀ KÍCH THƯỚC ĐÃ ĐƯỢC ÉP TỶ LỆ CHUẨN
-        // Dựa vào ảnh gốc: Khe nhét bắt đầu ở vị trí ~37.5% chiều ngang
-        // ==========================================
-        // Tính toán khe nhét MÁU
-        float hp_X = uiX_P1 + (ui.uiBase.width * 0.375f * uiScale); // Lùi sang phải 37.5%
-        float hp_Y = uiY_P1 + (ui.uiBase.height * 0.18f * uiScale);  // Lùi xuống 18%
-        float hp_W = ui.uiBase.width * 0.585f * uiScale;            // Độ rộng khe máu
-        float hp_H = ui.uiBase.height * 0.23f * uiScale;             // Độ cao khe máu
-
-        // Tính toán khe nhét RADAR
-        float radar_X = uiX_P1 + (ui.uiBase.width * 0.375f * uiScale);
-        float radar_Y = uiY_P1 + (ui.uiBase.height * 0.58f * uiScale); // Lùi xuống sâu hơn (58%)
-        float radar_W = ui.uiBase.width * 0.38f * uiScale;            // Độ rộng khe radar (ngắn hơn)
-        float radar_H = ui.uiBase.height * 0.22f * uiScale;
-        // ==========================================
-
-        // 2. Vẽ Máu P1
-        float hpPercentP1 = (float)game.player1.hp / 2.0f;
-        if (hpPercentP1 > 0) {
-            Rectangle hpSrc = { 0, 0, ui.uiHp.width * hpPercentP1, (float)ui.uiHp.height };
-            // Tự động kéo dãn chiều width/height cho khớp với khe hp_W và hp_H
-            Rectangle hpDest = { hp_X, hp_Y, hp_W * hpPercentP1, hp_H };
-            DrawTexturePro(ui.uiHp, hpSrc, hpDest, {0, 0}, 0.0f, WHITE);
-        }
-
-        // 3. Vẽ Radar P1
-        float scanPercentP1 = (float)game.player1.scansLeft / 2.0f;
-        if (scanPercentP1 > 0) {
-            Rectangle scanSrc = { 0, 0, ui.uiRadar.width * scanPercentP1, (float)ui.uiRadar.height };
-            Rectangle scanDest = { radar_X, radar_Y, radar_W * scanPercentP1, radar_H };
-            DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
-        }
-    }
     float p2X = 1690.0f - badgePWidth * 0.5f, p2Y = 324.0f;
     DrawTexturePro(ui.playerBadge, {0, 0, (float)ui.playerBadge.width, (float)ui.playerBadge.height},
         {p2X, p2Y, (float)badgePWidth, (float)badgePHeight}, {0, 0}, 0.0f, WHITE);
     DrawBadgeName(game.player2.name, p2X, p2Y, (float)badgePWidth, (float)badgePHeight, nameFontSize, WHITE);
-    // --- VẼ UI MÁU VÀ RADAR CHO PLAYER 2 ---
-    if (game.gameMode == 1) {
-        float uiScale = 0.35f; 
-        float uiX_P2 = p2X - 10.0f; 
-        float uiY_P2 = p2Y + 110.0f;
-
-        DrawTextureEx(ui.uiBase, { uiX_P2, uiY_P2 }, 0.0f, uiScale, WHITE);
-
-        // Dùng chung tỷ lệ như Player 1
-        float hp_X = uiX_P2 + (ui.uiBase.width * 0.375f * uiScale);
-        float hp_Y = uiY_P2 + (ui.uiBase.height * 0.18f * uiScale);
-        float hp_W = ui.uiBase.width * 0.585f * uiScale;
-        float hp_H = ui.uiBase.height * 0.23f * uiScale;
-
-        float radar_X = uiX_P2 + (ui.uiBase.width * 0.375f * uiScale);
-        float radar_Y = uiY_P2 + (ui.uiBase.height * 0.58f * uiScale);
-        float radar_W = ui.uiBase.width * 0.38f * uiScale;
-        float radar_H = ui.uiBase.height * 0.22f * uiScale;
-
-        // Vẽ Máu P2
-        float hpPercentP2 = (float)game.player2.hp / 2.0f;
-        if (hpPercentP2 > 0) {
-            Rectangle hpSrc = { 0, 0, ui.uiHp.width * hpPercentP2, (float)ui.uiHp.height };
-            Rectangle hpDest = { hp_X, hp_Y, hp_W * hpPercentP2, hp_H };
-            DrawTexturePro(ui.uiHp, hpSrc, hpDest, {0, 0}, 0.0f, WHITE);
-        }
-
-        // Vẽ Radar P2
-        float scanPercentP2 = (float)game.player2.scansLeft / 2.0f;
-        if (scanPercentP2 > 0) {
-            Rectangle scanSrc = { 0, 0, ui.uiRadar.width * scanPercentP2, (float)ui.uiRadar.height };
-            Rectangle scanDest = { radar_X, radar_Y, radar_W * scanPercentP2, radar_H };
-            DrawTexturePro(ui.uiRadar, scanSrc, scanDest, {0, 0}, 0.0f, WHITE);
-        }
-    }
-    // --- VẼ NHÂN VẬT ---
+    // --- DRAW HEROES ---
     int p1A = HERO_MAP[ui.p1HeroSelection];
     int p2A = HERO_MAP[ui.p2HeroSelection];
 
@@ -729,20 +643,20 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         return ui.heroAttack[asset];
     };
 
-    // Scale 1.5x. Sprite sheet rất lớn (1200x700) nhưng nhân vật thật chỉ chiếm
-    // phần giữa — dùng heroDrawOffset để biết nhân vật thật nằm đâu trong sprite.
-    // Công thức: anchor = vị trí muốn nhân vật thật đứng
-    //   drawX = anchorX - (spriteW/2 + offsetX)   [offsetX âm = nhân vật lệch phải trong sprite]
-    //   drawY = anchorY - spriteH - offsetY        [offsetY âm = nhân vật lệch xuống trong sprite]
+    // Scale 1.5x. The sprite sheet is large (1200x700) but the real character only occupies
+    // the middle, so heroDrawOffset tells where the real character sits within the sprite.
+    // Formula: anchor = where we want the real character to stand
+    //   drawX = anchorX - (spriteW/2 + offsetX)   [negative offsetX = character shifted right in sprite]
+    //   drawY = anchorY - spriteH - offsetY        [negative offsetY = character shifted down in sprite]
     float charScale = 1.5f;
 
     const CharAnim& p1Anim = ui.isP1Attacking ? getAtkC(p1A, ui.p1AttackVariant)
                            : (ui.isP1Dying || ui.isP1Dead) ? ui.heroDeath[p1A]
                            :                    ui.heroIdle[p1A];
-    bool p1Active = true; // luôn sáng, spotlight phân biệt lượt
+    bool p1Active = true; // always lit, the spotlight indicates whose turn it is
     float p1W = ui.heroDrawSize[p1A].x * charScale;
     float p1H = ui.heroDrawSize[p1A].y * charScale;
-    float pedestalH = 44.0f; // chiều cao bục — nhân vật đứng trên mặt bục
+    float pedestalH = 44.0f; // pedestal height, the character stands on top of it
 
     float p1AnchorX = 230.0f,  p1AnchorY = 1010.0f - pedestalH;
     float p1DrawX = p1AnchorX - p1W * 0.5f;
@@ -758,36 +672,36 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     float p2DrawX = p2AnchorX - p2W * 0.5f;
     float p2DrawY = p2AnchorY - p2H;
 
-    // === SPOTLIGHT dưới chân nhân vật — sân khấu style ===
+    // === SPOTLIGHT under the character, stage style ===
     auto drawSpotlight = [&](float cx, float fy, bool active, Color c) {
         float pulse = 0.75f + 0.25f * sinf(glowT * 3.5f);
 
-        // Bục hình thang +30% kích thước
+        // Trapezoid pedestal, +30% size
         float topRx = 124.0f;  // 95 * 1.3
         float topRy = 21.0f;   // 16 * 1.3
         float botRx = 169.0f;  // 130 * 1.3
         float botRy = 29.0f;   // 22 * 1.3
-        float pH    = 44.0f;   // cao hơn xíu cho cân đối
+        float pH    = 44.0f;   // a bit taller for balance
         float topY  = fy - pH;
         float pRx = topRx, pRy = topRy;
 
-        // Màu mặt bên bục: đục như đá, tint nhẹ màu theme
+        // Pedestal side color: stone-like, lightly tinted with the theme color
         unsigned char sr = (unsigned char)((int)c.r * 30 / 100 + 55);
         unsigned char sg = (unsigned char)((int)c.g * 30 / 100 + 55);
         unsigned char sb = (unsigned char)((int)c.b * 30 / 100 + 55);
-        // Màu mặt trên: sáng hơn mặt bên, vẫn đục
+        // Pedestal top color: brighter than the sides, still opaque
         unsigned char tr2 = (unsigned char)((int)c.r * 35 / 100 + 80);
         unsigned char tg2 = (unsigned char)((int)c.g * 35 / 100 + 80);
         unsigned char tb2 = (unsigned char)((int)c.b * 35 / 100 + 80);
 
         int segs = 80;
 
-        // === MẶT BÊN bục (hình thang) ===
+        // === PEDESTAL SIDE (trapezoid) ===
         for (int i = 0; i < segs; i++) {
             float a0 = (float)i       * 2.0f * PI / segs;
             float a1 = (float)(i + 1) * 2.0f * PI / segs;
 
-            // Shade: phía trước (sinf > 0) sáng hơn
+            // Shade: the front (sinf > 0) is brighter
             float shade0 = 0.55f + 0.45f * sinf(a0);
             float shade1 = 0.55f + 0.45f * sinf(a1);
             float shadeAvg = (shade0 + shade1) * 0.5f;
@@ -805,15 +719,15 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawTriangle({tx0,ty0},{tx1,ty1},{bx1,by1}, {cr2,cg2,cb2,255});
         }
 
-        // === MẶT TRÊN bục — solid đặc ===
+        // === PEDESTAL TOP, solid ===
         DrawEllipse((int)cx, (int)topY, (int)topRx, (int)topRy, {tr2,tg2,tb2,255});
-        // Highlight tâm — vùng sáng nhẹ, vẫn đục
+        // Center highlight, a soft bright spot
         DrawEllipse((int)cx, (int)topY, (int)(topRx*0.55f), (int)(topRy*0.55f),
             {(unsigned char)((int)tr2+25<255?(int)tr2+25:255),
              (unsigned char)((int)tg2+25<255?(int)tg2+25:255),
              (unsigned char)((int)tb2+25<255?(int)tb2+25:255), 255});
 
-        // === VIỀN mặt trên — glow màu theme ===
+        // === TOP EDGE, theme-colored glow ===
         for (int i = 0; i < segs; i++) {
             float a0 = (float)i       * 2.0f * PI / segs;
             float a1 = (float)(i + 1) * 2.0f * PI / segs;
@@ -825,7 +739,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                  (unsigned char)(220*pulse)});
         }
 
-        // === VIỀN đáy bục ===
+        // === PEDESTAL BOTTOM EDGE ===
         for (int i = 0; i < segs; i++) {
             float a0 = (float)i       * 2.0f * PI / segs;
             float a1 = (float)(i + 1) * 2.0f * PI / segs;
@@ -834,7 +748,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawLineEx({ex0,ey0},{ex1,ey1}, 2.0f, {sr,sg,sb,200});
         }
 
-        // === RÃNH TRANG TRÍ ngang giữa mặt bên ===
+        // === DECORATIVE GROOVE across the side ===
         float midH = 0.45f;
         float rRx  = topRx + (botRx - topRx) * midH;
         float rRy  = topRy + (botRy - topRy) * midH;
@@ -850,10 +764,10 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                  (unsigned char)(90*pulse)});
         }
 
-        // === LỬA BAY LÊN — chỉ khi active, mô phỏng particle như menu ===
+        // === RISING FLAMES, only when active, particles like the menu ===
         if (active) {
-            // 40 hạt ảo, mỗi hạt có seed pha riêng
-            // Tổng 90 hạt: 40 từ mặt trên, 50 từ viền bên bục
+            // 40 virtual particles, each with its own phase seed
+            // 90 total: 40 from the top, 50 from the pedestal sides
             int pCount = 90;
             float speed = 0.45f;
             for (int k = 0; k < pCount; k++) {
@@ -862,15 +776,15 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
                 float spawnX, spawnY;
                 if (k < 40) {
-                    // Nhóm 1: spawn trên mặt trên bục (như cũ)
+                    // Group 1: spawn on the pedestal top
                     float spawnAngle = phaseOffset * 2.0f * PI * 3.7f;
                     float spawnR = topRx * (0.25f + 0.70f * (0.5f + 0.5f * sinf(spawnAngle * 2.1f)));
                     spawnX = cx + cosf(spawnAngle) * spawnR;
                     spawnY = topY + sinf(spawnAngle) * topRy * (spawnR / topRx);
                 } else {
-                    // Nhóm 2: spawn trên viền bên bục — phân tán quanh botRx/midRx
+                    // Group 2: spawn on the pedestal sides, spread around botRx/midRx
                     float spawnAngle = phaseOffset * 2.0f * PI * 5.3f;
-                    // Chọn ngẫu nhiên-ish giữa mặt bên (giữa top và bot)
+                    // Pseudo-random position along the side (between top and bottom)
                     float sideT = 0.3f + 0.7f * (0.5f + 0.5f * sinf(phaseOffset * 19.1f));
                     float sRx = topRx + (botRx - topRx) * sideT;
                     float sRy = topRy + (botRy - topRy) * sideT;
@@ -879,7 +793,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                     spawnY = sY + sinf(spawnAngle) * sRy;
                 }
 
-                // Bay lên cao bằng tướng
+                // Rise as high as the hero
                 float riseMax = 420.0f + 80.0f * sinf(phaseOffset * 13.7f);
                 float sway = sinf(glowT * 1.8f + phaseOffset * 17.3f) * 10.0f * (1.0f - t * 0.7f);
                 float px = spawnX + sway;
@@ -893,14 +807,14 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
                 float sz = (1.0f - t * 0.9f) * (4.0f + 2.5f * sinf(phaseOffset * 11.1f));
 
-                // Màu: outer = cam/đỏ mix theme, mid = màu theme, core = trắng sáng
+                // Color: outer = orange/red mixed with theme, mid = theme, core = bright white
                 // outer glow
                 DrawCircle((int)px, (int)py, sz * 2.4f,
                     {c.r, (unsigned char)(c.g/3), (unsigned char)(c.b/4), (unsigned char)(fa2 * 0.35f)});
-                // mid: màu theme thuần
+                // mid: pure theme color
                 DrawCircle((int)px, (int)py, sz * 1.5f,
                     {c.r, c.g, c.b, fa2});
-                // core: trắng pha theme
+                // core: white mixed with theme
                 DrawCircle((int)px, (int)py, sz * 0.7f,
                     {(unsigned char)((c.r + 255) / 2),
                      (unsigned char)((c.g + 255) / 2),
@@ -909,7 +823,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             }
         }
 
-        // === GLOW dưới bục ===
+        // === GLOW under the pedestal ===
         DrawEllipse((int)cx,(int)fy,(int)(botRx+55),(int)(botRy+9),{c.r,c.g,c.b,(unsigned char)(15*pulse)});
         DrawEllipse((int)cx,(int)fy,(int)(botRx+22),(int)(botRy+4),{c.r,c.g,c.b,(unsigned char)(38*pulse)});
 
@@ -917,11 +831,11 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             DrawEllipse((int)cx,(int)topY,(int)topRx,(int)topRy,{0,0,0,130});
         }
     };
-    // fy = mặt đất thật (anchor + pedestalH = 1010)
+    // fy = the real ground line (anchor + pedestalH = 1010)
     drawSpotlight(p1AnchorX, p1AnchorY + pedestalH - 5.0f, game.isPlayer1Turn,  p1ThemeCol);
     drawSpotlight(p2AnchorX, p2AnchorY + pedestalH - 5.0f, !game.isPlayer1Turn, p2ThemeCol);
 
-    // VẼ GLOW ELLIPSE sau lưng tướng thắng — phải vẽ TRƯỚC DrawCharAnim
+    // DRAW GLOW ELLIPSE behind the winning hero, must come BEFORE DrawCharAnim
     if (game.matchStatus != 0 && game.matchStatus != 3) {
         float _t2  = (float)GetTime();
         float _p   = 0.5f + 0.5f * sinf(_t2 * 3.0f);
@@ -942,12 +856,12 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     DrawCharAnim(p1Anim, p1DrawX, p1DrawY, p1W, p1H, false, p1Active);
     DrawCharAnim(p2Anim, p2DrawX, p2DrawY, p2W, p2H, true, p2Active);
 
-    // VẼ MÀN HÌNH END GAME
+    // DRAW END GAME SCREEN
     if (game.matchStatus != 0) {
         float t      = (float)GetTime();
         float pulse  = 0.5f + 0.5f * sinf(t * 3.0f);
         float pulse2 = 0.5f + 0.5f * sinf(t * 1.8f + 0.7f);
-        float wt     = ui.winScreenTimer; // thời gian kể từ khi win screen hiện
+        float wt     = ui.winScreenTimer; // time since the win screen appeared
 
         bool isDraw    = (game.matchStatus == 3);
         int  winPlayer = game.matchStatus;
@@ -968,19 +882,19 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float bfw = ui.boardFrameRec.width;
         float bfh = ui.boardFrameRec.height;
 
-        // ── 1. VIGNETTE 4 GÓC — tối nhẹ viền màn, không che board ──
-        int vgStr = 160; // độ đậm vignette
+        // 1. CORNER VIGNETTE, slightly darken edges without covering the board
+        int vgStr = 160; // vignette strength
         DrawRectangleGradientH(0, 0, 320, 1080, {0,0,0,(unsigned char)vgStr}, {0,0,0,0});
         DrawRectangleGradientH(1600, 0, 320, 1080, {0,0,0,0}, {0,0,0,(unsigned char)vgStr});
         DrawRectangleGradientV(0, 0, 1920, 220, {0,0,0,(unsigned char)vgStr}, {0,0,0,0});
         DrawRectangleGradientV(0, 860, 1920, 220, {0,0,0,0}, {0,0,0,(unsigned char)vgStr});
 
-        // ── 3. TƯỚNG THUA mờ đi (alpha giảm) ──
-        // Đã được xử lý qua draw hero bên trên với alpha thấp khi matchStatus != 0
-        // Ta vẽ thêm 1 lớp overlay tối mờ lên vùng tướng thua
+        // 3. LOSING HERO fades out (lower alpha)
+        // Already handled by the hero draw above with low alpha when matchStatus != 0
+        // Add one more dark overlay layer over the losing hero area
         if (!isDraw) {
             float loserX = loserAnchorX;
-            // Hình ellipse tối bán trong suốt phủ lên vùng tướng thua
+            // Semi-transparent dark ellipse over the losing hero area
             for (int r = 250; r >= 50; r -= 25) {
                 float frac = (float)(r - 50) / 200.0f;
                 float a = 0.35f * (1.0f - frac * frac);
@@ -988,9 +902,9 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             }
         }
 
-        // ── 4. CONFETTI rơi từ trên xuống ──
+        // 4. CONFETTI falling from the top
         if (!isDraw) {
-            // 80 mảnh confetti, màu xen kẽ theme + white + gold
+            // 80 confetti pieces, alternating theme + white + gold
             Color confColors[4] = {
                 winTheme,
                 WHITE,
@@ -1006,14 +920,14 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 float sz = 4.0f + 3.0f * sinf(phase * 9.7f);
                 float alpha = (cycleT > 0.85f) ? (1.0f - cycleT) / 0.15f : 0.85f;
                 Color cc = confColors[k % 4];
-                // Mảnh nhỏ xoay (vẽ hình chữ nhật nhỏ nghiêng)
+                // Small rotating piece (a tilted little rectangle)
                 float angle = t * (60.0f + phase * 120.0f) + phase * 360.0f;
                 DrawRectanglePro({cx, cy, sz*2.0f, sz*0.8f}, {sz, sz*0.4f}, angle,
                     Fade(cc, alpha * 0.9f));
             }
         }
 
-        // ── 5. PARTICLE bay quanh chân hero thắng — nhiều hơn, đa dạng hơn ──
+        // 5. PARTICLES around the winning hero's feet, more and more varied
         if (!isDraw) {
             for (int k = 0; k < 80; k++) {
                 float phase  = (float)k / 80.0f;
@@ -1026,33 +940,33 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                             : (cycleT > 0.72f) ? (1.0f-cycleT)/0.28f : 1.0f;
                 alpha *= 0.85f;
                 float sz = 1.8f + 3.0f * sinf(phase * 9.1f);
-                // Xen kẽ màu theme và white
+                // Alternate theme color and white
                 Color pc = (k % 4 == 0) ? WHITE : winTheme;
                 DrawCircleV({px, py}, sz,        Fade(pc, alpha));
                 DrawCircleV({px, py}, sz * 2.5f, Fade(pc, alpha * 0.15f));
             }
         }
 
-        // ── 6. HIGHLIGHT 5 Ô THẮNG — đường sáng nhấp nháy ──
+        // 6. HIGHLIGHT THE 5 WINNING CELLS, a blinking bright line
         if (!isDraw) {
             float x0 = ui.cellStartX + game.winLine[0][1]*ui.cellSize + ui.cellSize*0.5f;
             float y0 = ui.cellStartY + game.winLine[0][0]*ui.cellSize + ui.cellSize*0.5f;
             float x4 = ui.cellStartX + game.winLine[4][1]*ui.cellSize + ui.cellSize*0.5f;
             float y4 = ui.cellStartY + game.winLine[4][0]*ui.cellSize + ui.cellSize*0.5f;
-            // Glow ngoài rộng
+            // Wide outer glow
             DrawLineEx({x0,y0},{x4,y4}, 14.0f, Fade(winTheme, 0.18f + 0.10f*pulse));
-            // Glow giữa
+            // Middle glow
             DrawLineEx({x0,y0},{x4,y4}, 7.0f,  Fade(winTheme, 0.45f + 0.20f*pulse));
-            // Đường chính
+            // Main line
             DrawLineEx({x0,y0},{x4,y4}, 3.0f,  Fade(winTheme, 1.0f));
-            // Lõi trắng nhấp nháy
+            // Blinking white core
             DrawLineEx({x0,y0},{x4,y4}, 1.5f,  Fade(WHITE, 0.60f + 0.40f*pulse));
         }
 
-        // ── 7. TEXT "WINS!" với scale-in animation ──
+        // 7. "WINS!" TEXT with scale-in animation
         if (!isDraw) {
             const char* winText = "WINS!";
-            // Scale ease-out: từ 0.3 → 1.0 trong 0.4s đầu
+            // Scale ease-out: 0.3 -> 1.0 over the first 0.4s
             float scl = wt < 0.4f ? (0.3f + 0.7f * (wt / 0.4f)) : 1.0f;
             // Easing cubic out
             float t01 = wt < 0.4f ? (wt / 0.4f) : 1.0f;
@@ -1068,13 +982,13 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
 
             // Shadow
             DrawTextCustom(ui.mainFont, winText, (int)(textX+3), (int)(textY+3), fontSize, Fade(BLACK, 0.80f));
-            // Glow lớn
+            // Large glow
             DrawTextCustom(ui.mainFont, winText, (int)(textX-2), (int)(textY-2), fontSize, Fade(winTheme, 0.25f * pulse));
             DrawTextCustom(ui.mainFont, winText, (int)(textX+2), (int)(textY+2), fontSize, Fade(winTheme, 0.15f * pulse));
-            // Text chính — pulse sáng
+            // Main text, brightness pulse
             Color tc = {winTheme.r, winTheme.g, winTheme.b, (unsigned char)(210 + 45*pulse)};
             DrawTextCustom(ui.mainFont, winText, (int)textX, (int)textY, fontSize, tc);
-            // Shine chạy qua text (dải trắng di chuyển)
+            // Shine sweeping across the text (moving white band)
             float shineX = winnerBadgeX - 200.0f + fmodf(wt * 280.0f, 600.0f);
             DrawRectanglePro({shineX, textY-5, 40, (float)fontSize+10}, {20,0}, 15.0f,
                 Fade(WHITE, 0.18f));
@@ -1095,7 +1009,7 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             float textX = bfx + bfw * 0.5f - dw * 0.5f;
             float textY = bfy + bfh * 0.5f - dh * 0.5f;
             
-            // Tối mờ bàn cờ 1 chút để nổi chữ
+            // Slightly darken the board so the text stands out
             DrawRectangle((int)bfx, (int)bfy, (int)bfw, (int)bfh, Fade(BLACK, 0.45f * t01));
 
             DrawTextCustom(ui.mainFont, drawText, (int)(textX+4), (int)(textY+4), fontSize, Fade(BLACK, 0.8f));

@@ -7,7 +7,7 @@ const int TOTAL_SETTING_ITEMS = 5;
 void UpdateMenuScreens(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
 
-    // Update embers + smooth scroll mọi lúc đang ở menu
+    // Update embers + smooth scroll whenever we are in the menu
     if (ui.currentScreen == 0) {
         float dt = GetFrameTime();
         float targetY = 350.0f + ui.menuSelection * (80.0f + 35.0f);
@@ -18,7 +18,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             e.y    += e.vy * 60.0f * dt;
             e.life += dt * 0.18f;
             e.alpha = (1.0f - e.life) * 0.85f;
-            // Spawn lại khi hết tuổi thọ
+            // Respawn when the ember's life ends
             if (e.life >= 1.0f) {
                 e.x    = (float)(rand() % 1920);
                 e.y    = 1080.0f + (float)(rand() % 60);
@@ -40,7 +40,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (ui.menuSelection >= TOTAL_MENU_ITEMS) ui.menuSelection = 0;
         }
 
-        float btnW = 800.0f; // Mở rộng vùng chọn siêu to khổng lồ
+        float btnW = 800.0f; // very wide clickable area
         float btnH = 80.0f;
         float centerX = 1500.0f; 
         float startY = 350.0f;
@@ -64,7 +64,6 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 "CARO BATTLE - LUAT CHOI",
                 "- Hai ben luan phien danh X va O.",
                 "- Ben nao co 5 quan lien tiep se thang.",
-                "- Trong Booming Caro, moi ben co HP va Ky Nang.",
                 "- Chuc ban choi vui ve!"
             };        
             switch (ui.menuSelection) {
@@ -79,8 +78,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 } break;
                 case 1: ui.currentScreen = 5; ui.loadSelection = 0; break;
                 case 2: ui.currentScreen = 2; ui.settingSelection = game.inputType; ui.draggingVolume = false; break;
-                case 3: break;
-                case 4: ui.currentScreen = 3; break;
+                case 3: ui.currentScreen = 3; ui.helpScrollTimer = 0.0f; break; // HELP
+                case 4: break; // CREDITS (chua lam)
                 case 5: ui.shouldExit = true; break;
             }
         }
@@ -94,11 +93,11 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         const int barX = (1920 - barWidth) / 2;
         const int barY = 350 + 2 * 80 + 60;
 
-        // Tăng vùng nhận diện click cho dễ nắm kéo
+        // Enlarge the click area so the slider is easy to grab
         Rectangle volumeHitbox = { (float)barX - 20, (float)barY - 20, (float)barWidth + 40, (float)barHeight + 40 };
 
         if (CheckCollisionPointRec(mouse, volumeHitbox)) {
-            ui.settingSelection = -1; // Ẩn highlight khi rê chuột lên thanh volume
+            ui.settingSelection = -1; // hide highlight when hovering the volume bar
         }
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -119,11 +118,11 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             ui.musicVolume = t;
             SetMusicVolume(ui.bgMusic, ui.musicVolume);
             
-            ui.settingSelection = -1; // Đảm bảo ẩn highlight khi đang kéo volume
+            ui.settingSelection = -1; // keep highlight hidden while dragging volume
         }
 
         if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
-            if (ui.settingSelection == -1) ui.settingSelection = 3; // Nếu đang trỏ volume, nhảy về nút dưới
+            if (ui.settingSelection == -1) ui.settingSelection = 3; // if pointing at volume, jump to the item below
             else {
                 ui.settingSelection = (ui.settingSelection - 1 + TOTAL_SETTING_ITEMS) % TOTAL_SETTING_ITEMS;
                 if (ui.settingSelection == 2) ui.settingSelection = 1;
@@ -156,7 +155,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         Rectangle setRects[TOTAL_SETTING_ITEMS];
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            if (i == 2) continue; // Không cho phép chọn "Am Luong Nhac"
+            if (i == 2) continue; // the "Music Volume" row is not selectable here
             int yPos = 350 + i * 80;
             if (i >= 3) yPos += 40;
             int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 40);
@@ -185,7 +184,15 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             ui.currentScreen = 0;
     }
     else if (ui.currentScreen == 3) {
-        if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
+        ui.helpScrollTimer += GetFrameTime();
+
+        Vector2 mouse3 = GetMousePosition();
+        Rectangle closeBtn3 = { 1920.0f - 90.0f, 30.0f, 56.0f, 56.0f };
+        bool closeHover = CheckCollisionPointRec(mouse3, closeBtn3);
+        bool closeClick = closeHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+
+        if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || closeClick)
+            ui.currentScreen = 0;
     }
     else if (ui.currentScreen == 5) {
         if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) {
@@ -275,7 +282,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                 ui.activeInputField = 1;
             } else {
                 int savedInput = game.inputType;
-                InitGame(game, 0); 
+                InitGame(game);
                 game.inputType = savedInput;
                 
                 if (ui.p1LetterCount > 0) strcpy(game.player1.name, ui.p1NameInput);
@@ -323,14 +330,14 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT)) ui.p1HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
             if (IsKeyPressed(KEY_ENTER)) {
                 if (game.isBotVsBot) {
-                    // Bot vs Bot: bỏ qua name input, tự random bot hero và vào game
+                    // Bot vs Bot: skip name input, randomize bot hero and start the game
                     const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
                     int botIdx = rand() % 4;
                     if (botIdx >= ui.p1HeroSelection) botIdx++;
                     ui.p2HeroSelection = botIdx;
 
                     int savedInput = game.inputType;
-                    InitGame(game, 0);
+                    InitGame(game);
                     game.inputType = savedInput;
 
                     snprintf(game.player1.name, sizeof(game.player1.name),
@@ -374,7 +381,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ui.p2HeroSelection = botIdx;
 
                     int savedInput = game.inputType;
-                    InitGame(game, 0);
+                    InitGame(game);
                     game.inputType = savedInput;
 
                     // P1 name: typed or "P1 - HeroName" (or BOT 1)
@@ -399,7 +406,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
                     ResetHeroAnimState(ui);
                     ui.currentScreen = 1;
                 } else {
-                    // Đảm bảo P2 bắt đầu ở hero khác P1
+                    // Make sure P2 starts on a different hero than P1
                     if (ui.p2HeroSelection == ui.p1HeroSelection)
                         ui.p2HeroSelection = (ui.p1HeroSelection + 1) % MAX_HEROES;
                     ui.selectionPhase = 2;
@@ -407,7 +414,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
         }
         else if (ui.selectionPhase == 2) {
-            // p2 pick hero — skip hero P1 đã chọn
+            // p2 picks hero, skipping the one P1 already chose
             if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT)) {
                 do { ui.p2HeroSelection = (ui.p2HeroSelection - 1 + MAX_HEROES) % MAX_HEROES; }
                 while (ui.p2HeroSelection == ui.p1HeroSelection);
@@ -438,7 +445,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             else if (IsKeyPressed(KEY_ENTER)) {
                 const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
                 int savedInput = game.inputType;
-                InitGame(game, 0);
+                InitGame(game);
                 game.inputType = savedInput;
                 // P1 name: typed or "P1 - HeroName"
                 if (ui.p1LetterCount > 0)
@@ -533,36 +540,36 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
     if (ui.currentScreen == 0) {
         DrawTexturePro(ui.bgMenu, { 0, 0, (float)ui.bgMenu.width, (float)ui.bgMenu.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
-        // Lớp gradient ma mị đổ từ phải qua
+        // Moody gradient sweeping in from the right
         DrawRectangleGradientH(950, 0, 970, 1080, Fade(BLACK, 0.0f), Fade(BLACK, 0.85f));
 
-        // Vẽ Tên Game phía trên Menu
+        // Draw the game title above the menu
         const char* titleText = "CARO BATTLE";
         int titleSize = 120;
         int titleW = MeasureTextCustomX(ui.mainFont, titleText, titleSize);
         int titleY = 130;
 
         float t = (float)GetTime();
-        float pulse = 0.5f + 0.5f * sinf(t * 2.0f); // dao động 0.0 → 1.0
+        float pulse = 0.5f + 0.5f * sinf(t * 2.0f); // oscillates 0.0 -> 1.0
         Color goldColor2 = { 255, 200, 50, 255 };
         float tx0 = 1500.0f - titleW / 2.0f;
 
-        // Bóng đen
+        // Dark shadow
         DrawTextCustom(ui.mainFont, titleText, tx0 + 6, titleY + 6, titleSize, Fade(BLACK, 0.9f));
-        // Glow đỏ loang rộng (pulse mạnh)
+        // Wide red glow (strong pulse)
         for (int d = 1; d <= 6; d++)
             DrawTextCustom(ui.mainFont, titleText, tx0, titleY, titleSize, Fade(RED, pulse * 0.13f));
-        // Glow vàng loang (pulse nhẹ hơn, luôn có)
+        // Spreading gold glow (softer pulse, always on)
         for (int d = 2; d <= 5; d++) {
             DrawTextCustom(ui.mainFont, titleText, tx0 - d, titleY,     titleSize, Fade(goldColor2, 0.18f + pulse * 0.12f));
             DrawTextCustom(ui.mainFont, titleText, tx0 + d, titleY,     titleSize, Fade(goldColor2, 0.18f + pulse * 0.12f));
             DrawTextCustom(ui.mainFont, titleText, tx0,     titleY - d, titleSize, Fade(goldColor2, 0.18f + pulse * 0.12f));
             DrawTextCustom(ui.mainFont, titleText, tx0,     titleY + d, titleSize, Fade(goldColor2, 0.18f + pulse * 0.12f));
         }
-        // Chữ chính vàng sáng
+        // Main bright gold text
         DrawTextCustom(ui.mainFont, titleText, tx0, titleY, titleSize, goldColor2);
 
-        // --- PARTICLES: tàn lửa bay lên ---
+        // --- PARTICLES: embers rising ---
         for (int i = 0; i < UIState::MAX_EMBERS; i++) {
             const UIState::Ember& e = ui.embers[i];
             if (e.alpha <= 0.0f) continue;
@@ -579,21 +586,21 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         const float gap2       = btnHeight + 35.0f;
         float targetY = startY2 + ui.menuSelection * gap2;
 
-        // Highlight bar — nhiều lớp mỏng chồng nhau tạo cảm giác blur/glow
-        float hy = ui.menuScrollY + btnHeight / 2.0f; // tâm dọc của item
+        // Highlight bar, many thin layers stacked for a blur/glow feel
+        float hy = ui.menuScrollY + btnHeight / 2.0f; // vertical center of the item
         float hw = btnWidth;
         Color gc = {255, 200, 50, 255};
-        // Lớp ngoài cùng — rất rộng, rất mờ
+        // Outermost layer, very wide and faint
         DrawRectangleGradientH((int)(menuBlockX - hw/2), (int)(hy - 28), (int)(hw/2), 56,
             Fade(gc, 0.0f), Fade(gc, 0.06f));
         DrawRectangleGradientH((int)(menuBlockX),        (int)(hy - 28), (int)(hw/2), 56,
             Fade(gc, 0.06f), Fade(gc, 0.0f));
-        // Lớp giữa — vừa
+        // Middle layer
         DrawRectangleGradientH((int)(menuBlockX - hw/2 + 60), (int)(hy - 16), (int)(hw/2 - 60), 32,
             Fade(gc, 0.0f), Fade(gc, 0.12f));
         DrawRectangleGradientH((int)(menuBlockX),               (int)(hy - 16), (int)(hw/2 - 60), 32,
             Fade(gc, 0.12f), Fade(gc, 0.0f));
-        // Lớp trong — mỏng, sáng nhất ở tâm
+        // Inner layer, thin and brightest at the center
         DrawRectangleGradientH((int)(menuBlockX - hw/2 + 120), (int)(hy - 6), (int)(hw/2 - 120), 12,
             Fade(gc, 0.0f), Fade(gc, 0.22f));
         DrawRectangleGradientH((int)(menuBlockX),                (int)(hy - 6), (int)(hw/2 - 120), 12,
@@ -625,7 +632,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             float ty = rect.y + (btnHeight - textH) / 2.0f;
 
             if (isSelected) {
-                // glow vàng loang mạnh ra 4 phía
+                // strong gold glow spreading in all directions
                 for (int d = 1; d <= 5; d++) {
                     float a = 0.35f - d * 0.06f;
                     DrawTextCustom(ui.mainFont, menuOptions[i], tx - d, ty,     fontSize, Fade(goldColor, a));
@@ -633,25 +640,170 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                     DrawTextCustom(ui.mainFont, menuOptions[i], tx,     ty - d, fontSize, Fade(goldColor, a));
                     DrawTextCustom(ui.mainFont, menuOptions[i], tx,     ty + d, fontSize, Fade(goldColor, a));
                 }
-                // mũi tên 2 bên
+                // arrows on both sides
                 DrawTextCustom(ui.mainFont, ">", tx - 45, ty, fontSize, goldColor);
                 DrawTextCustom(ui.mainFont, "<", tx + textW + 15, ty, fontSize, goldColor);
-                // chữ chính vàng sáng
+                // main bright gold text
                 DrawTextCustom(ui.mainFont, menuOptions[i], tx, ty, fontSize, goldColor);
             } else {
                 DrawTextCustom(ui.mainFont, menuOptions[i], tx, ty, fontSize, Fade(LIGHTGRAY, 0.55f));
             }
         }
-    } 
+    }
+    else if (ui.currentScreen == 3) {
+        // Sunset battlefield background, covering the full 1920x1080 canvas
+        DrawTexturePro(ui.helpBg, { 0, 0, (float)ui.helpBg.width, (float)ui.helpBg.height },
+            { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
+
+        // Full-screen dark scrim, same darkness as the Settings screen
+        DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.78f));
+
+        // Scale-in: the panel opens over 250ms when entering the screen
+        float introT = ui.helpScrollTimer / 0.25f;
+        if (introT > 1.0f) introT = 1.0f;
+        float easeOut = 1.0f - (1.0f - introT) * (1.0f - introT); // ease-out quadratic
+        float a3 = easeOut; // overall alpha
+
+        float t3 = (float)GetTime();
+        float pulse3 = 0.5f + 0.5f * sinf(t3 * 2.0f);
+
+        Color goldColor3 = Fade(Color{ 255, 180, 0, 255 }, a3);   // Gothic Gold (same as Settings)
+        Color goldBright = Fade(Color{ 255, 205, 70, 255 }, a3);
+
+        float centerX3 = 960.0f;
+
+        // Helper to draw a gothic ornament bar (diamonds + crosses), matching Settings
+        auto DrawOrnateLine3 = [](float x, float y, float width, Color c) {
+            DrawLineEx({ x + 40, y }, { x + width - 40, y }, 4.0f, c);
+            DrawLineEx({ x + 40, y - 6 }, { x + width - 40, y - 6 }, 1.0f, Fade(c, 0.6f));
+            DrawLineEx({ x + 40, y + 6 }, { x + width - 40, y + 6 }, 1.0f, Fade(c, 0.6f));
+            auto DrawDiamond = [](float cx, float cy, float w, float h, Color color) {
+                DrawTriangle({ cx - w / 2, cy }, { cx, cy + h / 2 }, { cx + w / 2, cy }, color);
+                DrawTriangle({ cx - w / 2, cy }, { cx + w / 2, cy }, { cx, cy - h / 2 }, color);
+            };
+            auto DrawCross = [](float cx, float cy, float size, Color color) {
+                DrawRectangle(cx - size / 6, cy - size / 2, size / 3, size, color);
+                DrawRectangle(cx - size / 2, cy - size / 6, size, size / 3, color);
+            };
+            float cx = x + width / 2;
+            // Center medallion
+            DrawDiamond(cx, y, 40, 40, c);
+            DrawDiamond(cx, y, 30, 30, BLACK);
+            DrawDiamond(cx, y, 16, 16, c);
+            DrawCross(cx, y, 12, BLACK);
+            // End caps on both ends
+            DrawDiamond(x + 20, y, 30, 30, c);
+            DrawDiamond(x + 20, y, 16, 16, BLACK);
+            DrawCross(x + 20, y, 10, c);
+            DrawDiamond(x + width - 20, y, 30, 30, c);
+            DrawDiamond(x + width - 20, y, 16, 16, BLACK);
+            DrawCross(x + width - 20, y, 10, c);
+        };
+
+        // === GOTHIC PANEL: dark background + double iron border + corner diamonds ===
+        float panelW = 1100.0f;
+        float panelH = 640.0f;
+        float panelX = centerX3 - panelW * 0.5f;
+        float panelY = 540.0f - panelH * 0.5f;
+
+        // Panel background: dark and slightly warm (brown-black) for an old stone/iron feel
+        DrawRectangleRounded({ panelX, panelY, panelW, panelH }, 0.03f, 8, Fade(Color{ 18, 12, 8, 255 }, 0.92f * a3));
+        // Double gold iron border
+        DrawRectangleRoundedLines({ panelX, panelY, panelW, panelH }, 0.03f, 8, Fade(goldColor3, 0.85f));
+        DrawRectangleRoundedLines({ panelX + 6, panelY + 6, panelW - 12, panelH - 12 }, 0.03f, 8, Fade(goldColor3, 0.30f));
+
+        // Diamonds at the 4 panel corners
+        auto DrawCornerDiamond = [&](float cx, float cy) {
+            DrawTriangle({ cx - 14, cy }, { cx, cy + 14 }, { cx + 14, cy }, goldColor3);
+            DrawTriangle({ cx - 14, cy }, { cx + 14, cy }, { cx, cy - 14 }, goldColor3);
+            DrawTriangle({ cx - 7, cy }, { cx, cy + 7 }, { cx + 7, cy }, Fade(BLACK, a3));
+            DrawTriangle({ cx - 7, cy }, { cx + 7, cy }, { cx, cy - 7 }, Fade(BLACK, a3));
+        };
+        DrawCornerDiamond(panelX, panelY);
+        DrawCornerDiamond(panelX + panelW, panelY);
+        DrawCornerDiamond(panelX, panelY + panelH);
+        DrawCornerDiamond(panelX + panelW, panelY + panelH);
+
+        // Text color on the dark panel: light cream for high contrast
+        Color bodyCol3 = Fade(Color{ 235, 220, 195, 255 }, a3);
+        Color hintCol3 = Fade(Color{ 190, 165, 120, 255 }, a3);
+
+        // === LAYOUT: vertically center the content block inside the panel ===
+        const char* helpTitle = "HOW TO PLAY";
+        int titleSize3 = 56;
+        const char* helpLines[] = {
+            "Two players take turns placing X and O.",
+            "The first to line up 5 marks in a row",
+            "horizontally, vertically or diagonally wins.",
+            "",
+            "Click a cell on the board to place a mark,",
+            "or use the W A S D keys + Enter.",
+            "",
+            "Have a great game!"
+        };
+        int lineCount3 = 8;
+        int bodySize3 = 28;
+        float bodyLineHeight = bodySize3 * 1.55f;
+
+        float gapTitleToLine = 22.0f;
+        float gapLineToBody = 40.0f;
+        float gapBodyToHint = 36.0f;
+        int hintSize3 = 22;
+
+        float blockH = titleSize3 + gapTitleToLine + 4.0f + gapLineToBody
+                     + lineCount3 * bodyLineHeight + gapBodyToHint + hintSize3;
+        float cursorY = panelY + (panelH - blockH) * 0.5f;
+
+        // --- Title: shadow + red glow + gold, matching the SETTINGS title ---
+        int titleW3 = MeasureTextCustomX(ui.mainFont, helpTitle, titleSize3);
+        float titleX = centerX3 - titleW3 * 0.5f;
+        DrawTextCustom(ui.mainFont, helpTitle, (int)(titleX + 4), (int)(cursorY + 4), titleSize3, Fade(BLACK, 0.8f * a3));
+        DrawTextCustom(ui.mainFont, helpTitle, (int)titleX, (int)cursorY, titleSize3, Fade(RED, 0.5f * a3));
+        for (int d = 2; d <= 4; d++) {
+            DrawTextCustom(ui.mainFont, helpTitle, (int)(titleX - d), (int)cursorY, titleSize3, Fade(goldBright, (0.10f + pulse3 * 0.06f) * a3));
+            DrawTextCustom(ui.mainFont, helpTitle, (int)(titleX + d), (int)cursorY, titleSize3, Fade(goldBright, (0.10f + pulse3 * 0.06f) * a3));
+        }
+        DrawTextCustom(ui.mainFont, helpTitle, (int)titleX, (int)cursorY, titleSize3, goldColor3);
+        cursorY += titleSize3 + gapTitleToLine;
+
+        // --- Gothic ornament bar below the title ---
+        DrawOrnateLine3(centerX3 - 240.0f, cursorY + 2.0f, 480.0f, goldColor3);
+        cursorY += 4.0f + gapLineToBody;
+
+        // --- Rule text ---
+        for (int i = 0; i < lineCount3; i++) {
+            if (helpLines[i][0] != '\0') { // skip empty paragraph-spacer lines
+                int lw = MeasureTextCustomX(ui.mainFont, helpLines[i], bodySize3);
+                DrawTextCustom(ui.mainFont, helpLines[i], (int)(centerX3 - lw * 0.5f), (int)(cursorY + i * bodyLineHeight), bodySize3, bodyCol3);
+            }
+        }
+        cursorY += lineCount3 * bodyLineHeight + gapBodyToHint;
+
+        // --- Exit hint ---
+        const char* hintText = "Press ESC / ENTER to go back";
+        int hintW3 = MeasureTextCustomX(ui.mainFont, hintText, hintSize3);
+        DrawTextCustom(ui.mainFont, hintText, (int)(centerX3 - hintW3 * 0.5f), (int)cursorY, hintSize3, hintCol3);
+
+        // Top-right X button, an always-visible escape route, not just a key shortcut
+        Vector2 mouseHelp = GetMousePosition();
+        Rectangle closeBtnDraw = { 1920.0f - 90.0f, 30.0f, 56.0f, 56.0f };
+        bool closeHoverDraw = CheckCollisionPointRec(mouseHelp, closeBtnDraw);
+        Color closeBg = Fade(BLACK, closeHoverDraw ? 0.85f : 0.65f);
+        Color closeFg = closeHoverDraw ? Color{ 255, 200, 50, 255 } : Color{ 220, 200, 170, 220 };
+        DrawRectangleRounded(closeBtnDraw, 0.25f, 6, closeBg);
+        DrawRectangleRoundedLines(closeBtnDraw, 0.25f, 6, Fade(closeFg, 0.8f));
+        int xW = MeasureTextCustomX(ui.mainFont, "X", 26);
+        DrawTextCustom(ui.mainFont, "X", (int)(closeBtnDraw.x + (closeBtnDraw.width - xW) * 0.5f), (int)(closeBtnDraw.y + 13), 26, closeFg);
+    }
     else if (ui.currentScreen == 2) {
         DrawTexturePro(ui.bgSettings, { 0, 0, (float)ui.bgSettings.width, (float)ui.bgSettings.height }, { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
 
-        // Nền tối toàn màn hình thay vì khung chữ nhật thô
+        // Full-screen dark background instead of a plain rectangle
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.75f));
 
         Color selectedColor = { 255, 180, 0, 255 }; // Gothic Gold
 
-        // Hai thanh ngang trang trí (Top & Bottom)
+        // Two ornament bars (top & bottom)
         auto DrawOrnateLine = [](float x, float y, float width, Color c) {
             // Main horizontal lines (Double line effect)
             DrawLineEx({x + 40, y}, {x + width - 40, y}, 4.0f, c);
@@ -705,7 +857,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawOrnateLine(1920/2 - 600, 100, 1200, selectedColor);
         DrawOrnateLine(1920/2 - 600, 850, 1200, selectedColor);
 
-        // Tiêu đề SETTINGS ma mị
+        // Moody SETTINGS title
         const char* titleText = "SETTINGS";
         int titleSize = 100;
         int titleW = MeasureTextCustomX(ui.mainFont, titleText, titleSize);
@@ -727,7 +879,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
             int yPos = 350 + i * 80;
-            if (i >= 3) yPos += 40; // Khoảng cách cho thanh âm lượng
+            if (i >= 3) yPos += 40; // extra spacing for the volume bar
             
             Color textColor = LIGHTGRAY;
             if (i == ui.settingSelection) textColor = selectedColor;
@@ -748,7 +900,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             if (i == 1 && game.inputType == 1) snprintf(displayText, sizeof(displayText), "%s [ACTIVE]", setOptions[i]);
 
             if (i == ui.settingSelection) {
-                // Thêm ngoặc nhọn nếu đang được chọn
+                // Add angle brackets when selected
                 char selectedText[256];
                 snprintf(selectedText, sizeof(selectedText), "> %s <", displayText);
                 int w = MeasureTextCustomX(ui.mainFont, selectedText, 40);
@@ -782,7 +934,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTexturePro(ui.bgLoadGame, { 0, 0, (float)ui.bgLoadGame.width, (float)ui.bgLoadGame.height },
             { 0, 0, 1920.0f, 1080.0f }, { 0, 0 }, 0.0f, WHITE);
         DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.52f));
-        // Vignette — tối 4 cạnh, sáng giữa
+        // Vignette, dark edges and bright center
         DrawRectangleGradientH(0, 0, 500, 1080, Fade(BLACK, 0.55f), Fade(BLACK, 0.0f));
         DrawRectangleGradientH(1420, 0, 500, 1080, Fade(BLACK, 0.0f), Fade(BLACK, 0.55f));
         DrawRectangleGradientV(0, 0, 1920, 160, Fade(BLACK, 0.50f), Fade(BLACK, 0.0f));
@@ -844,12 +996,12 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
             // Selected: glow background + border
             if (isSelected) {
-                // Nền gradient ấm
+                // Warm gradient background
                 DrawRectangleGradientH((int)listX, (int)sy+1, (int)listW, (int)slotH-1,
                     Fade(gothicGold, 0.18f), Fade(BLACK, 0.0f));
-                // Border vàng quanh slot selected
+                // Gold border around the selected slot
                 DrawRectangleLinesEx({listX, sy, listW, slotH}, 2.0f, Fade(gothicGold, 0.70f));
-                // Left accent bar sáng
+                // Bright left accent bar
                 DrawRectangle((int)listX, (int)sy+1, 5, (int)slotH-1, Fade(gothicGold, 0.95f));
                 // Outer glow pulse
                 DrawRectangleLinesEx({listX-3, sy-3, listW+6, slotH+6}, 1.5f,
@@ -868,7 +1020,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 DrawTriangle({dcx-dw/2,dcy},{dcx+dw/2,dcy},{dcx,dcy-dh/2},dc);
             }
 
-            // Slot number label (top right) — vàng rõ hơn
+            // Slot number label (top right), brighter gold
             const char* slotLabel = TextFormat("SLOT %d", i + 1);
             int slW = MeasureTextCustomX(ui.mainFont, slotLabel, 24);
             DrawTextCustom(ui.mainFont, slotLabel, (int)(listX + listW - slW - 12), (int)sy + 8, 24,
@@ -886,20 +1038,17 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 DrawTextCustom(ui.mainFont, tempGame.saveName,
                     (int)listX + (isSelected ? 62 : 26), (int)sy + (isSelected ? 32 : 34), nameSize, nameCol);
 
-                // Mode badge — colored, đậm hơn khi không selected
-                const char* modeShort = (tempGame.gameMode == 0) ? "Classic" : "Booming";
-                Color modeCol = (tempGame.gameMode == 0)
-                    ? (isSelected ? gothicGold : Fade(gothicGold, 0.70f))
-                    : (isSelected ? redAccent  : Fade(redAccent,  0.75f));
-                DrawTextCustom(ui.mainFont, modeShort, (int)listX + 26, (int)(sy + slotH - 50), 30, modeCol);
+                // Mode badge
+                Color modeCol = isSelected ? gothicGold : Fade(gothicGold, 0.70f);
+                DrawTextCustom(ui.mainFont, "Classic", (int)listX + 26, (int)(sy + slotH - 50), 30, modeCol);
 
-                // Round (bottom right) — silverColor đậm hơn
+                // Round (bottom right), stronger silver color
                 const char* roundStr = TextFormat("Round %d", tempGame.roundCount);
                 int rw = MeasureTextCustomX(ui.mainFont, roundStr, 26);
                 DrawTextCustom(ui.mainFont, roundStr, (int)(listX + listW - rw - 14), (int)(sy + slotH - 48), 26,
                     isSelected ? silverColor : Fade(silverColor, 0.70f));
 
-                // Save time — đậm hơn, màu riêng
+                // Save time, bolder with its own color
                 DrawTextCustom(ui.mainFont, tempGame.saveTime, (int)listX + 26, (int)sy + 8, 22,
                     isSelected ? Fade(gothicGold, 0.80f) : Fade({200, 180, 130, 255}, 0.75f));
             } else {
@@ -921,11 +1070,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawTriangle({dcx-8,dcy},{dcx+8,dcy},{dcx,dcy-8},Fade(dimColor,0.4f));
         }
 
-        // ── Vertical divider — rõ hơn ──
+        // Vertical divider, more visible
         float divX = listX + listW + 40.0f;
         DrawLineEx({divX,   listY - 6}, {divX,   bottomY + 6}, 2.5f, Fade(gothicGold, 0.80f));
         DrawLineEx({divX+6, listY - 6}, {divX+6, bottomY + 6}, 1.0f, Fade(gothicGold, 0.25f));
-        // Diamond mid-point sáng
+        // Bright diamond at the midpoint
         float dmY = listY + panelH / 2.0f;
         DD5(divX+3, dmY, 24, 24, gothicGold); DD5(divX+3, dmY, 14, 14, BLACK); DC5(divX+3, dmY, 10, gothicGold);
 
@@ -939,7 +1088,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         bool selHasData = PeekGameSlot(ui.loadSelection, selGame);
 
         if (selHasData) {
-            // ── Save name — to nhất, gothicGold, glow pulse ──
+            // Save name, largest, gothicGold, glow pulse
             float snX = prevX;
             int snSize = 72;
             // Outer glow
@@ -953,13 +1102,13 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawLineEx({prevX, prevY+82}, {prevX + prevW*0.44f, prevY+82}, 2.0f, Fade(gothicGold, 0.70f));
             DD5(prevX + prevW*0.44f + 12, prevY+82, 16, 16, gothicGold);
 
-            // ── Mode badge — rõ hơn ──
+            // Mode badge
             float contentY = prevY + 100.0f;
             float infoX    = prevX;
             float infoW    = prevW * 0.40f;
 
-            const char* modeStr = (selGame.gameMode == 0) ? "Classic Mode" : "Booming Mode";
-            Color modeColor = (selGame.gameMode == 0) ? gothicGold : redAccent;
+            const char* modeStr = "Classic Mode";
+            Color modeColor = gothicGold;
             int modeW = MeasureTextCustomX(ui.mainFont, modeStr, 32);
             DrawRectangleRounded({infoX, contentY, (float)(modeW+30), 46}, 0.3f, 6, Fade(modeColor, 0.20f));
             DrawRectangleRoundedLines({infoX, contentY, (float)(modeW+30), 46}, 0.3f, 6, Fade(modeColor, 0.75f));
@@ -967,7 +1116,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
 
             contentY += 62.0f;
 
-            // ── Stats — label sáng hơn, value to hơn ──
+            // Stats, brighter labels and larger values
             Color labelColor = {190, 170, 120, 255};
             auto DrawStat5 = [&](const char* label, const char* value, Color valCol, float y) {
                 DrawTextCustom(ui.mainFont, label, (int)infoX, (int)y, 22, labelColor);
@@ -987,14 +1136,14 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawLineEx({infoX, pY}, {infoX+infoW, pY}, 1.5f, Fade(gothicGold, 0.45f));
             DrawTextCustom(ui.mainFont, "PLAYERS", (int)infoX, (int)pY+8, 22, Fade(gothicGold, 0.85f));
 
-            // P1 — ember dot + tên sáng
+            // P1, ember dot + bright name
             DrawCircleV({infoX+12, pY+58}, 6.0f, {255,140,30,255});
             DrawCircleV({infoX+12, pY+58}, 2.5f, WHITE);
             DrawTextCustom(ui.mainFont, selGame.player1.name, (int)infoX+30, (int)(pY+40), 40, warmWhite);
 
             DrawTextCustom(ui.mainFont, "vs", (int)infoX+30, (int)(pY+88), 24, Fade(dimColor, 0.70f));
 
-            // P2 — red dot + tên silver
+            // P2, red dot + silver name
             DrawCircleV({infoX+12, pY+132}, 6.0f, redAccent);
             DrawCircleV({infoX+12, pY+132}, 2.5f, WHITE);
             DrawTextCustom(ui.mainFont, selGame.player2.name, (int)infoX+30, (int)(pY+112), 40, silverColor);
@@ -1006,7 +1155,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             float boardSize = (boardAvW < boardAvH) ? boardAvW : boardAvH;
             float boardY    = prevY + (prevH - boardSize) * 0.5f;
 
-            // Glow rings — sáng hơn
+            // Glow rings, brighter
             for (int g = 4; g >= 1; g--) {
                 float go = g * 9.0f;
                 DrawRectangleLinesEx({boardX-go, boardY-go, boardSize+go*2, boardSize+go*2},
@@ -1156,8 +1305,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
                 Color timeCol   = isSel ? Fade(goldColor, 0.85f) : Fade(goldDim, 0.6f);
 
                 DrawTextCustom(ui.mainFont, tempGame.saveName, (int)(startX+55), (int)(sy+16), 38, nameCol);
-                const char* modeStr = (tempGame.gameMode == 0) ? "Classic" : "Booming";
-                const char* detail  = TextFormat("Mode: %s   |   Round: %d", modeStr, tempGame.roundCount);
+                const char* detail  = TextFormat("Mode: Classic   |   Round: %d", tempGame.roundCount);
                 DrawTextCustom(ui.mainFont, detail, (int)(startX+55), (int)(sy+66), 24, detailCol);
                 int timeW = MeasureTextCustomX(ui.mainFont, tempGame.saveTime, 24);
                 DrawTextCustom(ui.mainFont, tempGame.saveTime, (int)(startX+slotW-timeW-30), (int)(sy+slotH*0.5f-12), 24, timeCol);
@@ -1379,7 +1527,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2+3, 106, 68, Fade(BLACK,0.9f));
         DrawTextCustom(ui.mainFont, title8, 1920/2-titW8/2,   102, 68, gothicGold);
 
-        // ── Game Mode badge phía dưới title ──
+        // Game Mode badge below the title
         {
             const char* modeLabel = game.isBotVsBot ? "BOT  VS  BOT"
                                   : (game.isVsBot   ? "VS  BOT"
@@ -1387,7 +1535,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             Color modeTextCol = game.isBotVsBot ? Color{180, 100, 255, 255}
                               : (game.isVsBot    ? Color{220,  60,  30, 255}
                                                  : Color{ 40, 185, 120, 255});
-            // Viền pill nhỏ
+            // Small pill border
             int mLblW = MeasureTextCustomX(ui.mainFont, modeLabel, 32);
             float pillX = 1920/2 - mLblW/2 - 18;
             float pillY = 180.0f;
@@ -1400,7 +1548,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawTextCustom(ui.mainFont, modeLabel, (int)(pillX+18),   (int)pillY+6,   32, modeTextCol);
         }
 
-        // ── 5 Hero card slots — chia đều ngang ──
+        // 5 hero card slots, evenly spaced horizontally
         const float cardW   = 320.0f;
         const float cardH   = 510.0f;
         const float cardGap = 24.0f;
@@ -1408,7 +1556,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         const float cardStartX = (1920.0f - totalCW) / 2.0f;
         const float cardY   = 310.0f;
 
-        // Xác định card nào đang được hover (dựa vào selectionPhase)
+        // Determine which card is hovered (based on selectionPhase)
         int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
         bool isP1turn = (ui.selectionPhase == 0 || ui.selectionPhase == 1);
 
@@ -1416,8 +1564,8 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         Color heroTheme[5] = {
             {220,  70,  20, 255},  // fire_knight    — red-orange
             { 40, 170, 110, 255},  // green_archer   — teal-green
-            {180, 160,  60, 255},  // earth_assassin — gold (từ metal_blade cũ)
-            {180, 185, 195, 255},  // metal_blade    — bạc/xám thép
+            {180, 160,  60, 255},  // earth_assassin - gold (former metal_blade)
+            {180, 185, 195, 255},  // metal_blade    - steel silver/grey
             { 30, 160, 220, 255},  // water_mage     — sky blue
         };
 
@@ -1567,8 +1715,8 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             Color heroThemeParts[5] = {
                 {255, 120,  30, 255},  // fire_knight    — orange-red
                 { 60, 220, 130, 255},  // green_archer   — bright teal
-                {220, 200,  60, 255},  // earth_assassin — gold shimmer (từ metal_blade cũ)
-                {210, 220, 230, 255},  // metal_blade    — bạc sáng
+                {220, 200,  60, 255},  // earth_assassin - gold shimmer (former metal_blade)
+                {210, 220, 230, 255},  // metal_blade    - bright silver
                 { 40, 200, 255, 255},  // water_mage     — aqua
             };
             for (int k = 0; k < UIState::MAX_CHAR_PARTICLES; k++) {
@@ -1702,13 +1850,13 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             Rectangle box={(float)(1920/2-boxW/2),(float)(1080/2-boxH/2),(float)boxW,(float)boxH};
             DrawRectangleRec(box, Fade(BLACK, 0.90f));
 
-            // Viền ngoài màu tướng
+            // Outer border in the hero color
             DrawRectangleLinesEx(box, 2.5f, Fade(hTheme, 0.90f));
-            // Viền glow mờ bên ngoài, nhấp nháy
+            // Faint blinking outer glow
             DrawRectangleLinesEx({box.x-5,box.y-5,box.width+10,box.height+10}, 1.0f,
                 Fade(hTheme, 0.30f * gp8));
 
-            // Accent bar top màu tướng
+            // Top accent bar in the hero color
             DrawRectangleGradientH((int)box.x, (int)box.y, (int)boxW, 5,
                 Fade(hTheme, 0.0f), Fade(hTheme, 0.95f));
 

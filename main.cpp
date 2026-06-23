@@ -9,7 +9,7 @@ int main() {
 
     SetExitKey(0);
     GameState game;
-    InitGame(game, 0); 
+    InitGame(game);
     game.inputType = 0; 
 
     UIState ui;

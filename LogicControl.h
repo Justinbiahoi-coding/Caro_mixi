@@ -3,9 +3,8 @@
 
 #include "Library.h"
 
-void InitGame(GameState& game, int mode);
+void InitGame(GameState& game);
 bool MakeMove(GameState& game, int row, int col);
-bool ScanMine(GameState& game, int centerRow, int centerCol);
 int CheckWin(GameState& game, int lastRow, int lastCol);
 void ResetRound(GameState& game);
 void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player, int& count, int& blocks);

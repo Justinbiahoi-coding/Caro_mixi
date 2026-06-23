@@ -1,43 +1,26 @@
 #include "LogicControl.h"
 #include <string.h> 
 
-void InitGame(GameState& game, int mode) {
+void InitGame(GameState& game) {
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             game.board[i][j].c = 0;
-            game.board[i][j].isMine = false;
-            game.board[i][j].isScanned = false;
         }
     }
 
-    //create mines for Booming Caro mode
-    if (mode == 1) {
-        srand((unsigned int)time(NULL));
-        int minesToPlace = 30; 
-        while (minesToPlace > 0) {
-            int r = rand() % BOARD_SIZE;
-            int c = rand() % BOARD_SIZE;
-            if (!game.board[r][c].isMine) {
-                game.board[r][c].isMine = true;
-                minesToPlace--;
-            }
-        }
-    }
-
-    game.isPlayer1Turn = true; 
+    game.isPlayer1Turn = true;
     game.moveCount = 0;
-    game.gameMode = mode;
-    game.matchStatus = 0; 
+    game.matchStatus = 0;
     game.botThinkTimer = 0.0f;
-    
-    game.player1.hp = 2; game.player1.scansLeft = 2; game.player1.stepCount = 0;
+
+    game.player1.stepCount = 0;
     game.player1.winCount = 0; game.player1.loseCount = 0;
-    
-    game.player2.hp = 2; game.player2.scansLeft = 2; game.player2.stepCount = 0;
+
+    game.player2.stepCount = 0;
     game.player2.winCount = 0; game.player2.loseCount = 0;
 
     game.roundCount = 1;
-    game.cursorRow = BOARD_SIZE / 2; 
+    game.cursorRow = BOARD_SIZE / 2;
     game.cursorCol = BOARD_SIZE / 2;
     game.inputType = 1;
 }
@@ -46,34 +29,19 @@ void ResetRound(GameState& game) {
     for (int i = 0; i < BOARD_SIZE; i++) {
         for (int j = 0; j < BOARD_SIZE; j++) {
             game.board[i][j].c = 0;
-            game.board[i][j].isMine = false;
-            game.board[i][j].isScanned = false;
-        }
-    }
-    
-    if (game.gameMode == 1) {
-        srand((unsigned int)time(NULL));
-        int minesToPlace = 30; 
-        while (minesToPlace > 0) {
-            int r = rand() % BOARD_SIZE;
-            int c = rand() % BOARD_SIZE;
-            if (!game.board[r][c].isMine) {
-                game.board[r][c].isMine = true;
-                minesToPlace--;
-            }
         }
     }
 
-    game.isPlayer1Turn = !game.isPlayer1Turn; 
+    game.isPlayer1Turn = !game.isPlayer1Turn;
     game.moveCount = 0;
-    game.matchStatus = 0; 
+    game.matchStatus = 0;
     game.botThinkTimer = 0.0f;
-    
-    game.player1.hp = 2; game.player1.scansLeft = 2; game.player1.stepCount = 0;
-    game.player2.hp = 2; game.player2.scansLeft = 2; game.player2.stepCount = 0;
 
-    game.roundCount++; 
-    game.cursorRow = BOARD_SIZE / 2; 
+    game.player1.stepCount = 0;
+    game.player2.stepCount = 0;
+
+    game.roundCount++;
+    game.cursorRow = BOARD_SIZE / 2;
     game.cursorCol = BOARD_SIZE / 2;
 }
 
@@ -82,18 +50,6 @@ bool MakeMove(GameState& game, int row, int col) {
 
     if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
         if (game.board[row][col].c == 0) {
-
-            if (game.gameMode == 1 && game.board[row][col].isMine) {
-                game.board[row][col].isScanned = true; 
-                
-                if (game.isPlayer1Turn) {
-                    game.player1.hp--;
-                    if (game.player1.hp <= 0) game.matchStatus = 2; 
-                } else {
-                    game.player2.hp--;
-                    if (game.player2.hp <= 0) game.matchStatus = 1; 
-                }
-            }
 
             game.board[row][col].c = game.isPlayer1Turn ? 1 : 2;
             game.lastMoveRow = row;
@@ -115,24 +71,6 @@ bool MakeMove(GameState& game, int row, int col) {
         }
     }
     return false; 
-}
-
-bool ScanMine(GameState& game, int centerRow, int centerCol) {
-    if (game.matchStatus != 0 || game.gameMode != 1) return false;
-
-    int& scansLeft = game.isPlayer1Turn ? game.player1.scansLeft : game.player2.scansLeft;
-    if (scansLeft <= 0) return false;
-
-    for (int r = centerRow - 1; r <= centerRow + 1; r++) {
-        for (int c = centerCol - 1; c <= centerCol + 1; c++) {
-            if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
-                game.board[r][c].isScanned = true;
-            }
-        }
-    }
-
-    scansLeft--; 
-    return true;
 }
 
 int CheckWin(GameState& game, int lastRow, int lastCol) {
@@ -159,12 +97,12 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
         if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player)) blocks++;
 
         if (count >= 5 && blocks < 2) {
-            // Lưu 5 ô thắng vào winLine — bắt đầu từ đầu âm của đường
+            // Save the 5 winning cells into winLine, starting from the negative end of the line
             int sr = lastRow - dx, sc = lastCol - dy;
             while (sr >= 0 && sr < BOARD_SIZE && sc >= 0 && sc < BOARD_SIZE && game.board[sr][sc].c == player) {
                 sr -= dx; sc -= dy;
             }
-            sr += dx; sc += dy; // bước lại 1 ô (đầu tiên của chuỗi)
+            sr += dx; sc += dy; // step back one cell (the first of the run)
             for (int k = 0; k < 5; k++) {
                 game.winLine[k][0] = sr + dx*k;
                 game.winLine[k][1] = sc + dy*k;
@@ -178,10 +116,10 @@ int CheckWin(GameState& game, int lastRow, int lastCol) {
 
 void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player, int& count, int& blocks)
 {
-    count = 0; // Không bao gồm bản thân ô hiện tại (ô đang xét)
+    count = 0; // does not include the current cell itself
     blocks = 0;
 
-    // Chiều xuôi (+dx, +dy)
+    // Forward direction (+dx, +dy)
     int r = row + dx;
     int c = col + dy;
     while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player)
@@ -190,13 +128,13 @@ void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player
         r += dx;
         c += dy;
     }
-    // Kiểm tra xem có bị chặn ở đầu này không
+    // Check whether this end is blocked
     if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player))
     {
         blocks++;
     }
 
-    // Chiều ngược (-dx, -dy)
+    // Backward direction (-dx, -dy)
     r = row - dx;
     c = col - dy;
     while (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE && game.board[r][c].c == player)
@@ -205,7 +143,7 @@ void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player
         r -= dx;
         c -= dy;
     }
-    // Kiểm tra xem có bị chặn ở đầu này không
+    // Check whether this end is blocked
     if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || (game.board[r][c].c != 0 && game.board[r][c].c != player))
     {
         blocks++;
@@ -215,13 +153,13 @@ void GetLineStatus(GameState& game, int row, int col, int dx, int dy, int player
 int EvaluatePosition(GameState& game, int row, int col, int botPlayer)
 {
     int oppPlayer = (botPlayer == 1) ? 2 : 1;
-    // Điểm được tính theo: Score[blocks][count]
-    // blocks: 0 (mở 2 đầu), 1 (chặn 1 đầu), 2 (chặn 2 đầu)
-    // count: số lượng quân liên tiếp (0 đến 5)
+    // Score is looked up as: Score[blocks][count]
+    // blocks: 0 (both ends open), 1 (one end blocked), 2 (both ends blocked)
+    // count: number of consecutive marks (0 to 5)
     int AttackScore[3][6] = {
-        { 0, 9, 54, 162, 1458, 13112 }, // 0 đầu bị chặn
-        { 0, 2, 18, 54,  729,  13112 }, // 1 đầu bị chặn
-        { 0, 0, 0,  0,   0,    0     }  // 2 đầu bị chặn (Vô dụng)
+        { 0, 9, 54, 162, 1458, 13112 }, // 0 ends blocked
+        { 0, 2, 18, 54,  729,  13112 }, // 1 end blocked
+        { 0, 0, 0,  0,   0,    0     }  // both ends blocked (useless)
     };
 
     int DefenseScore[3][6] = {
@@ -250,7 +188,7 @@ int EvaluatePosition(GameState& game, int row, int col, int botPlayer)
         int attackBlocks = 0;
         GetLineStatus(game, row, col, dx, dy, botPlayer, attackCount, attackBlocks);
         
-        if (attackCount > 5) attackCount = 5; // Giới hạn chống tràn mảng
+        if (attackCount > 5) attackCount = 5; // clamp to avoid array overflow
         totalScore += AttackScore[attackBlocks][attackCount];
 
         // ===== DEFENSE =====
@@ -258,7 +196,7 @@ int EvaluatePosition(GameState& game, int row, int col, int botPlayer)
         int defenseBlocks = 0;
         GetLineStatus(game, row, col, dx, dy, oppPlayer, defenseCount, defenseBlocks);
         
-        if (defenseCount > 5) defenseCount = 5; // Giới hạn chống tràn mảng
+        if (defenseCount > 5) defenseCount = 5; // clamp to avoid array overflow
         totalScore += DefenseScore[defenseBlocks][defenseCount];
     }
 
@@ -269,7 +207,7 @@ void BotMove(GameState& game, int botPlayer)
 {
     int bestScore = -1;
     
-    // Khai báo mảng để lưu các nước đi tốt nhất
+    // Array to store the best-scoring moves
     struct Move { int r; int c; };
     Move bestMoves[BOARD_SIZE * BOARD_SIZE];
     int bestMoveCount = 0;

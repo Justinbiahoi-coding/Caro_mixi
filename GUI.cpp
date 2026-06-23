@@ -35,23 +35,16 @@ void InitGUI(UIState& ui) {
     ui.bgLoadGame = LoadTexture("assets/menu/loadbg.png");
     ui.bgGame      = LoadTexture("assets/board/bg_game.png"); 
     ui.bgSelect = LoadTexture("assets/menu/bg_select.png");
+    ui.helpBg     = LoadTexture("assets/menu/helpbg.jpg");
+    ui.helpScrollTimer = 0.0f;
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
-    ui.pieceX     = LoadTexture("assets/board/piece_x.png");
-    ui.pieceO     = LoadTexture("assets/board/piece_o.png");
     ui.playerBadge = LoadTexture("assets/board/playername_badge.png");
     ui.roundBadge = LoadTexture("assets/board/round_badge.png");
-    ui.titleBadge = LoadTexture("assets/board/title_badge.png");
-
-    
-    ui.uiBase  = LoadTexture("assets/board/ui_base.png");
-    ui.uiHp    = LoadTexture("assets/board/ui_hp.png");
-    ui.uiRadar = LoadTexture("assets/board/ui_radar.png");
 
     ui.mainFont = LoadFontEx("assets/font/PixelSerif_16px_v02.ttf", 64, 0, 250);
-// 0 co gi --------- 
-    // config: frame_count, frame_duration
-    // Load hero animations for all 4 heroes
+
+    // Load hero animations. Args: frame_count, frame_duration
     // Hero 0: black_knight (hidden)
     ui.heroIdle[0]    = LoadCharAnim("assets/Character/black_knight/idle.png", 8, 0.2f);
     ui.heroAttack[0]  = LoadCharAnim("assets/Character/black_knight/attack_s1.png", 8, 0.12f);
@@ -106,8 +99,8 @@ void InitGUI(UIState& ui) {
     ui.heroDrawSize[5] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[5] = { -400.0f, -350.0f };
 
-    // Load attack effects (sprite sheet — animation khi đặt quân)
-    // black_knight: không có effect → dùng icon thay thế
+    // Load attack effects (sprite sheet shown when placing a piece)
+    // black_knight has no effect, use its icon instead
     ui.heroEffect[0] = LoadTexture("assets/Character/black_knight/attack_icon.png");
     ui.heroEffectFrames[0] = 1;
     ui.heroEffect[1] = LoadTexture("assets/Character/fire_knight/attack_effect.png");
@@ -123,7 +116,7 @@ void InitGUI(UIState& ui) {
 
     ui.cellEffectCount = 0;
 
-    // Load attack icons (dùng làm quân cờ trên bàn)
+    // Load attack icons (used as board pieces)
     ui.heroIcon[0] = LoadTexture("assets/Character/black_knight/attack_icon.png");
     ui.heroIcon[1] = LoadTexture("assets/Character/fire_knight/attack_icon.png");
     ui.heroIcon[2] = LoadTexture("assets/Character/green_archer/attack_icon.png");
@@ -146,19 +139,18 @@ void InitGUI(UIState& ui) {
     ui.cellStartX = (1920.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
     ui.cellStartY = (1080.0f - BOARD_SIZE * ui.cellSize) / 2.0f; 
 
-    // Frame vuông, để lại đủ chỗ cho nhân vật 2 bên và badge trên/dưới
-    // 1920 - 2*550 = 820px cho frame → nhân vật có ~550px mỗi bên
+    // Square frame, leaving room for the heroes on both sides and badges top/bottom
     float frameW = 780.0f;
     float frameH = 780.0f;
 
     ui.boardFrameRec.width  = frameW;
     ui.boardFrameRec.height = frameH;
-    ui.boardFrameRec.x = (1920.0f - frameW) / 2.0f;          // căn giữa ngang
-    ui.boardFrameRec.y = (1080.0f - frameH) / 2.0f - 20.0f;  // dịch lên nhường chỗ badge dưới to hơn
+    ui.boardFrameRec.x = (1920.0f - frameW) / 2.0f;          // center horizontally
+    ui.boardFrameRec.y = (1080.0f - frameH) / 2.0f - 20.0f;  // shift up for the larger bottom badge
 
-    // Border frame asset đều 4 phía ~5.5%
+    // Frame border is ~5.5% on every side
     float margin_L = 0.055f, margin_R = 0.055f;
-    float margin_T = 0.055f, margin_B = 0.055f;
+    float margin_T = 0.055f;
 
     ui.cellSize   = frameW * (1.0f - margin_L - margin_R) / BOARD_SIZE;
     ui.cellStartX = ui.boardFrameRec.x + frameW * margin_L;
@@ -168,9 +160,9 @@ void InitGUI(UIState& ui) {
 
     ui.bgMusic = LoadMusicStream("assets/music/bgm.mp3");
 
-    // Load attack sound effects per hero — PHẢI sau InitAudioDevice()
-    // LoadSoundFromWave cần audio device đã khởi tạo để tạo buffer
-    ui.heroAttackSound[0] = Sound{}; // black_knight: không có file
+    // Load attack sound effects per hero, MUST come after InitAudioDevice()
+    // because LoadSoundFromWave needs the audio device ready to build the buffer
+    ui.heroAttackSound[0] = Sound{}; // black_knight has no sound file
     {
         const char* soundPaths[5] = {
             "assets/Character/fire_knight/attack_sound.wav",
@@ -181,7 +173,7 @@ void InitGUI(UIState& ui) {
         };
         for (int i = 0; i < 5; i++) {
             Wave w = LoadWave(soundPaths[i]);
-            WaveFormat(&w, 44100, 32, 2); // chuẩn hóa sang 32-bit float stereo
+            WaveFormat(&w, 44100, 32, 2); // normalize to 32-bit float stereo
             ui.heroAttackSound[i + 1] = LoadSoundFromWave(w);
             UnloadWave(w);
         }
@@ -191,9 +183,9 @@ void InitGUI(UIState& ui) {
     ui.musicEnabled = true;
     ui.draggingVolume = false;
 
-    ui.menuScrollY = 350.0f; // vị trí item đầu tiên
+    ui.menuScrollY = 350.0f; // position of the first menu item
 
-    // Init embers — rải ngẫu nhiên toàn màn hình để tránh trống lúc đầu
+    // Init embers, scattered across the screen so it isn't empty at start
     for (int i = 0; i < UIState::MAX_EMBERS; i++) {
         ui.embers[i].x     = (float)(rand() % 1920);
         ui.embers[i].y     = (float)(rand() % 1080);
@@ -204,7 +196,7 @@ void InitGUI(UIState& ui) {
         ui.embers[i].life  = (float)(rand() % 100) / 100.0f;
     }
 
-    // Init char select particles — bắt đầu tắt hết
+    // Init char select particles, all off at start
     for (int i = 0; i < UIState::MAX_CHAR_PARTICLES; i++) {
         ui.charParticles[i].life = 0.0f;
         ui.charParticles[i].alpha = 0.0f;
@@ -224,24 +216,20 @@ void UnloadGUI(UIState& ui) {
     UnloadTexture(ui.btnHelp);
     UnloadTexture(ui.btnCredits);
     UnloadTexture(ui.btnExit);
+    UnloadTexture(ui.bgSettings);
     UnloadTexture(ui.bgSaveLoad);
     UnloadTexture(ui.bgLoadGame);
+    UnloadTexture(ui.bgSelect);
     UnloadTexture(ui.boardFrame);
     UnloadTexture(ui.cell);
-    UnloadTexture(ui.pieceX);
-    UnloadTexture(ui.pieceO);
     UnloadTexture(ui.playerBadge);
     UnloadTexture(ui.roundBadge);
-    UnloadTexture(ui.titleBadge);
 
-    UnloadTexture(ui.uiBase);
-    UnloadTexture(ui.uiHp);
-    UnloadTexture(ui.uiRadar);
-    
     UnloadTexture(ui.bgGame);
+    UnloadTexture(ui.helpBg);
     UnloadFont(ui.mainFont);
-    
-    // Unload all hero animations + icons + effects
+
+    // Unload all hero animations, icons and effects
     for (int i = 0; i < 6; i++) {
         UnloadCharAnim(ui.heroIdle[i]);
         UnloadCharAnim(ui.heroAttack[i]);
@@ -250,7 +238,7 @@ void UnloadGUI(UIState& ui) {
         UnloadCharAnim(ui.heroDeath[i]);
         UnloadTexture(ui.heroIcon[i]);
         UnloadTexture(ui.heroEffect[i]);
-        if (i != 0) UnloadSound(ui.heroAttackSound[i]); // index 0 không load
+        if (i != 0) UnloadSound(ui.heroAttackSound[i]); // index 0 is never loaded
     }
     
     UnloadMusicStream(ui.bgMusic);

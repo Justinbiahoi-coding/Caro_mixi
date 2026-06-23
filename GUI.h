@@ -38,16 +38,10 @@ struct UIState {
     
     Texture2D boardFrame;
     Texture2D cell;
-    Texture2D pieceX;
-    Texture2D pieceO;
     Texture2D playerBadge;
-    Texture2D roundBadge; 
-    Texture2D titleBadge;
+    Texture2D roundBadge;
 
-    Texture2D uiBase;
-    Texture2D uiHp;
-    Texture2D uiRadar;
-    
+
     float cellSize;       
     float cellStartX;     
     float cellStartY;     
@@ -65,7 +59,9 @@ struct UIState {
     Texture2D bgSettings;
     Texture2D bgSaveLoad;
     Texture2D bgLoadGame;
-    Texture2D bgSelect; 
+    Texture2D bgSelect;
+    Texture2D helpBg;
+    float helpScrollTimer; // time since Help opened, used for panel scale-in
 
     Font mainFont;
 
@@ -74,7 +70,7 @@ struct UIState {
     CharAnim heroAttack2[6];     // attack_s2
     CharAnim heroAttack3[6];     // attack_s3
     CharAnim heroDeath[6];       // death animation
-    Texture2D heroIcon[6];       // attack_icon — dùng làm quân cờ
+    Texture2D heroIcon[6];       // attack_icon, used as the board piece
     Vector2 heroDrawSize[6];
     Vector2 heroDrawOffset[6];
     // Legacy support
@@ -86,27 +82,27 @@ struct UIState {
     bool isP2Attacking;
     int p1AttackVariant; // 0/1/2 = s1/s2/s3
     int p2AttackVariant;
-    bool pendingWin;        // true khi đang chờ attack_s3 kết thúc
-    int  pendingWinStatus;  // matchStatus thật sự (1 or 2)
-    bool isP1Dying;         // đang chạy death animation P1
-    bool isP2Dying;         // đang chạy death animation P2
-    bool isP1Dead;          // đã chết xong, giữ frame cuối
-    bool isP2Dead;          // đã chết xong, giữ frame cuối
-    float winScreenTimer;   // thời gian kể từ khi win screen hiện (cho scale-in)
+    bool pendingWin;        // true while waiting for attack_s3 to finish
+    int  pendingWinStatus;  // the real matchStatus (1 or 2)
+    bool isP1Dying;         // P1 death animation playing
+    bool isP2Dying;         // P2 death animation playing
+    bool isP1Dead;          // P1 dead, hold last frame
+    bool isP2Dead;          // P2 dead, hold last frame
+    float winScreenTimer;   // time since win screen appeared (for scale-in)
 
-    // Attack effect trên ô cờ
+    // Attack effect on a board cell
     Texture2D heroEffect[6];   // attack_effect sprite sheet
-    int heroEffectFrames[6];   // số frame của từng hero
-    Sound heroAttackSound[6];  // attack sound effect mỗi hero
+    int heroEffectFrames[6];   // frame count per hero
+    Sound heroAttackSound[6];  // attack sound effect per hero
 
     struct CellEffect {
         int row, col;
-        int player;        // 1 hoặc 2
-        int heroAsset;     // index vào heroEffect[]
-        float timer;       // tổng thời gian đã chạy
-        float frameDur;    // giây/frame
+        int player;        // 1 or 2
+        int heroAsset;     // index into heroEffect[]
+        float timer;       // total elapsed time
+        float frameDur;    // seconds per frame
         int currentFrame;
-        bool done;         // effect xong, chỉ vẽ icon
+        bool done;         // effect finished, draw icon only
     };
     static const int MAX_CELL_EFFECTS = 225; // 15x15
     CellEffect cellEffects[MAX_CELL_EFFECTS];
@@ -144,7 +140,7 @@ struct UIState {
     CharParticle charParticles[MAX_CHAR_PARTICLES];
 
     // Smooth menu scroll
-    float menuScrollY = 0.0f; // vị trí highlight hiện tại (pixel, nội suy)
+    float menuScrollY = 0.0f; // current highlight position (interpolated pixels)
 };
 
 // Maps selection index (0-4) → asset index (1-5), black_knight hidden at index 0
@@ -161,7 +157,6 @@ void DrawGUI(const GameState& game, const UIState& ui);
 static float fontSpacing = 0.0f;
 
 inline void DrawTextCustom(Font font, const char *text, int posX, int posY, int fontSize, Color color) {
-    // Spacing (khoảng cách chữ) để mặc định là 1.0f
     DrawTextEx(font, text, {(float)posX, (float)posY}, (float)fontSize, fontSpacing, color);
 }
 
@@ -173,24 +168,21 @@ inline int MeasureTextCustomY(Font font, const char *text, int fontSize) {
 }
 
 inline void DrawBadgeText(Font font, Texture2D badge, const char *text, int y, float badgeWidth, float badgeHeight, int textFontSize, Color textColor, float offsetY = 0.0f) {
-    // 1. Vị trí Badge căn giữa ngang
+    // Center the badge horizontally
     float badgeX = (1920.0f - badgeWidth) / 2.0f;
 
-    // 2. Độ rộng text (ngang) và chiều cao visual thực tế
-    //    MeasureTextCustomY trả về line-height (bao gồm ascender/descender) nên rất lớn.
-    //    Dùng fontSize * 0.65f để ước lượng chiều cao glyph thực, cho kết quả căn giữa dọc đếp hơn.
+    // MeasureTextCustomY returns the full line-height (with ascender/descender),
+    // so use fontSize * 0.65f to estimate the real glyph height for better vertical centering.
     float textWidth   = (float)MeasureTextCustomX(font, text, textFontSize);
-    float visualTextH = textFontSize * 0.65f;   // chiều cao visual thực tế
+    float visualTextH = textFontSize * 0.65f;   // approximate visual glyph height
 
-    // 3. Vị trí text: căn giữa ngang + căn giữa dọc theo badgeHeight
+    // Center text inside the badge
     float textX = badgeX + (badgeWidth  - textWidth)  * 0.5f;
     float textY = y      + (badgeHeight - visualTextH) * 0.5f + offsetY;
 
-    // 4. Vẽ Badge
+    // Draw badge, then text on top
     DrawTexturePro(badge, {0, 0, (float)badge.width, (float)badge.height},
                    {badgeX, (float)y, badgeWidth, badgeHeight}, {0, 0}, 0.0f, WHITE);
-
-    // 5. Vẽ Text lên trên
     DrawTextCustom(font, text, (int)textX, (int)textY, textFontSize, textColor);
 }
 
@@ -208,8 +200,8 @@ inline void UnloadCharAnim(CharAnim& c) {
     UnloadTexture(c.spriteSheet);
 }
 
-// Reset toàn bộ animation state (frame + timer) của cả 2 hero khi bắt đầu game mới.
-// Gọi tại MỌI điểm chuyển sang currentScreen = 1 để tránh lỗi "kẹt" frame death/attack.
+// Reset both heroes' animation state (frame + timer) when a new game starts.
+// Call this on EVERY switch to currentScreen = 1 to avoid stuck death/attack frames.
 inline void ResetHeroAnimState(UIState& ui) {
     ui.pendingWin       = false;
     ui.pendingWinStatus = 0;

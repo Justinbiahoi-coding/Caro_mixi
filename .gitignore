@@ -1,2 +1,11 @@
+# Build artifacts
+caro_game
 caro_game.exe
-caro_save.bin
+caro_game_test.exe
+build/
+
+# Save files
+*.bin
+
+# macOS junk
+.DS_Store

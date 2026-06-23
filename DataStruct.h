@@ -8,10 +8,6 @@
 // Structure of 1 square on the chessboard
 struct Point {
     int c;          // 0: Empty, 1: X (played), 2:  (not played)
-    
-    //Booming Caro
-    bool isMine;    
-    bool isScanned; 
 };
 
 // Player structure
@@ -20,10 +16,6 @@ struct Player {
     int winCount;
     int loseCount;
     int stepCount;  // Number of steps taken in the current game
-    
-    //Booming Caro
-    int hp;        
-    int scansLeft;
 };
 
 // Structure for managing the entire game state
@@ -35,7 +27,6 @@ struct GameState {
     bool isPlayer1Turn; // true: P1, false: P2
     int moveCount;      // Total number of moves made on the chessboard
     int roundCount;
-    int gameMode;       // 0: Normal Caro, 1: Booming Caro
     int matchStatus;    // 0: In progress, 1: P1 wins, 2: P2 wins, 3: Draw
     int cursorRow;  // Y coordinate of the keyboard cursor
     int cursorCol;  // X coordinate of the keyboard cursor
@@ -43,13 +34,12 @@ struct GameState {
 
     bool isVsBot;
     bool isBotVsBot;
-    int botPlayer;
     float botThinkTimer;
-    int lastMoveRow;  // ô vừa đánh (cả player lẫn bot)
+    int lastMoveRow;  // last placed cell (player or bot)
     int lastMoveCol;
-    int winLine[5][2]; // 5 ô thắng [r][c], dùng để highlight
-    int p1HeroSelection;  // hero index (0-4) của P1, map qua HERO_MAP để lấy asset
-    int p2HeroSelection;  // hero index (0-4) của P2
+    int winLine[5][2]; // the 5 winning cells [r][c], used for highlight
+    int p1HeroSelection;  // P1 hero index (0-4), mapped through HERO_MAP to the asset
+    int p2HeroSelection;  // P2 hero index (0-4)
 
     char saveName[30];
     char saveTime[30];
