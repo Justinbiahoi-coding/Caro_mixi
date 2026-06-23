@@ -61,6 +61,38 @@ Each of the 6 heroes (index 0 = `black_knight`, hidden/unused; 1–5 = selectabl
 
 `EvaluatePosition` (LogicControl.cpp) scores an empty cell by summing pattern-based attack/defense scores (from lookup tables keyed by `[blocks][count]`) across the 4 line directions; `BotMove` picks uniformly at random among all empty cells tied for the highest score. This is a one-ply heuristic — it does not search ahead. Bot-vs-bot mode just calls `BotMove` for both sides on alternating turns.
 
+`GetLineStatus` (exported in `LogicControl.h`) scans one direction from a cell and returns `count` (consecutive marks of the target player) and `blocks` (how many ends are blocked by an edge or opponent mark). Both the AI evaluator and `CheckBlockVariant` in `GUI_Game.cpp` rely on it; its semantics are important: it does **not** include the queried cell itself in `count`.
+
+### Attack variant logic
+
+Each placed piece triggers one of three animations, chosen in `UpdateGUIGame` (GUI_Game.cpp) immediately after `MakeMove`:
+- `attack_s1` — normal move (default)
+- `attack_s2` — the move blocks an opponent sequence (`CheckBlockVariant` returns true: ≥3 opponent marks in a row, or 4 with both ends closed)
+- `attack_s3` — the move wins the round (or draws)
+
+The win/draw case defers the real `matchStatus` reveal: `game.matchStatus` is stored in `ui.pendingWinStatus`, temporarily reset to 0 (so the board stays in-play during the animation), and restored only once `attack_s3` finishes and `triggerDeath` has run the loser's death animation.
+
+### Round lifecycle
+
+`InitGame` (LogicControl.cpp) — full reset: clears board, zeros both players' win/loss/step counts, sets `roundCount = 1`. Call once at startup.
+
+`ResetRound` — next-round reset: clears board and step counts, swaps starting player (`isPlayer1Turn = !isPlayer1Turn`), increments `roundCount`. Win/loss records are preserved. Always pair with `ResetHeroAnimState(ui)` (see Hero / animation system above).
+
+### Hero roster and asset convention
+
+The 5 selectable heroes (UI index 0–4, asset index 1–5 via `HERO_MAP`):
+
+| UI idx | Asset idx | Folder |
+|---|---|---|
+| 0 | 1 | `black_knight` |
+| 1 | 2 | `fire_knight` |
+| 2 | 3 | `green_archer` |
+| 3 | 4 | `metal_blade` |
+| 4 | 5 | `water_mage` |
+| — | — | `wind_assassin` (asset idx 5 in some builds; check `GUI.cpp` load order) |
+
+Each hero folder under `assets/Character/<name>/` must contain exactly: `idle.png`, `attack_s1.png`, `attack_s2.png`, `attack_s3.png`, `attack_effect.png`, `attack_icon.png`, `death.png`, `attack_sound.wav`. The load order in `InitGUI` determines the array index — add a new hero by appending to that loop, not by inserting.
+
 ### Persistence
 
 Saves are raw binary dumps of the whole `GameState` struct (`fwrite(&game, sizeof(GameState), 1, file)`) to `save_<slot>.bin` in the working directory — not portable across struct layout changes, no versioning. Any change to `DataStruct.h::GameState` invalidates existing save files silently (`fread` will just produce garbage/zeros for shifted fields).

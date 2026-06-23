@@ -162,26 +162,35 @@ void InitGUI(UIState& ui) {
 
     // Load attack sound effects per hero, MUST come after InitAudioDevice()
     // because LoadSoundFromWave needs the audio device ready to build the buffer
-    ui.heroAttackSound[0] = Sound{}; // black_knight has no sound file
+    for (int v = 0; v < 3; v++) ui.heroAttackSound[0][v] = Sound{}; // black_knight has no sound files
     {
-        const char* soundPaths[5] = {
-            "assets/Character/fire_knight/attack_sound.wav",
-            "assets/Character/green_archer/attack_sound.wav",
-            "assets/Character/wind_assassin/attack_sound.wav",
-            "assets/Character/metal_blade/attack_sound.wav",
-            "assets/Character/water_mage/attack_sound.wav"
+        // Asset index 1-5; order MUST match HERO_MAP
+        const char* heroDirs[5] = {
+            "fire_knight", "green_archer", "wind_assassin", "metal_blade", "water_mage"
+        };
+        // One sound per attack variant: 0=normal(s1), 1=block(s2), 2=win(s3)
+        const char* variantFile[3] = {
+            "attack_sound.wav", "attack_sound_s2.wav", "attack_sound_s3.wav"
         };
         for (int i = 0; i < 5; i++) {
-            Wave w = LoadWave(soundPaths[i]);
-            WaveFormat(&w, 44100, 32, 2); // normalize to 32-bit float stereo
-            ui.heroAttackSound[i + 1] = LoadSoundFromWave(w);
-            UnloadWave(w);
+            for (int v = 0; v < 3; v++) {
+                char path[160];
+                snprintf(path, sizeof(path), "assets/Character/%s/%s", heroDirs[i], variantFile[v]);
+                Wave w = LoadWave(path);
+                WaveFormat(&w, 44100, 32, 2); // normalize to 32-bit float stereo
+                ui.heroAttackSound[i + 1][v] = LoadSoundFromWave(w);
+                UnloadWave(w);
+            }
         }
     }
 
     ui.musicVolume = 0.8f;
     ui.musicEnabled = true;
     ui.draggingVolume = false;
+
+    ui.sfxVolume = 0.8f;
+    ui.draggingSFX = false;
+    ApplySFXVolume(ui); // push the initial SFX volume onto every loaded sound
 
     ui.menuScrollY = 350.0f; // position of the first menu item
 
@@ -238,7 +247,7 @@ void UnloadGUI(UIState& ui) {
         UnloadCharAnim(ui.heroDeath[i]);
         UnloadTexture(ui.heroIcon[i]);
         UnloadTexture(ui.heroEffect[i]);
-        if (i != 0) UnloadSound(ui.heroAttackSound[i]); // index 0 is never loaded
+        if (i != 0) for (int v = 0; v < 3; v++) UnloadSound(ui.heroAttackSound[i][v]); // index 0 is never loaded
     }
     
     UnloadMusicStream(ui.bgMusic);

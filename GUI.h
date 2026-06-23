@@ -93,7 +93,7 @@ struct UIState {
     // Attack effect on a board cell
     Texture2D heroEffect[6];   // attack_effect sprite sheet
     int heroEffectFrames[6];   // frame count per hero
-    Sound heroAttackSound[6];  // attack sound effect per hero
+    Sound heroAttackSound[6][3];  // [hero][variant] 0=normal(s1) 1=block(s2) 2=win(s3)
 
     struct CellEffect {
         int row, col;
@@ -112,6 +112,9 @@ struct UIState {
     float musicVolume = 0.8f;
     bool musicEnabled;
     bool draggingVolume = false;
+    float sfxVolume = 0.8f;     // volume for hero attack sound effects (0.0 - 1.0)
+    bool draggingSFX = false;   // true while the SFX volume slider is being dragged
+    bool inGamePaused = false;  // true when the in-game gear/pause settings overlay is open
 
     // Menu particles
     struct Ember {
@@ -200,6 +203,47 @@ inline void UnloadCharAnim(CharAnim& c) {
     UnloadTexture(c.spriteSheet);
 }
 
+// Apply the current SFX volume to every loaded hero attack sound.
+// heroAttackSound[0] (black_knight) is never loaded, so start at index 1.
+// Call this once after sounds are loaded, and whenever ui.sfxVolume changes.
+inline void ApplySFXVolume(UIState& ui) {
+    for (int i = 1; i < 6; i++) {
+        for (int v = 0; v < 3; v++) {
+            SetSoundVolume(ui.heroAttackSound[i][v], ui.sfxVolume);
+        }
+    }
+}
+
+// Reusable draggable volume slider (used by both the Settings screen and the
+// in-game pause overlay). Updates `value` in [0,1] while the user drags it and
+// keeps `dragging` in sync with the mouse button. Returns true while dragging,
+// so the caller can apply side effects (SetMusicVolume / ApplySFXVolume).
+inline bool VolumeSliderUpdate(float& value, bool& dragging, Vector2 mouse,
+                               int barX, int barY, int barWidth, int barHeight) {
+    Rectangle hit = { (float)barX - 20, (float)barY - 20,
+                      (float)barWidth + 40, (float)barHeight + 40 };
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, hit))
+        dragging = true;
+    if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+        dragging = false;
+    if (dragging) {
+        float t = (mouse.x - (float)barX) / (float)barWidth;
+        value = (t < 0.0f) ? 0.0f : (t > 1.0f ? 1.0f : t);
+    }
+    return dragging;
+}
+
+// Draw the matching slider track + fill + knob + percentage label.
+inline void VolumeSliderDraw(Font font, int barX, int barY, int barWidth, int barHeight,
+                             float value, bool active, Color activeColor) {
+    DrawRectangleRec({ (float)barX, (float)barY, (float)barWidth, (float)barHeight }, DARKGRAY);
+    DrawRectangle(barX, barY, (int)(barWidth * value), barHeight, MAROON);
+    Rectangle knob = { barX + value * barWidth - 8.0f, (float)barY - 12.0f, 16.0f, 48.0f };
+    DrawRectangleRec(knob, active ? activeColor : (Color){ 200, 150, 40, 255 });
+    DrawTextEx(font, TextFormat("%i%%", (int)(value * 100)),
+               { (float)(barX + barWidth + 20), (float)barY - 5 }, 30.0f, fontSpacing, WHITE);
+}
+
 // Reset both heroes' animation state (frame + timer) when a new game starts.
 // Call this on EVERY switch to currentScreen = 1 to avoid stuck death/attack frames.
 inline void ResetHeroAnimState(UIState& ui) {
@@ -215,6 +259,7 @@ inline void ResetHeroAnimState(UIState& ui) {
     ui.isP2Dead         = false;
     ui.winScreenTimer   = 0.0f;
     ui.cellEffectCount  = 0;
+    ui.inGamePaused     = false;
 
     int assets[2] = { HERO_MAP[ui.p1HeroSelection], HERO_MAP[ui.p2HeroSelection] };
     for (int i = 0; i < 2; i++) {

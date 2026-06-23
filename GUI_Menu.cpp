@@ -2,7 +2,7 @@
 #include "LogicControl.h"
 
 const int TOTAL_MENU_ITEMS = 6;
-const int TOTAL_SETTING_ITEMS = 5;
+const int TOTAL_SETTING_ITEMS = 6;
 
 void UpdateMenuScreens(GameState& game, UIState& ui) {
     Vector2 mouse = GetMousePosition();
@@ -91,91 +91,103 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         const int barWidth = 400;
         const int barHeight = 24;
         const int barX = (1920 - barWidth) / 2;
-        const int barY = 350 + 2 * 80 + 60;
 
-        // Enlarge the click area so the slider is easy to grab
-        Rectangle volumeHitbox = { (float)barX - 20, (float)barY - 20, (float)barWidth + 40, (float)barHeight + 40 };
+        // Row Y positions. Rows 2 ("Music Volume") and 3 ("SFX Volume") are
+        // non-selectable labels, each followed by a drag slider just below it.
+        // This layout MUST match the one in DrawMenuScreens (screen 2).
+        const int rowY[TOTAL_SETTING_ITEMS] = { 320, 390, 460, 580, 700, 770 };
+        const int musicBarY = rowY[2] + 55;
+        const int sfxBarY   = rowY[3] + 55;
 
-        if (CheckCollisionPointRec(mouse, volumeHitbox)) {
-            ui.settingSelection = -1; // hide highlight when hovering the volume bar
-        }
+        // Generous hitbox so each slider is easy to grab with the mouse
+        auto sliderHitbox = [&](int by) {
+            return Rectangle{ (float)barX - 20, (float)by - 20,
+                              (float)barWidth + 40, (float)barHeight + 40 };
+        };
+        Rectangle musicHit = sliderHitbox(musicBarY);
+        Rectangle sfxHit   = sliderHitbox(sfxBarY);
+
+        // Hide the menu highlight while the cursor hovers either slider
+        if (CheckCollisionPointRec(mouse, musicHit) || CheckCollisionPointRec(mouse, sfxHit))
+            ui.settingSelection = -1;
 
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (CheckCollisionPointRec(mouse, volumeHitbox)) {
-                ui.draggingVolume = true;
-            }
+            if (CheckCollisionPointRec(mouse, musicHit))      ui.draggingVolume = true;
+            else if (CheckCollisionPointRec(mouse, sfxHit))   ui.draggingSFX = true;
         }
-
         if (!IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
             ui.draggingVolume = false;
+            ui.draggingSFX = false;
         }
+
+        // Map the mouse X onto a 0..1 slider value
+        auto sliderValue = [&]() {
+            float t = (mouse.x - barX) / (float)barWidth;
+            return (t < 0.0f) ? 0.0f : (t > 1.0f ? 1.0f : t);
+        };
 
         if (ui.draggingVolume) {
-            float t = (mouse.x - barX) / (float)barWidth;
-            if (t < 0.0f) t = 0.0f;
-            if (t > 1.0f) t = 1.0f;
-
-            ui.musicVolume = t;
+            ui.musicVolume = sliderValue();
             SetMusicVolume(ui.bgMusic, ui.musicVolume);
-            
-            ui.settingSelection = -1; // keep highlight hidden while dragging volume
+            ui.settingSelection = -1;
         }
+        if (ui.draggingSFX) {
+            ui.sfxVolume = sliderValue();
+            ApplySFXVolume(ui);
+            ui.settingSelection = -1;
+        }
+
+        bool dragging = ui.draggingVolume || ui.draggingSFX;
+
+        // Rows 2 and 3 are slider labels, so they cannot be selected
+        auto selectable = [](int i) { return i != 2 && i != 3; };
 
         if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP)) {
-            if (ui.settingSelection == -1) ui.settingSelection = 3; // if pointing at volume, jump to the item below
-            else {
-                ui.settingSelection = (ui.settingSelection - 1 + TOTAL_SETTING_ITEMS) % TOTAL_SETTING_ITEMS;
-                if (ui.settingSelection == 2) ui.settingSelection = 1;
-            }
+            int s = (ui.settingSelection < 0) ? 4 : ui.settingSelection;
+            do { s = (s - 1 + TOTAL_SETTING_ITEMS) % TOTAL_SETTING_ITEMS; } while (!selectable(s));
+            ui.settingSelection = s;
         }
-
         if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN)) {
-            if (ui.settingSelection == -1) ui.settingSelection = 3;
-            else {
-                ui.settingSelection = (ui.settingSelection + 1) % TOTAL_SETTING_ITEMS;
-                if (ui.settingSelection == 2) ui.settingSelection = 3;
-            }
+            int s = (ui.settingSelection < 0) ? 4 : ui.settingSelection;
+            do { s = (s + 1) % TOTAL_SETTING_ITEMS; } while (!selectable(s));
+            ui.settingSelection = s;
         }
 
-    const char* menuOptions[TOTAL_MENU_ITEMS] = {
-        "NEW GAME",
-        "LOAD GAME",
-        "SETTINGS",
-        "HELP",
-        "CREDITS",
-        "EXIT"
-    };
         const char* setOptions[TOTAL_SETTING_ITEMS] = {
             "Mouse Control (Recommended)",
             "Keyboard Control (WASD + Enter)",
             "Music Volume",
+            "SFX Volume",
             "Toggle Music",
             "Back to Menu"
         };
 
-        Rectangle setRects[TOTAL_SETTING_ITEMS];
+        Rectangle setRects[TOTAL_SETTING_ITEMS] = {};
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            if (i == 2) continue; // the "Music Volume" row is not selectable here
-            int yPos = 350 + i * 80;
-            if (i >= 3) yPos += 40;
+            if (!selectable(i)) continue; // skip the two slider-label rows
             int textWidth = MeasureTextCustomX(ui.mainFont, setOptions[i], 40);
             int xPos = (1920 - textWidth) / 2;
-            setRects[i] = { (float)(xPos - 40), (float)(yPos - 10), (float)(textWidth + 80), 60 };
+            setRects[i] = { (float)(xPos - 40), (float)(rowY[i] - 10), (float)(textWidth + 80), 60 };
 
-            if (!ui.draggingVolume && CheckCollisionPointRec(mouse, setRects[i]))
+            if (!dragging && CheckCollisionPointRec(mouse, setRects[i]))
                 ui.settingSelection = i;
         }
 
-        if ((IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, setRects[ui.settingSelection])
-            && !ui.draggingVolume) || IsKeyPressed(KEY_ENTER)) {
+        bool confirm = IsKeyPressed(KEY_ENTER);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !dragging &&
+            ui.settingSelection >= 0 && selectable(ui.settingSelection) &&
+            CheckCollisionPointRec(mouse, setRects[ui.settingSelection]))
+            confirm = true;
+
+        if (confirm && ui.settingSelection >= 0) {
             if (ui.settingSelection == 0) game.inputType = 0;
             else if (ui.settingSelection == 1) game.inputType = 1;
-            else if (ui.settingSelection == 3) {
+            else if (ui.settingSelection == 4) {
                 ui.musicEnabled = !ui.musicEnabled;
                 if (ui.musicEnabled) PlayMusicStream(ui.bgMusic);
                 else PauseMusicStream(ui.bgMusic);
             }
-            else if (ui.settingSelection == 4) {
+            else if (ui.settingSelection == 5) {
                 ui.currentScreen = 0;
             }
         }
@@ -871,16 +883,17 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
           "Mouse Control (Recommended)",
           "Keyboard Control (WASD + Enter)",
           "Music Volume",
+          "SFX Volume",
           "Toggle Music",
           "Back to Menu"
         };
 
-        Vector2 mouse = GetMousePosition();
+        // Row layout MUST match UpdateMenuScreens (screen 2)
+        const int rowY[TOTAL_SETTING_ITEMS] = { 320, 390, 460, 580, 700, 770 };
 
         for (int i = 0; i < TOTAL_SETTING_ITEMS; i++) {
-            int yPos = 350 + i * 80;
-            if (i >= 3) yPos += 40; // extra spacing for the volume bar
-            
+            int yPos = rowY[i];
+
             Color textColor = LIGHTGRAY;
             if (i == ui.settingSelection) textColor = selectedColor;
 
@@ -890,7 +903,7 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             if (i == ui.settingSelection) textColor = selectedColor;
 
             char displayText[256];
-            if (i == 3) { 
+            if (i == 4) { // "Toggle Music" shows current on/off state
                 const char* status = ui.musicEnabled ? " [ON]" : " [OFF]";
                 snprintf(displayText, sizeof(displayText), "%s%s", setOptions[i], status);
             } else {
@@ -911,24 +924,25 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             }
         }
 
+        // --- Volume sliders: Music under row 2, SFX under row 3 ---------
         const int barWidth = 400;
         const int barHeight = 24;
         const int barX = (1920 - barWidth) / 2;
-        const int barY = 350 + 2 * 80 + 60;
-        
-        Rectangle volumeBar = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
-        DrawRectangleRec(volumeBar, DARKGRAY);
-        DrawRectangle(barX, barY, (int)(barWidth * ui.musicVolume), barHeight, MAROON);
-        
-        Rectangle knob = {
-            barX + ui.musicVolume * barWidth - 8.0f,
-            (float)barY - 12.0f,
-            16.0f,
-            48.0f
-        };
-        DrawRectangleRec(knob, selectedColor);
 
-        DrawTextCustom(ui.mainFont, TextFormat("%i%%", (int)(ui.musicVolume * 100)), barX + barWidth + 20, barY - 5, 30, WHITE);
+        auto drawSlider = [&](int barY, float value, bool active) {
+            Rectangle bar = { (float)barX, (float)barY, (float)barWidth, (float)barHeight };
+            DrawRectangleRec(bar, DARKGRAY);
+            DrawRectangle(barX, barY, (int)(barWidth * value), barHeight, MAROON);
+
+            Rectangle knob = { barX + value * barWidth - 8.0f, (float)barY - 12.0f, 16.0f, 48.0f };
+            DrawRectangleRec(knob, active ? selectedColor : (Color){ 200, 150, 40, 255 });
+
+            DrawTextCustom(ui.mainFont, TextFormat("%i%%", (int)(value * 100)),
+                           barX + barWidth + 20, barY - 5, 30, WHITE);
+        };
+
+        drawSlider(rowY[2] + 55, ui.musicVolume, ui.draggingVolume);
+        drawSlider(rowY[3] + 55, ui.sfxVolume,   ui.draggingSFX);
     }
    else if (ui.currentScreen == 5) {
         DrawTexturePro(ui.bgLoadGame, { 0, 0, (float)ui.bgLoadGame.width, (float)ui.bgLoadGame.height },

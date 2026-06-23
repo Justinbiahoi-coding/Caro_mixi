@@ -1,6 +1,11 @@
 #include "GUI_Game.h"
 #include "Library.h"
 
+// In-game pause / settings overlay (gear button at the top-right of the board)
+static void DrawGearIcon(float cx, float cy, float radius, Color color);
+static void DrawPauseOverlay(const GameState& game, const UIState& ui);
+static void UpdatePauseOverlay(GameState& game, UIState& ui, Vector2 mouse);
+
 // Check whether the move at (row,col) blocks the opponent (oppPlayer).
 // Returns true if:
 //   - It blocks one end of 3 opponent marks in a row (the other end already blocked by edge/our mark)
@@ -26,12 +31,145 @@ static bool CheckBlockVariant(GameState& game, int row, int col, int oppPlayer) 
     return false;
 }
 
+// Draw a gothic gear/cog icon centered at (cx,cy). Teeth are rotated rectangles
+// (always render regardless of vertex winding), with a solid body and a dark hole.
+static void DrawGearIcon(float cx, float cy, float radius, Color color) {
+    const int teeth = 8;
+    float bodyR    = radius * 0.66f;
+    float toothW   = radius * 0.42f;
+    float toothLen = radius * 0.46f;
+    float dInner   = bodyR * 0.80f; // teeth start slightly inside the body
+    for (int i = 0; i < teeth; i++) {
+        float deg = (float)i * (360.0f / teeth);
+        Rectangle r = { cx, cy, toothW, toothLen };
+        Vector2 origin = { toothW * 0.5f, dInner + toothLen };
+        DrawRectanglePro(r, origin, deg, color);
+    }
+    DrawCircle((int)cx, (int)cy, bodyR, color);
+    DrawCircle((int)cx, (int)cy, radius * 0.30f, (Color){ 14, 10, 7, 255 });
+}
+
+// Handle input for the in-game pause overlay (mouse driven). Geometry MUST stay
+// in sync with DrawPauseOverlay below.
+static void UpdatePauseOverlay(GameState& game, UIState& ui, Vector2 mouse) {
+    (void)game;
+    const int panelW = 620, panelH = 520;
+    const int panelX = (1920 - panelW) / 2;
+    const int panelY = (1080 - panelH) / 2;
+
+    const int barWidth = 360, barHeight = 22;
+    const int barX = panelX + (panelW - barWidth) / 2 - 30;
+    const int musicBarY = panelY + 150;
+    const int sfxBarY   = panelY + 240;
+
+    if (VolumeSliderUpdate(ui.musicVolume, ui.draggingVolume, mouse, barX, musicBarY, barWidth, barHeight))
+        SetMusicVolume(ui.bgMusic, ui.musicVolume);
+    if (VolumeSliderUpdate(ui.sfxVolume, ui.draggingSFX, mouse, barX, sfxBarY, barWidth, barHeight))
+        ApplySFXVolume(ui);
+
+    bool dragging = ui.draggingVolume || ui.draggingSFX;
+
+    Rectangle btnToggle = { (float)(panelX + (panelW - 360) / 2), (float)(panelY + 310), 360, 50 };
+    Rectangle btnResume = { (float)(panelX + 40), (float)(panelY + panelH - 90), 250, 56 };
+    Rectangle btnMenu   = { (float)(panelX + panelW - 290), (float)(panelY + panelH - 90), 250, 56 };
+
+    if (!dragging && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (CheckCollisionPointRec(mouse, btnToggle)) {
+            ui.musicEnabled = !ui.musicEnabled;
+            if (ui.musicEnabled) PlayMusicStream(ui.bgMusic);
+            else PauseMusicStream(ui.bgMusic);
+        } else if (CheckCollisionPointRec(mouse, btnResume)) {
+            ui.inGamePaused = false;
+        } else if (CheckCollisionPointRec(mouse, btnMenu)) {
+            ui.inGamePaused = false;
+            ui.currentScreen = 0;
+        }
+    }
+}
+
+// Draw the dim backdrop + settings panel for the in-game pause overlay.
+static void DrawPauseOverlay(const GameState& game, const UIState& ui) {
+    (void)game;
+    Vector2 mouse = GetMousePosition();
+    Color gold  = { 255, 180, 0, 255 };
+    Color stone = { 14, 10, 7, 255 };
+
+    DrawRectangle(0, 0, 1920, 1080, Fade(BLACK, 0.62f));
+
+    const int panelW = 620, panelH = 520;
+    const int panelX = (1920 - panelW) / 2;
+    const int panelY = (1080 - panelH) / 2;
+    Rectangle panel = { (float)panelX, (float)panelY, (float)panelW, (float)panelH };
+
+    DrawRectangleRounded(panel, 0.04f, 8, Fade(stone, 0.96f));
+    DrawRectangleRoundedLines(panel, 0.04f, 8, Fade(gold, 0.85f));
+    DrawRectangleRoundedLines({ panel.x + 5, panel.y + 5, panel.width - 10, panel.height - 10 },
+                              0.04f, 8, Fade(gold, 0.25f));
+
+    const char* title = "PAUSED";
+    int tw = MeasureTextCustomX(ui.mainFont, title, 64);
+    DrawTextCustom(ui.mainFont, title, panelX + (panelW - tw) / 2 + 3, panelY + 33, 64, Fade(BLACK, 0.8f));
+    DrawTextCustom(ui.mainFont, title, panelX + (panelW - tw) / 2,     panelY + 30, 64, gold);
+
+    const int barWidth = 360, barHeight = 22;
+    const int barX = panelX + (panelW - barWidth) / 2 - 30;
+    const int musicBarY = panelY + 150;
+    const int sfxBarY   = panelY + 240;
+
+    DrawTextCustom(ui.mainFont, "Music Volume", barX, musicBarY - 38, 30, LIGHTGRAY);
+    DrawTextCustom(ui.mainFont, "SFX Volume",   barX, sfxBarY - 38, 30, LIGHTGRAY);
+    VolumeSliderDraw(ui.mainFont, barX, musicBarY, barWidth, barHeight, ui.musicVolume, ui.draggingVolume, gold);
+    VolumeSliderDraw(ui.mainFont, barX, sfxBarY,   barWidth, barHeight, ui.sfxVolume,   ui.draggingSFX,   gold);
+
+    auto drawBtn = [&](Rectangle b, const char* label, bool hov) {
+        DrawRectangleRounded(b, 0.3f, 6, hov ? Color{ 120, 70, 10, 240 } : Color{ 10, 10, 10, 205 });
+        DrawRectangleRoundedLines(b, 0.3f, 6, Fade(gold, hov ? 0.9f : 0.4f));
+        int lw = MeasureTextCustomX(ui.mainFont, label, 30);
+        DrawTextCustom(ui.mainFont, label, (int)(b.x + (b.width - lw) / 2),
+                       (int)(b.y + (b.height - 30) / 2), 30, hov ? WHITE : Fade(WHITE, 0.7f));
+    };
+
+    Rectangle btnToggle = { (float)(panelX + (panelW - 360) / 2), (float)(panelY + 310), 360, 50 };
+    Rectangle btnResume = { (float)(panelX + 40), (float)(panelY + panelH - 90), 250, 56 };
+    Rectangle btnMenu   = { (float)(panelX + panelW - 290), (float)(panelY + panelH - 90), 250, 56 };
+
+    char tg[64];
+    snprintf(tg, sizeof(tg), "Music: %s", ui.musicEnabled ? "ON" : "OFF");
+    drawBtn(btnToggle, tg, CheckCollisionPointRec(mouse, btnToggle));
+    drawBtn(btnResume, "Resume",    CheckCollisionPointRec(mouse, btnResume));
+    drawBtn(btnMenu,   "Main Menu", CheckCollisionPointRec(mouse, btnMenu));
+
+    const char* hint = "[ESC] Resume   -   click the gear to toggle";
+    int hw = MeasureTextCustomX(ui.mainFont, hint, 20);
+    DrawTextCustom(ui.mainFont, hint, panelX + (panelW - hw) / 2, panelY + panelH - 26, 20, Fade(WHITE, 0.4f));
+}
+
 void UpdateGUIGame(GameState& game, UIState& ui) {
     float dt = GetFrameTime();
     Vector2 mouse = GetMousePosition();
 
     int p1Asset = HERO_MAP[ui.p1HeroSelection];
     int p2Asset = HERO_MAP[ui.p2HeroSelection];
+
+    // --- IN-GAME PAUSE / SETTINGS OVERLAY ---------------------------------
+    // The gear button is only available during active play (not while a win
+    // animation or the end-game panel is on screen).
+    bool canPause = (game.matchStatus == 0 && !ui.pendingWin &&
+                     !ui.isP1Dying && !ui.isP2Dying);
+    if (!canPause) {
+        ui.inGamePaused = false; // never linger in pause once the round resolves
+    } else {
+        Vector2 gearCenter = { 1850.0f, 56.0f };
+        bool gearClicked = CheckCollisionPointCircle(mouse, gearCenter, 34.0f) &&
+                           IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+        if (gearClicked || IsKeyPressed(KEY_ESCAPE)) {
+            ui.inGamePaused = !ui.inGamePaused;
+        }
+    }
+    if (ui.inGamePaused) {
+        UpdatePauseOverlay(game, ui, mouse);
+        return; // freeze the match while the overlay is open
+    }
 
     // Helper: get active attack anim by variant
     auto getAtk = [&](int asset, int variant) -> CharAnim& {
@@ -225,8 +363,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                         getAtk(p2Asset, 2).currentFrame = 0;
                         getAtk(p2Asset, 2).frameTimer = 0.0f;
                         
-                        PlaySound(ui.heroAttackSound[p1Asset]);
-                        PlaySound(ui.heroAttackSound[p2Asset]);
+                        PlaySound(ui.heroAttackSound[p1Asset][2]); // both play the win (s3) sound
+                        PlaySound(ui.heroAttackSound[p2Asset][2]);
                     }
                 } else {
                     // Check whether this move blocks the opponent (using the placed row/col)
@@ -241,13 +379,13 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                         ui.p1AttackVariant = variant;
                         getAtk(p1Asset, variant).currentFrame = 0;
                         getAtk(p1Asset, variant).frameTimer = 0.0f;
-                        PlaySound(ui.heroAttackSound[p1Asset]); // P1 attack sound effect
+                        PlaySound(ui.heroAttackSound[p1Asset][variant]); // P1: s1/s2/s3 by variant
                     } else {
                         ui.isP2Attacking = true;
                         ui.p2AttackVariant = variant;
                         getAtk(p2Asset, variant).currentFrame = 0;
                         getAtk(p2Asset, variant).frameTimer = 0.0f;
-                        PlaySound(ui.heroAttackSound[p2Asset]); // P2 attack sound effect
+                        PlaySound(ui.heroAttackSound[p2Asset][variant]); // P2: s1/s2/s3 by variant
                     }
                 }
 
@@ -313,8 +451,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
     }
 
     // Cell effects are reset on a new round (ResetRound is called on confirm)
-    // SHORTCUTS
-    if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0;
+    // SHORTCUTS  (ESC now toggles the in-game pause overlay, handled above)
+    if (IsKeyPressed(KEY_M)) ui.currentScreen = 0;
     if (IsKeyPressed(KEY_L)) {
         ui.currentScreen = 6; 
         ui.nameInput[0] = '\0'; 
@@ -369,8 +507,35 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     DrawRectangleGradientV(0, (int)(boardBot + 40), 1920, 60, {0,0,0,0}, {0,0,0,80});
 
 
-    Rectangle frameSrc = { 0, 0, (float)ui.boardFrame.width, (float)ui.boardFrame.height };
-    DrawTexturePro(ui.boardFrame, frameSrc, ui.boardFrameRec, {0, 0}, 0.0f, WHITE);
+    // BOARD FRAME, code-drawn: dark semi-transparent stone + thin gold border
+    {
+        Rectangle fr = ui.boardFrameRec;
+        float bt = (float)GetTime();
+        float bpulse = 0.5f + 0.5f * sinf(bt * 2.0f);
+        Color boardGold = { 255, 180, 0, 255 }; // Gothic Gold
+
+        // Dark stone surface, kept translucent so the battlefield shows faintly through
+        DrawRectangleRounded(fr, 0.02f, 8, Fade(Color{ 14, 10, 7, 255 }, 0.82f));
+        // Soft inner shade to give depth toward the edges
+        DrawRectangleGradientV((int)fr.x, (int)fr.y, (int)fr.width, (int)(fr.height * 0.5f),
+            Fade(BLACK, 0.25f), Fade(BLACK, 0.0f));
+
+        // Thin double gold border
+        DrawRectangleRoundedLines(fr, 0.02f, 8, Fade(boardGold, 0.85f));
+        DrawRectangleRoundedLines({ fr.x + 5, fr.y + 5, fr.width - 10, fr.height - 10 }, 0.02f, 8, Fade(boardGold, 0.22f));
+
+        // Small gold corner diamonds, subtle gothic accent (pulses gently)
+        auto BoardCorner = [&](float cx, float cy) {
+            float s = 11.0f;
+            Color c = Fade(boardGold, 0.55f + 0.25f * bpulse);
+            DrawTriangle({ cx - s, cy }, { cx, cy + s }, { cx + s, cy }, c);
+            DrawTriangle({ cx - s, cy }, { cx + s, cy }, { cx, cy - s }, c);
+        };
+        BoardCorner(fr.x, fr.y);
+        BoardCorner(fr.x + fr.width, fr.y);
+        BoardCorner(fr.x, fr.y + fr.height);
+        BoardCorner(fr.x + fr.width, fr.y + fr.height);
+    }
 
     Vector2 mousePos = GetMousePosition();
     
@@ -380,16 +545,22 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             float x = ui.cellStartX + j * ui.cellSize;
             float y = ui.cellStartY + i * ui.cellSize;
             Rectangle cellRect = { x, y, ui.cellSize, ui.cellSize };
-            Color cellTint = WHITE; 
 
+            // Is this cell hovered (mouse) or under the keyboard cursor?
+            bool hovered = false;
             if (game.inputType == 0 && CheckCollisionPointRec(mousePos, cellRect) && game.board[i][j].c == 0) {
-                cellTint = LIGHTGRAY; 
+                hovered = true;
             } else if (game.inputType == 1 && i == game.cursorRow && j == game.cursorCol) {
-                cellTint = LIGHTGRAY; 
+                hovered = true;
             }
 
-            Rectangle sourceCell = { 0, 0, (float)ui.cell.width, (float)ui.cell.height };
-            DrawTexturePro(ui.cell, sourceCell, cellRect, {0, 0}, 0.0f, cellTint);
+            // Cell with a thin gold border; brighten the fill on hover/cursor
+            Color cellBorder = { 255, 180, 0, 60 };
+            if (hovered) {
+                DrawRectangleRec(cellRect, Fade(Color{ 255, 200, 80, 255 }, 0.22f));
+                cellBorder = Color{ 255, 200, 80, 200 };
+            }
+            DrawRectangleLinesEx(cellRect, 1.0f, cellBorder);
 
             if (game.board[i][j].c == 1 || game.board[i][j].c == 2) {
                 int owner = game.board[i][j].c;
@@ -1103,4 +1274,17 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 Fade({180, 155, 80, 255}, 0.50f));
         }
     }
+
+    // GEAR BUTTON (top-right) — only while the match is actively in progress
+    if (game.matchStatus == 0 && !ui.pendingWin && !ui.isP1Dying && !ui.isP2Dying) {
+        Vector2 gearCenter = { 1850.0f, 56.0f };
+        bool hov = ui.inGamePaused || CheckCollisionPointCircle(GetMousePosition(), gearCenter, 34.0f);
+        Color gold = { 255, 180, 0, 255 };
+        DrawCircle((int)gearCenter.x, (int)gearCenter.y, 30.0f, Fade(BLACK, 0.45f));
+        DrawCircleLines((int)gearCenter.x, (int)gearCenter.y, 30.0f, Fade(gold, hov ? 0.9f : 0.5f));
+        DrawGearIcon(gearCenter.x, gearCenter.y, hov ? 19.5f : 18.0f, Fade(gold, hov ? 1.0f : 0.8f));
+    }
+
+    // PAUSE OVERLAY — drawn on top of everything when open
+    if (ui.inGamePaused) DrawPauseOverlay(game, ui);
 }
