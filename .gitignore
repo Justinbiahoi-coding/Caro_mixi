@@ -9,3 +9,6 @@ build/
 
 # macOS junk
 .DS_Store
+
+# Raw character asset packs (frames are stitched into assets/Character/ instead)
+Elementals_*/

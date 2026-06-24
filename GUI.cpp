@@ -100,6 +100,24 @@ void InitGUI(UIState& ui) {
     ui.heroDrawSize[5] = { 1200.0f, 700.0f };
     ui.heroDrawOffset[5] = { -400.0f, -350.0f };
 
+    // Hero 6: crystal_mauler (frames stitched from the Elementals free pack, 288x128)
+    ui.heroIdle[6]    = LoadCharAnim("assets/Character/crystal_mauler/idle.png",      8,  0.12f);
+    ui.heroAttack[6]  = LoadCharAnim("assets/Character/crystal_mauler/attack_s1.png", 7,  0.08f);
+    ui.heroAttack2[6] = LoadCharAnim("assets/Character/crystal_mauler/attack_s2.png", 17, 0.07f);
+    ui.heroAttack3[6] = LoadCharAnim("assets/Character/crystal_mauler/attack_s3.png", 15, 0.06f);
+    ui.heroDeath[6]   = LoadCharAnim("assets/Character/crystal_mauler/death.png",     15, 0.10f);
+    ui.heroDrawSize[6] = { 1800.0f, 800.0f };   // character sits small/bottom-center in frame, so draw bigger
+    ui.heroDrawOffset[6] = { -640.0f, -360.0f }; // TODO: fine-tune position in-game
+
+    // Hero 7: ground_monk (Elementals free pack, 288x128 frames)
+    ui.heroIdle[7]    = LoadCharAnim("assets/Character/ground_monk/idle.png",      6,  0.13f);
+    ui.heroAttack[7]  = LoadCharAnim("assets/Character/ground_monk/attack_s1.png", 12, 0.07f);
+    ui.heroAttack2[7] = LoadCharAnim("assets/Character/ground_monk/attack_s2.png", 23, 0.06f);
+    ui.heroAttack3[7] = LoadCharAnim("assets/Character/ground_monk/attack_s3.png", 25, 0.06f);
+    ui.heroDeath[7]   = LoadCharAnim("assets/Character/ground_monk/death.png",     18, 0.10f);
+    ui.heroDrawSize[7] = { 1800.0f, 800.0f };    // same framing as crystal_mauler
+    ui.heroDrawOffset[7] = { -640.0f, -360.0f };
+
     // Load attack effects (sprite sheet shown when placing a piece)
     // black_knight has no effect, use its icon instead
     ui.heroEffect[0] = LoadTexture("assets/Character/black_knight/attack_icon.png");
@@ -114,6 +132,10 @@ void InitGUI(UIState& ui) {
     ui.heroEffectFrames[4] = 11;
     ui.heroEffect[5] = LoadTexture("assets/Character/water_mage/attack_effect.png");
     ui.heroEffectFrames[5] = 10;
+    ui.heroEffect[6] = LoadTexture("assets/Character/crystal_mauler/attack_effect.png"); // borrowed from water_mage
+    ui.heroEffectFrames[6] = 10;
+    ui.heroEffect[7] = LoadTexture("assets/Character/ground_monk/attack_effect.png"); // borrowed from metal_blade
+    ui.heroEffectFrames[7] = 11;
 
     ui.cellEffectCount = 0;
 
@@ -124,6 +146,8 @@ void InitGUI(UIState& ui) {
     ui.heroIcon[3] = LoadTexture("assets/Character/wind_assassin/attack_icon.png");
     ui.heroIcon[4] = LoadTexture("assets/Character/metal_blade/attack_icon.png");
     ui.heroIcon[5] = LoadTexture("assets/Character/water_mage/attack_icon.png");
+    ui.heroIcon[6] = LoadTexture("assets/Character/crystal_mauler/attack_icon.png");
+    ui.heroIcon[7] = LoadTexture("assets/Character/ground_monk/attack_icon.png");
 
     ui.isP1Attacking = false;
     ui.isP2Attacking = false;
@@ -165,15 +189,15 @@ void InitGUI(UIState& ui) {
     // because LoadSoundFromWave needs the audio device ready to build the buffer
     for (int v = 0; v < 3; v++) ui.heroAttackSound[0][v] = Sound{}; // black_knight has no sound files
     {
-        // Asset index 1-5; order MUST match HERO_MAP
-        const char* heroDirs[5] = {
-            "fire_knight", "green_archer", "wind_assassin", "metal_blade", "water_mage"
+        // Asset index 1-6; order MUST match HERO_MAP
+        const char* heroDirs[7] = {
+            "fire_knight", "green_archer", "wind_assassin", "metal_blade", "water_mage", "crystal_mauler", "ground_monk"
         };
         // One sound per attack variant: 0=normal(s1), 1=block(s2), 2=win(s3)
         const char* variantFile[3] = {
             "attack_sound.wav", "attack_sound_s2.wav", "attack_sound_s3.wav"
         };
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             for (int v = 0; v < 3; v++) {
                 char path[160];
                 snprintf(path, sizeof(path), "assets/Character/%s/%s", heroDirs[i], variantFile[v]);
@@ -240,7 +264,7 @@ void UnloadGUI(UIState& ui) {
     UnloadFont(ui.mainFont);
 
     // Unload all hero animations, icons and effects
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 8; i++) {
         UnloadCharAnim(ui.heroIdle[i]);
         UnloadCharAnim(ui.heroAttack[i]);
         UnloadCharAnim(ui.heroAttack2[i]);

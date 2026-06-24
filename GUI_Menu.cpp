@@ -60,12 +60,6 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         if (IsKeyPressed(KEY_ENTER)) confirmSelection = true;
 
         if (confirmSelection) {
-            const char* helpText[] = {
-                "CARO BATTLE - LUAT CHOI",
-                "- Hai ben luan phien danh X va O.",
-                "- Ben nao co 5 quan lien tiep se thang.",
-                "- Chuc ban choi vui ve!"
-            };        
             switch (ui.menuSelection) {
                 case 0: { 
                     ui.currentScreen = 8; 
@@ -332,9 +326,9 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         if (IsKeyPressed(KEY_ESCAPE)) ui.currentScreen = 0; 
     }
     else if (ui.currentScreen == 8) {
-        // Animate all hero idle sprites (indices 0-5)
+        // Animate all hero idle sprites (indices 0-7)
         float dt8 = GetFrameTime();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 8; i++) {
             CharAnim& anim = ui.heroIdle[i];
             if (anim.frameCount <= 0) continue;
             anim.frameTimer += dt8;
@@ -344,9 +338,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
         }
 
-        const int MAX_HEROES = 5; // black_knight hidden (index 0 reserved)
-        // Maps selection index (0,1,2,3,4) → asset index (1,2,3,4,5) skipping black_knight
-        const int heroMap[5] = {1, 2, 3, 4, 5};
+        const int MAX_HEROES = 7; // black_knight hidden (index 0 reserved)
 
         if (ui.selectionPhase == -1) {
             // Chon che do choi: VS Player hoac VS Bot hoac Bot vs Bot
@@ -365,8 +357,8 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (IsKeyPressed(KEY_ENTER)) {
                 if (game.isBotVsBot) {
                     // Bot vs Bot: skip name input, randomize bot hero and start the game
-                    const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
-                    int botIdx = rand() % 4;
+                    const char* heroNamesUpd[7] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage", "Crystal Mauler", "Ground Monk"};
+                    int botIdx = rand() % 6;
                     if (botIdx >= ui.p1HeroSelection) botIdx++;
                     ui.p2HeroSelection = botIdx;
 
@@ -407,10 +399,10 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 0;
             else if (IsKeyPressed(KEY_ENTER)) {
                 // Hero names (same order as heroMap: asset 1-5)
-                const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
+                const char* heroNamesUpd[7] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage", "Crystal Mauler", "Ground Monk"};
                 if (game.isVsBot || game.isBotVsBot) {
-                    // Random bot hero: pick from 0-4 excluding p1HeroSelection
-                    int botIdx = rand() % 4; // 4 remaining choices
+                    // Random bot hero: pick from 0-6 excluding p1HeroSelection
+                    int botIdx = rand() % 6; // 6 remaining choices
                     if (botIdx >= ui.p1HeroSelection) botIdx++; // skip p1's slot
                     ui.p2HeroSelection = botIdx;
 
@@ -477,7 +469,7 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
             }
             if (IsKeyPressed(KEY_ESCAPE)) ui.selectionPhase = 2;
             else if (IsKeyPressed(KEY_ENTER)) {
-                const char* heroNamesUpd[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
+                const char* heroNamesUpd[7] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage", "Crystal Mauler", "Ground Monk"};
                 int savedInput = game.inputType;
                 InitGame(game);
                 game.inputType = savedInput;
@@ -502,10 +494,10 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
 
         // ── Update char select particles ──
         {
-            const float cardW   = 320.0f;
+            const float cardW   = 250.0f;
             const float cardH   = 510.0f;
-            const float cardGap = 24.0f;
-            const float totalCW = 5*cardW + 4*cardGap;
+            const float cardGap = 12.0f;
+            const float totalCW = 7*cardW + 6*cardGap;
             const float cardStartX = (1920.0f - totalCW) / 2.0f;
             const float cardY      = 310.0f;
             int curSel = (ui.selectionPhase <= 1) ? ui.p1HeroSelection : ui.p2HeroSelection;
@@ -616,9 +608,6 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         const float menuBlockX = 1500.0f;
         const float btnWidth   = 800.0f;
         const float btnHeight  = 80.0f;
-        const float startY2    = 350.0f;
-        const float gap2       = btnHeight + 35.0f;
-        float targetY = startY2 + ui.menuSelection * gap2;
 
         // Highlight bar, many thin layers stacked for a blur/glow feel
         float hy = ui.menuScrollY + btnHeight / 2.0f; // vertical center of the item
@@ -1544,7 +1533,6 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         float gp8b = 0.5f + 0.5f * sinf(t8 * 1.3f + 1.0f);
 
         Color gothicGold  = {255, 180,   0, 255};
-        Color accentDim   = {160, 110,   0, 255};
         Color redAccent   = {200,  60,  30, 255};
         Color silverColor = {220, 210, 195, 255};
         Color dimColor    = {150, 130, 100, 255};
@@ -1553,9 +1541,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         Color p2Color     = {100, 160, 255, 255};
 
         // ── Hero names (3 active heroes, black_knight hidden) ──
-        const char* heroNames[5] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage"};
+        const char* heroNames[7] = {"Fire Knight", "Green Archer", "Earth Assassin", "Metal Blade", "Water Mage", "Crystal Mauler", "Ground Monk"};
         // Maps selection index (0,1,2,3,4) → asset index (1,2,3,4,5)
-        const int heroMap[5] = {1, 2, 3, 4, 5};
+        const int heroMap[7] = {1, 2, 3, 4, 5, 6, 7};
 
         // ── Ornate helpers ──
         auto DD8 = [](float cx, float cy, float w, float h, Color col) {
@@ -1608,10 +1596,10 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         }
 
         // 5 hero card slots, evenly spaced horizontally
-        const float cardW   = 320.0f;
+        const float cardW   = 250.0f;
         const float cardH   = 510.0f;
-        const float cardGap = 24.0f;
-        const float totalCW = 5*cardW + 4*cardGap;
+        const float cardGap = 12.0f;
+        const float totalCW = 7*cardW + 6*cardGap;
         const float cardStartX = (1920.0f - totalCW) / 2.0f;
         const float cardY   = 310.0f;
 
@@ -1620,20 +1608,22 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         bool isP1turn = (ui.selectionPhase == 0 || ui.selectionPhase == 1);
 
         // Per-hero color theme (index 0=fire, 1=archer, 2=assassin, 3=metal_blade, 4=water_mage)
-        Color heroTheme[5] = {
+        Color heroTheme[7] = {
             {220,  70,  20, 255},  // fire_knight    — red-orange
             { 40, 170, 110, 255},  // green_archer   — teal-green
             {180, 160,  60, 255},  // earth_assassin - gold (former metal_blade)
             {180, 185, 195, 255},  // metal_blade    - steel silver/grey
             { 30, 160, 220, 255},  // water_mage     — sky blue
+            {150, 120, 235, 255},  // crystal_mauler — crystal violet
+            {170, 120,  60, 255},  // ground_monk    — earth brown
         };
 
-        // Hero bottom-pixel anchors — all 5 heroes use 126px
-        struct HeroBot { float bottomPx; } bots[5] = {
-            {126.0f}, {126.0f}, {126.0f}, {126.0f}, {126.0f},
+        // Hero bottom-pixel anchors — all heroes use 126px
+        struct HeroBot { float bottomPx; } bots[7] = {
+            {126.0f}, {126.0f}, {126.0f}, {126.0f}, {126.0f}, {126.0f}, {126.0f},
         };
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 7; i++) {
             int assetID = heroMap[i]; // translate to asset index
             float cx = cardStartX + i*(cardW+cardGap);
             bool isSelected = (curSel == i);

@@ -66,14 +66,14 @@ struct UIState {
 
     Font mainFont;
 
-    CharAnim heroIdle[6];        // Idle animations for 6 heroes (0=black_knight hidden, 1-5 active)
-    CharAnim heroAttack[6];      // attack_s1
-    CharAnim heroAttack2[6];     // attack_s2
-    CharAnim heroAttack3[6];     // attack_s3
-    CharAnim heroDeath[6];       // death animation
-    Texture2D heroIcon[6];       // attack_icon, used as the board piece
-    Vector2 heroDrawSize[6];
-    Vector2 heroDrawOffset[6];
+    CharAnim heroIdle[8];        // Idle animations (index 0=black_knight hidden, 1-7 active)
+    CharAnim heroAttack[8];      // attack_s1
+    CharAnim heroAttack2[8];     // attack_s2
+    CharAnim heroAttack3[8];     // attack_s3
+    CharAnim heroDeath[8];       // death animation
+    Texture2D heroIcon[8];       // attack_icon, used as the board piece
+    Vector2 heroDrawSize[8];
+    Vector2 heroDrawOffset[8];
     // Legacy support
     CharAnim& charP1 = heroIdle[0];
     CharAnim& charP2 = heroIdle[1];
@@ -92,9 +92,9 @@ struct UIState {
     float winScreenTimer;   // time since win screen appeared (for scale-in)
 
     // Attack effect on a board cell
-    Texture2D heroEffect[6];   // attack_effect sprite sheet
-    int heroEffectFrames[6];   // frame count per hero
-    Sound heroAttackSound[6][3];  // [hero][variant] 0=normal(s1) 1=block(s2) 2=win(s3)
+    Texture2D heroEffect[8];   // attack_effect sprite sheet
+    int heroEffectFrames[8];   // frame count per hero
+    Sound heroAttackSound[8][3];  // [hero][variant] 0=normal(s1) 1=block(s2) 2=win(s3)
 
     struct CellEffect {
         int row, col;
@@ -116,6 +116,7 @@ struct UIState {
     float sfxVolume = 0.8f;     // volume for hero attack sound effects (0.0 - 1.0)
     bool draggingSFX = false;   // true while the SFX volume slider is being dragged
     bool inGamePaused = false;  // true when the in-game gear/pause settings overlay is open
+    int  pauseSelection = 0;    // focused control in the pause overlay: 0=Music 1=SFX 2=Toggle 3=Resume 4=Menu
 
     // Menu particles
     struct Ember {
@@ -148,7 +149,7 @@ struct UIState {
 };
 
 // Maps selection index (0-4) → asset index (1-5), black_knight hidden at index 0
-static const int HERO_MAP[5] = {1, 2, 3, 4, 5};
+static const int HERO_MAP[7] = {1, 2, 3, 4, 5, 6, 7};
 
 void InitGUI(UIState& ui);
 void UnloadGUI(UIState& ui);
@@ -208,7 +209,7 @@ inline void UnloadCharAnim(CharAnim& c) {
 // heroAttackSound[0] (black_knight) is never loaded, so start at index 1.
 // Call this once after sounds are loaded, and whenever ui.sfxVolume changes.
 inline void ApplySFXVolume(UIState& ui) {
-    for (int i = 1; i < 6; i++) {
+    for (int i = 1; i < 8; i++) {
         for (int v = 0; v < 3; v++) {
             SetSoundVolume(ui.heroAttackSound[i][v], ui.sfxVolume);
         }

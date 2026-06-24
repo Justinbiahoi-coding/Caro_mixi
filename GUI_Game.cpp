@@ -49,8 +49,9 @@ static void DrawGearIcon(float cx, float cy, float radius, Color color) {
     DrawCircle((int)cx, (int)cy, radius * 0.30f, (Color){ 14, 10, 7, 255 });
 }
 
-// Handle input for the in-game pause overlay (mouse driven). Geometry MUST stay
-// in sync with DrawPauseOverlay below.
+// Handle input for the in-game pause overlay (mouse + keyboard). Geometry MUST
+// stay in sync with DrawPauseOverlay below.
+// Focus order (ui.pauseSelection): 0=Music 1=SFX 2=Toggle 3=Resume 4=Menu.
 static void UpdatePauseOverlay(GameState& game, UIState& ui, Vector2 mouse) {
     (void)game;
     const int panelW = 620, panelH = 520;
@@ -62,29 +63,74 @@ static void UpdatePauseOverlay(GameState& game, UIState& ui, Vector2 mouse) {
     const int musicBarY = panelY + 150;
     const int sfxBarY   = panelY + 240;
 
+    Rectangle btnToggle = { (float)(panelX + (panelW - 360) / 2), (float)(panelY + 310), 360, 50 };
+    Rectangle btnResume = { (float)(panelX + 40), (float)(panelY + panelH - 90), 250, 56 };
+    Rectangle btnMenu   = { (float)(panelX + panelW - 290), (float)(panelY + panelH - 90), 250, 56 };
+
+    const int PAUSE_ITEMS = 5;
+
+    // Hovering a control focuses it — but only when the mouse actually moves, so a
+    // parked cursor doesn't fight the keyboard.
+    Vector2 md = GetMouseDelta();
+    if (md.x != 0.0f || md.y != 0.0f) {
+        Rectangle musicHit = { (float)barX - 20, (float)musicBarY - 20, (float)barWidth + 40, (float)barHeight + 40 };
+        Rectangle sfxHit   = { (float)barX - 20, (float)sfxBarY   - 20, (float)barWidth + 40, (float)barHeight + 40 };
+        if      (CheckCollisionPointRec(mouse, musicHit))  ui.pauseSelection = 0;
+        else if (CheckCollisionPointRec(mouse, sfxHit))    ui.pauseSelection = 1;
+        else if (CheckCollisionPointRec(mouse, btnToggle)) ui.pauseSelection = 2;
+        else if (CheckCollisionPointRec(mouse, btnResume)) ui.pauseSelection = 3;
+        else if (CheckCollisionPointRec(mouse, btnMenu))   ui.pauseSelection = 4;
+    }
+
+    // Move focus with W/S (or arrows)
+    if (IsKeyPressed(KEY_W) || IsKeyPressed(KEY_UP))
+        ui.pauseSelection = (ui.pauseSelection - 1 + PAUSE_ITEMS) % PAUSE_ITEMS;
+    if (IsKeyPressed(KEY_S) || IsKeyPressed(KEY_DOWN))
+        ui.pauseSelection = (ui.pauseSelection + 1) % PAUSE_ITEMS;
+
+    // Sliders: mouse drag
     if (VolumeSliderUpdate(ui.musicVolume, ui.draggingVolume, mouse, barX, musicBarY, barWidth, barHeight))
         SetMusicVolume(ui.bgMusic, ui.musicVolume);
     if (VolumeSliderUpdate(ui.sfxVolume, ui.draggingSFX, mouse, barX, sfxBarY, barWidth, barHeight))
         ApplySFXVolume(ui);
 
+    // Sliders: A/D (or Left/Right) adjusts the focused slider smoothly
+    if (ui.pauseSelection == 0 || ui.pauseSelection == 1) {
+        float step = 0.0f;
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))  step -= 0.6f * GetFrameTime();
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) step += 0.6f * GetFrameTime();
+        if (step != 0.0f) {
+            float& v = (ui.pauseSelection == 0) ? ui.musicVolume : ui.sfxVolume;
+            v += step;
+            v = (v < 0.0f) ? 0.0f : (v > 1.0f ? 1.0f : v);
+            if (ui.pauseSelection == 0) SetMusicVolume(ui.bgMusic, ui.musicVolume);
+            else ApplySFXVolume(ui);
+        }
+    }
+
     bool dragging = ui.draggingVolume || ui.draggingSFX;
 
-    Rectangle btnToggle = { (float)(panelX + (panelW - 360) / 2), (float)(panelY + 310), 360, 50 };
-    Rectangle btnResume = { (float)(panelX + 40), (float)(panelY + panelH - 90), 250, 56 };
-    Rectangle btnMenu   = { (float)(panelX + panelW - 290), (float)(panelY + panelH - 90), 250, 56 };
-
-    if (!dragging && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        if (CheckCollisionPointRec(mouse, btnToggle)) {
+    auto activate = [&](int which) {
+        if (which == 2) {
             ui.musicEnabled = !ui.musicEnabled;
             if (ui.musicEnabled) PlayMusicStream(ui.bgMusic);
             else PauseMusicStream(ui.bgMusic);
-        } else if (CheckCollisionPointRec(mouse, btnResume)) {
+        } else if (which == 3) {
             ui.inGamePaused = false;
-        } else if (CheckCollisionPointRec(mouse, btnMenu)) {
+        } else if (which == 4) {
             ui.inGamePaused = false;
             ui.currentScreen = 0;
         }
+    };
+
+    // Activate via mouse click or Enter on the focused button (2/3/4)
+    if (!dragging && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if (CheckCollisionPointRec(mouse, btnToggle))      activate(2);
+        else if (CheckCollisionPointRec(mouse, btnResume)) activate(3);
+        else if (CheckCollisionPointRec(mouse, btnMenu))   activate(4);
     }
+    if (IsKeyPressed(KEY_ENTER) && ui.pauseSelection >= 2)
+        activate(ui.pauseSelection);
 }
 
 // Draw the dim backdrop + settings panel for the in-game pause overlay.
@@ -116,10 +162,10 @@ static void DrawPauseOverlay(const GameState& game, const UIState& ui) {
     const int musicBarY = panelY + 150;
     const int sfxBarY   = panelY + 240;
 
-    DrawTextCustom(ui.mainFont, "Music Volume", barX, musicBarY - 38, 30, LIGHTGRAY);
-    DrawTextCustom(ui.mainFont, "SFX Volume",   barX, sfxBarY - 38, 30, LIGHTGRAY);
-    VolumeSliderDraw(ui.mainFont, barX, musicBarY, barWidth, barHeight, ui.musicVolume, ui.draggingVolume, gold);
-    VolumeSliderDraw(ui.mainFont, barX, sfxBarY,   barWidth, barHeight, ui.sfxVolume,   ui.draggingSFX,   gold);
+    DrawTextCustom(ui.mainFont, "Music Volume", barX, musicBarY - 38, 30, ui.pauseSelection == 0 ? gold : LIGHTGRAY);
+    DrawTextCustom(ui.mainFont, "SFX Volume",   barX, sfxBarY - 38, 30,   ui.pauseSelection == 1 ? gold : LIGHTGRAY);
+    VolumeSliderDraw(ui.mainFont, barX, musicBarY, barWidth, barHeight, ui.musicVolume, ui.draggingVolume || ui.pauseSelection == 0, gold);
+    VolumeSliderDraw(ui.mainFont, barX, sfxBarY,   barWidth, barHeight, ui.sfxVolume,   ui.draggingSFX   || ui.pauseSelection == 1, gold);
 
     auto drawBtn = [&](Rectangle b, const char* label, bool hov) {
         DrawRectangleRounded(b, 0.3f, 6, hov ? Color{ 120, 70, 10, 240 } : Color{ 10, 10, 10, 205 });
@@ -135,11 +181,11 @@ static void DrawPauseOverlay(const GameState& game, const UIState& ui) {
 
     char tg[64];
     snprintf(tg, sizeof(tg), "Music: %s", ui.musicEnabled ? "ON" : "OFF");
-    drawBtn(btnToggle, tg, CheckCollisionPointRec(mouse, btnToggle));
-    drawBtn(btnResume, "Resume",    CheckCollisionPointRec(mouse, btnResume));
-    drawBtn(btnMenu,   "Main Menu", CheckCollisionPointRec(mouse, btnMenu));
+    drawBtn(btnToggle, tg,          CheckCollisionPointRec(mouse, btnToggle) || ui.pauseSelection == 2);
+    drawBtn(btnResume, "Resume",    CheckCollisionPointRec(mouse, btnResume) || ui.pauseSelection == 3);
+    drawBtn(btnMenu,   "Main Menu", CheckCollisionPointRec(mouse, btnMenu)   || ui.pauseSelection == 4);
 
-    const char* hint = "[ESC] Resume   -   click the gear to toggle";
+    const char* hint = "[W/S] Select   [A/D] Adjust   [Enter] Choose   [ESC] Resume";
     int hw = MeasureTextCustomX(ui.mainFont, hint, 20);
     DrawTextCustom(ui.mainFont, hint, panelX + (panelW - hw) / 2, panelY + panelH - 26, 20, Fade(WHITE, 0.4f));
 }
@@ -164,6 +210,7 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
                            IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
         if (gearClicked || IsKeyPressed(KEY_ESCAPE)) {
             ui.inGamePaused = !ui.inGamePaused;
+            if (ui.inGamePaused) ui.pauseSelection = 0; // start focus on Music slider
         }
     }
     if (ui.inGamePaused) {
@@ -336,12 +383,8 @@ void UpdateGUIGame(GameState& game, UIState& ui) {
 
             // --- 3. TRIGGER ATTACK ANIMATION ON A SUCCESSFUL MOVE ---
             if (moveMade) {
-                int lastRow = -1, lastCol = -1;
-                // Find the cell just placed (value wasP1 ? 1 : 2)
-                // We already know row/col from input, saved before MakeMove
-                // see moveRow/moveCol set above
+                // moveRow/moveCol were saved before MakeMove above
                 int variant = 0; // default attack_s1
-                int myPlayer = wasP1 ? 1 : 2;
                 int oppPlayer = wasP1 ? 2 : 1;
 
                 // Check win: matchStatus != 0 means this move won
@@ -655,7 +698,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             int lW = MeasureTextCustomX(ui.mainFont, "L", 24);
             int lH = MeasureTextCustomY(ui.mainFont, "L", 24);
             DrawTextCustom(ui.mainFont, "L",    (int)(badX + 17 - lW * 0.5f), (int)(badY + (34 - lH) * 0.5f), 24, keyCol);
-            int svW = MeasureTextCustomX(ui.mainFont, "Save", 26);
             int svH = MeasureTextCustomY(ui.mainFont, "Save", 26);
             DrawTextCustom(ui.mainFont, "Save", (int)(badX + 42), (int)(badY + (34 - svH) * 0.5f), 26, labelCol);
         }
@@ -671,7 +713,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             int escW = MeasureTextCustomX(ui.mainFont, "ESC", 22);
             int escH = MeasureTextCustomY(ui.mainFont, "ESC", 22);
             DrawTextCustom(ui.mainFont, "ESC",  (int)(badX + 28 - escW * 0.5f), (int)(badY + (34 - escH) * 0.5f), 22, keyCol);
-            int mnW = MeasureTextCustomX(ui.mainFont, "Menu", 26);
             int mnH = MeasureTextCustomY(ui.mainFont, "Menu", 26);
             DrawTextCustom(ui.mainFont, "Menu", (int)(badX + 64), (int)(badY + (34 - mnH) * 0.5f), 26, labelCol);
         }
@@ -698,7 +739,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
             // Small "TURN" label, centered horizontally, on top
             const char* lbl = "TURN";
             int lblW = MeasureTextCustomX(ui.mainFont, lbl, 16);
-            int lblH = MeasureTextCustomY(ui.mainFont, lbl, 16);
             DrawTextCustom(ui.mainFont, lbl,
                 (int)(midX - lblW * 0.5f), (int)(by + 8), 16, {160, 130, 65, 155});
 
@@ -707,7 +747,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
                 ? Color{255, 210, 80, 255}
                 : Color{130, 195, 255, 255};
             int tnFontSz  = 32;
-            int tnH       = MeasureTextCustomY(ui.mainFont, turnName, tnFontSz);
             float nameY   = by + 28.0f;  // per the fixed vertical layout
             int tnW       = MeasureTextCustomX(ui.mainFont, turnName, tnFontSz);
             float nameClipPad = 12.0f;
@@ -743,7 +782,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     }
 
     float glowT = (float)GetTime();
-    float glowAlpha = 0.55f + 0.45f * sinf(glowT * 4.0f);
 
     // Theme color per hero (asset index 1-5)
     const Color heroThemeColors[6] = {
@@ -764,7 +802,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     // clipPadH = horizontal padding (px each side), scroll speed = 55px/s
     auto DrawBadgeName = [&](const char* name, float bx, float by, float bw, float bh2, int fSize, Color col) {
         int tW = MeasureTextCustomX(ui.mainFont, name, fSize);
-        int tH = MeasureTextCustomY(ui.mainFont, name, fSize);
         float clipPad = 18.0f;
         float clipW   = bw - clipPad * 2.0f;   // visible text area
         float clipX   = bx + clipPad;
@@ -854,7 +891,6 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
         float botRy = 29.0f;   // 22 * 1.3
         float pH    = 44.0f;   // a bit taller for balance
         float topY  = fy - pH;
-        float pRx = topRx, pRy = topRy;
 
         // Pedestal side color: stone-like, lightly tinted with the theme color
         unsigned char sr = (unsigned char)((int)c.r * 30 / 100 + 55);
@@ -1031,12 +1067,10 @@ void DrawGUIGame(const GameState& game, const UIState& ui) {
     if (game.matchStatus != 0) {
         float t      = (float)GetTime();
         float pulse  = 0.5f + 0.5f * sinf(t * 3.0f);
-        float pulse2 = 0.5f + 0.5f * sinf(t * 1.8f + 0.7f);
         float wt     = ui.winScreenTimer; // time since the win screen appeared
 
         bool isDraw    = (game.matchStatus == 3);
         int  winPlayer = game.matchStatus;
-        int  loserPlayer = (winPlayer == 1) ? 2 : 1;
         float winnerAnchorX = (winPlayer == 1) ? 230.0f  : 1690.0f;
         float loserAnchorX  = (winPlayer == 1) ? 1690.0f : 230.0f;
         float winnerBadgeX  = winnerAnchorX;
