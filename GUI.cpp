@@ -37,6 +37,7 @@ void InitGUI(UIState& ui) {
     ui.bgSelect = LoadTexture("assets/menu/bg_select.png");
     ui.helpBg     = LoadTexture("assets/menu/helpbg.jpg");
     ui.helpScrollTimer = 0.0f;
+    ui.isHelpVietnamese = false; // default to English
     ui.boardFrame = LoadTexture("assets/board/board_frame.png");
     ui.cell       = LoadTexture("assets/board/cell_custom.png");
     ui.playerBadge = LoadTexture("assets/board/playername_badge.png");

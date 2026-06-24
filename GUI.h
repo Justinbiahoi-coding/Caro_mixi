@@ -62,6 +62,7 @@ struct UIState {
     Texture2D bgSelect;
     Texture2D helpBg;
     float helpScrollTimer; // time since Help opened, used for panel scale-in
+    bool isHelpVietnamese; // Add language toggle
 
     Font mainFont;
 

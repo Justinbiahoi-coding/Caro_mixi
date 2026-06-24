@@ -203,6 +203,28 @@ void UpdateMenuScreens(GameState& game, UIState& ui) {
         bool closeHover = CheckCollisionPointRec(mouse3, closeBtn3);
         bool closeClick = closeHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 
+        float panelW = 1100.0f;
+        float panelH = 640.0f;
+        float panelX = 960.0f - panelW * 0.5f;
+        float panelY = 540.0f - panelH * 0.5f;
+        int titleSize3 = 56;
+        int lineCount3 = 8;
+        int bodySize3 = 28;
+        float bodyLineHeight = bodySize3 * 1.55f;
+        float gapTitleToLine = 22.0f;
+        float gapLineToBody = 40.0f;
+        float gapBodyToHint = 36.0f;
+        int hintSize3 = 22;
+        float blockH = titleSize3 + gapTitleToLine + 4.0f + gapLineToBody
+                     + lineCount3 * bodyLineHeight + gapBodyToHint + hintSize3;
+        float cursorY = panelY + (panelH - blockH) * 0.5f;
+
+        Rectangle langBtn3 = { panelX + panelW - 140.0f, cursorY + 8.0f, 110.0f, 40.0f };
+        bool langHover = CheckCollisionPointRec(mouse3, langBtn3);
+        if (langHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            ui.isHelpVietnamese = !ui.isHelpVietnamese;
+        }
+
         if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_ENTER) || closeClick)
             ui.currentScreen = 0;
     }
@@ -741,9 +763,9 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         Color hintCol3 = Fade(Color{ 190, 165, 120, 255 }, a3);
 
         // === LAYOUT: vertically center the content block inside the panel ===
-        const char* helpTitle = "HOW TO PLAY";
+        const char* helpTitle = ui.isHelpVietnamese ? "HUONG DAN CHOI" : "HOW TO PLAY";
         int titleSize3 = 56;
-        const char* helpLines[] = {
+        const char* helpLinesEN[] = {
             "Two players take turns placing X and O.",
             "The first to line up 5 marks in a row",
             "horizontally, vertically or diagonally wins.",
@@ -753,6 +775,17 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             "",
             "Have a great game!"
         };
+        const char* helpLinesVN[] = {
+            "Hai nguoi choi lan luot danh X va O.",
+            "Nguoi dau tien xep duoc 5 quan lien tiep",
+            "theo hang ngang, doc hoac cheo se thang.",
+            "",
+            "Nhan vao mot o tren ban co de danh,",
+            "hoac su dung cac phim W A S D + Enter.",
+            "",
+            "Chuc ban choi game vui ve!"
+        };
+        const char** helpLines = ui.isHelpVietnamese ? helpLinesVN : helpLinesEN;
         int lineCount3 = 8;
         int bodySize3 = 28;
         float bodyLineHeight = bodySize3 * 1.55f;
@@ -776,6 +809,19 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
             DrawTextCustom(ui.mainFont, helpTitle, (int)(titleX + d), (int)cursorY, titleSize3, Fade(goldBright, (0.10f + pulse3 * 0.06f) * a3));
         }
         DrawTextCustom(ui.mainFont, helpTitle, (int)titleX, (int)cursorY, titleSize3, goldColor3);
+
+        // Language switch button next to the title
+        Vector2 mouseHelp = GetMousePosition();
+        Rectangle langBtnDraw = { panelX + panelW - 140.0f, cursorY + 8.0f, 110.0f, 40.0f };
+        bool langHoverDraw = CheckCollisionPointRec(mouseHelp, langBtnDraw);
+        Color langBg = Fade(BLACK, langHoverDraw ? 0.85f : 0.65f);
+        Color langFg = langHoverDraw ? Color{ 255, 200, 50, 255 } : Color{ 220, 200, 170, 220 };
+        DrawRectangleRounded(langBtnDraw, 0.25f, 6, langBg);
+        DrawRectangleRoundedLines(langBtnDraw, 0.25f, 6, Fade(langFg, 0.8f * a3));
+        const char* langText = "ENG/VIE";
+        int langW = MeasureTextCustomX(ui.mainFont, langText, 22);
+        DrawTextCustom(ui.mainFont, langText, (int)(langBtnDraw.x + (langBtnDraw.width - langW) * 0.5f), (int)(langBtnDraw.y + 9), 22, langFg);
+
         cursorY += titleSize3 + gapTitleToLine;
 
         // --- Gothic ornament bar below the title ---
@@ -792,12 +838,11 @@ void DrawMenuScreens(const GameState& game, const UIState& ui) {
         cursorY += lineCount3 * bodyLineHeight + gapBodyToHint;
 
         // --- Exit hint ---
-        const char* hintText = "Press ESC / ENTER to go back";
+        const char* hintText = ui.isHelpVietnamese ? "Nhan ESC / ENTER de quay lai" : "Press ESC / ENTER to go back";
         int hintW3 = MeasureTextCustomX(ui.mainFont, hintText, hintSize3);
         DrawTextCustom(ui.mainFont, hintText, (int)(centerX3 - hintW3 * 0.5f), (int)cursorY, hintSize3, hintCol3);
 
         // Top-right X button, an always-visible escape route, not just a key shortcut
-        Vector2 mouseHelp = GetMousePosition();
         Rectangle closeBtnDraw = { 1920.0f - 90.0f, 30.0f, 56.0f, 56.0f };
         bool closeHoverDraw = CheckCollisionPointRec(mouseHelp, closeBtnDraw);
         Color closeBg = Fade(BLACK, closeHoverDraw ? 0.85f : 0.65f);
